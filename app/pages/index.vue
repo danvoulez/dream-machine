@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { agent } from "~~/shared/agent";
+
 useSeoMeta({
-  title: "adam",
-  description: "A Nuxt starter for Eve agents.",
+  title: agent.name,
+  description: agent.description,
 });
 </script>
 

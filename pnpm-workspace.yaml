@@ -1,0 +1,5 @@
+minimumReleaseAgeExclude:
+  - eve
+  - "@vercel/connect"
+allowBuilds:
+  sharp: false

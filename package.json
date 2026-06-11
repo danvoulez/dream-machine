@@ -1,0 +1,32 @@
+{
+  "name": "adam",
+  "version": "0.0.0",
+  "type": "module",
+  "imports": {
+    "#*": "./agent/*",
+    "#evals/*": "./evals/*"
+  },
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "start": "nuxt preview",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@comark/nuxt": "^0.4.0",
+    "@nuxt/ui": "^4.8.2",
+    "@vercel/connect": "0.2.2",
+    "ai": "7.0.0-canary.165",
+    "eve": "beta",
+    "nuxt": "^4.4.8",
+    "shiki": "^4.2.0",
+    "tailwindcss": "^4.3.0",
+    "vue": "^3.5.35",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^2.2.12"
+  }
+}

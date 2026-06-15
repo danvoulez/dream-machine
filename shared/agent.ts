@@ -5,6 +5,6 @@ export const agent = {
   description:
     "A durable personal agent powered by Eve — concise, capable, and always you.",
   avatar: {
-    icon: "i-lucide-sparkles",
+    icon: "i-lucide-bot",
   },
 } as const;

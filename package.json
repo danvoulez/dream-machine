@@ -8,13 +8,14 @@
   },
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "node scripts/ensure-eve-dev.mjs && nuxt dev",
     "start": "nuxt preview",
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@comark/nuxt": "^0.4.0",
     "@nuxt/ui": "^4.8.2",
+    "@shikijs/langs": "^4.2.0",
     "@vercel/connect": "0.2.2",
     "ai": "7.0.0-canary.165",
     "eve": "beta",

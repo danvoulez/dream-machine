@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useChatNavigation } from "~/composables/chat/navigation";
+import { useAuthorizationChallenges } from "~/composables/chat/useAuthorizationChallenges";
 import { useStreamLog } from "~/composables/chat/providers/eve/stream-log";
 import { useChatSession } from "~/composables/chat/useChatSession";
 
@@ -18,6 +19,7 @@ const {
 
 const { consumePendingOnMount } = useChatNavigation(chatId);
 const { resetTurnEventCounts } = useStreamLog();
+const { pendingChallenges, failedChallenges, tryResumeConnectedChallenges } = useAuthorizationChallenges();
 
 const input = ref("");
 
@@ -28,6 +30,16 @@ watch(status, (value) => {
 });
 
 onMounted(() => {
+  void tryResumeConnectedChallenges({ skipIfBusy: isBusy.value });
+
+  if (import.meta.client) {
+    const onFocus = () => {
+      void tryResumeConnectedChallenges({ skipIfBusy: isBusy.value });
+    };
+    window.addEventListener("focus", onFocus);
+    onUnmounted(() => window.removeEventListener("focus", onFocus));
+  }
+
   if (consumePendingOnMount(sendMessage)) {
     return;
   }
@@ -91,6 +103,22 @@ function handleInputResponses(responses: Parameters<typeof sendInputResponses>[0
               />
             </template>
           </UChatMessages>
+
+          <div
+            v-if="pendingChallenges.length || failedChallenges.length"
+            class="space-y-2"
+          >
+            <AgentAuthorizationRequest
+              v-for="challenge in pendingChallenges"
+              :key="`pending-${challenge.name}`"
+              :challenge="challenge"
+            />
+            <AgentAuthorizationRequest
+              v-for="challenge in failedChallenges"
+              :key="`failed-${challenge.name}`"
+              :challenge="challenge"
+            />
+          </div>
 
           <UChatPrompt
             v-model="input"

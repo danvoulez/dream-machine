@@ -4,7 +4,10 @@ import {
   loadThreadContextMessages,
   slackChannel,
   type SlackContext,
+  type SlackMessage,
 } from "eve/channels/slack";
+import { resolveSlackInboundAuth } from "../../lib/slack-app-auth";
+import { consumeSlackLinkCode, parseSlackLinkCommand } from "../../lib/slack-link-codes";
 
 async function slackUserProfile(ctx: SlackContext, userId: string) {
   const res = await ctx.slack.request("users.info", { user: userId });
@@ -30,45 +33,123 @@ async function slackUserProfile(ctx: SlackContext, userId: string) {
   };
 }
 
+async function tryHandleSlackLinkCommand(
+  ctx: SlackContext,
+  message: SlackMessage,
+) {
+  const userId = message.author?.userId;
+  const teamId = message.teamId;
+  const text = message.markdown ?? message.text ?? "";
+
+  if (!userId || !teamId) {
+    return false;
+  }
+
+  const code = parseSlackLinkCommand(text);
+  if (!code) {
+    return false;
+  }
+
+  const profile = await slackUserProfile(ctx, userId);
+  const result = consumeSlackLinkCode({
+    code,
+    slackTeamId: teamId,
+    slackUserId: userId,
+    slackUserName: profile?.userName ?? message.author?.userName,
+    slackDisplayName: profile?.displayName ?? message.author?.fullName,
+    slackEmail: profile?.email,
+  });
+
+  if (result.ok) {
+    await ctx.thread.post(
+      "Your Slack account is now linked to Adam. Mentions and DMs will use your profile and integrations.",
+    );
+    return true;
+  }
+
+  const reason = result.reason === "expired"
+    ? "That link code has expired. Generate a new one in Adam → Integrations."
+    : "That link code is invalid. Generate a fresh code in Adam → Integrations.";
+
+  await ctx.thread.post(reason);
+  return true;
+}
+
+async function buildSlackTurn(ctx: SlackContext, message: SlackMessage) {
+  if (await tryHandleSlackLinkCommand(ctx, message)) {
+    return null;
+  }
+
+  await ctx.thread.startTyping("Thinking…");
+
+  const context: string[] = [];
+  const userId = message.author?.userId;
+  let profile: Awaited<ReturnType<typeof slackUserProfile>> = null;
+
+  if (userId) {
+    profile = await slackUserProfile(ctx, userId);
+    if (profile?.displayName) {
+      context.push(
+        [
+          "Slack user speaking in this thread:",
+          `- Display name: ${profile.displayName}`,
+          profile.userName ? `- Username: @${profile.userName}` : null,
+          `- User ID: ${profile.userId}`,
+          profile.email ? `- Email: ${profile.email}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    }
+  }
+
+  const prior = await loadThreadContextMessages(ctx.thread, message, {
+    since: "last-agent-reply",
+  });
+  if (prior.length > 0) {
+    const transcript = prior
+      .map((m) => `${m.isMe ? "Adam" : (m.user ?? "user")}: ${m.markdown}`)
+      .join("\n");
+    context.push(`Recent thread messages since your last reply:\n\n${transcript}`);
+  }
+
+  const slackAuth = defaultSlackAuth(message, ctx);
+  if (!slackAuth || !userId) {
+    return null;
+  }
+
+  const auth = resolveSlackInboundAuth(slackAuth, {
+    teamId: message.teamId,
+    userId,
+    userName: profile?.userName ?? message.author?.userName,
+    displayName: profile?.displayName ?? message.author?.fullName,
+    email: profile?.email,
+  });
+
+  const linked = auth.principalId !== slackAuth.principalId;
+  if (!linked) {
+    const linkUrl = process.env.BETTER_AUTH_URL
+      ? `${process.env.BETTER_AUTH_URL.replace(/\/$/, "")}/settings/integrations`
+      : "Adam → Integrations";
+    context.push(
+      `This Slack account is not linked to an Adam profile yet. Open ${linkUrl}, generate a link code, then message \`link <code>\` here.`,
+    );
+  }
+
+  return {
+    auth,
+    context: context.length > 0 ? context : undefined,
+  };
+}
+
 export default slackChannel({
   credentials: connectSlackCredentials("slack/adam"),
 
   async onAppMention(ctx, message) {
-    await ctx.thread.startTyping("Thinking…");
+    return buildSlackTurn(ctx, message);
+  },
 
-    const context: string[] = [];
-    const userId = message.author?.userId;
-
-    if (userId) {
-      const profile = await slackUserProfile(ctx, userId);
-      if (profile?.displayName) {
-        context.push(
-          [
-            "Slack user speaking in this thread:",
-            `- Display name: ${profile.displayName}`,
-            profile.userName ? `- Username: @${profile.userName}` : null,
-            `- User ID: ${profile.userId}`,
-            profile.email ? `- Email: ${profile.email}` : null,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        );
-      }
-    }
-
-    const prior = await loadThreadContextMessages(ctx.thread, message, {
-      since: "last-agent-reply",
-    });
-    if (prior.length > 0) {
-      const transcript = prior
-        .map((m) => `${m.isMe ? "Adam" : (m.user ?? "user")}: ${m.markdown}`)
-        .join("\n");
-      context.push(`Recent thread messages since your last reply:\n\n${transcript}`);
-    }
-
-    return {
-      auth: defaultSlackAuth(message, ctx),
-      context: context.length > 0 ? context : undefined,
-    };
+  async onDirectMessage(ctx, message) {
+    return buildSlackTurn(ctx, message);
   },
 });

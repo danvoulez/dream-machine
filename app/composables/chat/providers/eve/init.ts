@@ -1,5 +1,6 @@
 import type { EveMessageData } from "eve/vue";
 import type { UseEveAgentReturn } from "eve/vue";
+import { recordAuthorizationEvent } from "~/composables/chat/useAuthorizationChallenges";
 import { recordStreamEvent } from "./stream-log";
 
 const agentsByChatId = new Map<string, UseEveAgentReturn<EveMessageData>>();
@@ -9,6 +10,10 @@ export function getOrCreateEveAgent(chatId: string) {
   if (!agent) {
     agent = useEveAgent({
       onEvent: (event) => {
+        if (event.type === "authorization.required" || event.type === "authorization.completed") {
+          recordAuthorizationEvent(event);
+        }
+
         if (!import.meta.dev) return;
         recordStreamEvent(event.type);
       },

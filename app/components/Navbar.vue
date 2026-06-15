@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { startNewChat } from "~/composables/chat/navigation";
+import { authClient } from "~/lib/auth-client";
+
+const session = authClient.useSession();
+
+async function signOut() {
+  await authClient.signOut();
+  await navigateTo("/login");
+}
 </script>
 
 <template>
@@ -13,6 +21,33 @@ import { startNewChat } from "~/composables/chat/navigation";
 
     <template #right>
       <slot />
+
+      <UDropdownMenu
+        v-if="session.data"
+        :items="[[
+          {
+            label: session.data.user.name || session.data.user.email,
+            type: 'label',
+          },
+          {
+            label: 'Integrations',
+            icon: 'i-lucide-plug',
+            to: '/settings/integrations',
+          },
+          {
+            label: 'Sign out',
+            icon: 'i-lucide-log-out',
+            onSelect: signOut,
+          },
+        ]]"
+      >
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-user"
+          aria-label="Account menu"
+        />
+      </UDropdownMenu>
 
       <UColorModeButton />
 

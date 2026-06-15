@@ -1,17 +1,34 @@
+import type { AuthFn } from "eve/channels/auth";
 import { eveChannel } from "eve/channels/eve";
-import { localDev, none, placeholderAuth, vercelOidc } from "eve/channels/auth";
+import { vercelOidc } from "eve/channels/auth";
+import { auth } from "../../auth";
+
+function appSession(): AuthFn<Request> {
+  return async (request) => {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    if (!session?.user) {
+      return null;
+    }
+
+    return {
+      attributes: {
+        email: session.user.email,
+        name: session.user.name,
+      },
+      authenticator: "app",
+      issuer: "app",
+      principalId: session.user.id,
+      principalType: "user",
+    };
+  };
+}
 
 export default eveChannel({
   auth: [
-    // Open on localhost for `eve dev` and the REPL; ignored in production.
-    localDev(),
-    // Lets the Eve TUI and your Vercel deployments reach the deployed agent.
+    appSession(),
     vercelOidc(),
-    // This placeholder will not allow browser requests in production.
-    // Replace it with your app's auth provider, like Auth.js or Clerk,
-    // or use none() for a public demo.
-    // placeholderAuth(),
-    // Enable this for a public demo.
-    none(),
   ],
 });

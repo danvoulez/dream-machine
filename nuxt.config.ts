@@ -6,4 +6,8 @@ export default defineNuxtConfig({
     viewTransition: true,
   },
   compatibilityDate: "latest",
+  runtimeConfig: {
+    betterAuthSecret: process.env.BETTER_AUTH_SECRET,
+    betterAuthUrl: process.env.BETTER_AUTH_URL,
+  },
 });

@@ -3,55 +3,47 @@ defineProps<{
   label: string;
   description?: string;
   hint?: string;
+  inline?: boolean;
 }>();
 </script>
 
 <template>
-  <div class="px-4 py-4 sm:px-5 sm:py-5">
+  <div
+    class="px-4 py-3"
+    :class="inline ? 'flex items-center justify-between gap-4' : undefined"
+  >
+    <div
+      class="min-w-0"
+      :class="inline ? 'flex-1' : 'mb-3'"
+    >
+      <p class="text-sm text-highlighted">
+        {{ label }}
+      </p>
+      <p
+        v-if="description"
+        class="mt-0.5 text-xs text-muted"
+      >
+        {{ description }}
+      </p>
+    </div>
+
     <div
       v-if="$slots.default"
-      class="grid gap-4 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)] sm:items-start"
+      class="min-w-0"
+      :class="inline ? 'shrink-0' : 'w-full'"
     >
-      <div class="space-y-1">
-        <p class="text-sm font-medium text-highlighted">
-          {{ label }}
-        </p>
-        <p
-          v-if="description"
-          class="text-xs leading-relaxed text-muted"
-        >
-          {{ description }}
-        </p>
-      </div>
-
-      <div class="min-w-0 space-y-1">
-        <slot />
-        <p
-          v-if="hint"
-          class="text-xs text-dimmed"
-        >
-          {{ hint }}
-        </p>
-      </div>
+      <slot />
+      <p
+        v-if="hint"
+        class="mt-1.5 text-xs text-dimmed"
+      >
+        {{ hint }}
+      </p>
     </div>
 
-    <div
+    <slot
       v-else
-      class="flex items-center justify-between gap-4"
-    >
-      <div class="min-w-0 space-y-1">
-        <p class="text-sm font-medium text-highlighted">
-          {{ label }}
-        </p>
-        <p
-          v-if="description"
-          class="text-xs leading-relaxed text-muted"
-        >
-          {{ description }}
-        </p>
-      </div>
-
-      <slot name="control" />
-    </div>
+      name="control"
+    />
   </div>
 </template>

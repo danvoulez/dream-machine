@@ -6,6 +6,13 @@ const connectedCount = computed(
 );
 
 const totalCount = computed(() => connectors.value?.length ?? 0);
+
+const servicesDescription = computed(() => {
+  if (isInitialLoad.value || error.value) {
+    return "OAuth tools available in chat and Slack once linked.";
+  }
+  return `${connectedCount.value} of ${totalCount.value} connected · OAuth tools available in chat and Slack once linked.`;
+});
 </script>
 
 <template>
@@ -15,22 +22,16 @@ const totalCount = computed(() => connectors.value?.length ?? 0);
     :ui="{ body: 'p-0 sm:p-0' }"
   >
     <template #header>
-      <Navbar>
-        <template #title>
-          <h1 class="text-sm font-medium text-highlighted">
-            Settings
-          </h1>
-        </template>
-      </Navbar>
+      <Navbar />
     </template>
 
     <template #body>
-      <UContainer class="max-w-3xl py-8 sm:py-10">
-        <header class="mb-6 space-y-1">
-          <h1 class="text-2xl font-semibold tracking-tight text-highlighted">
+      <div class="mx-auto w-full max-w-2xl px-6 py-8">
+        <header class="mb-8">
+          <h1 class="mb-1 text-lg font-medium text-highlighted">
             Settings
           </h1>
-          <p class="text-sm text-muted">
+          <p class="max-w-lg text-sm text-muted">
             Manage your identity, memory, and integrations.
           </p>
         </header>
@@ -38,80 +39,61 @@ const totalCount = computed(() => connectors.value?.length ?? 0);
         <SettingsNav class="mb-8" />
 
         <div class="space-y-8">
-          <section class="space-y-3">
-            <div class="space-y-0.5">
-              <h2 class="text-sm font-medium text-highlighted">
-                Channels
-              </h2>
-              <p class="text-xs text-muted">
-                Link messaging platforms to your Adam account.
-              </p>
-            </div>
-
+          <SettingsSection
+            title="Channels"
+            description="Link messaging platforms to your Adam account."
+          >
             <IntegrationsSlackLinkCard />
-          </section>
+          </SettingsSection>
 
-          <section class="space-y-3">
-            <div class="flex items-start justify-between gap-4">
-              <div class="space-y-0.5">
-                <h2 class="text-sm font-medium text-highlighted">
-                  Services
-                </h2>
-                <p class="text-xs text-muted">
-                  OAuth tools available in chat and Slack once linked.
-                </p>
-                <p
-                  v-if="!isInitialLoad && !error"
-                  class="text-[11px] text-dimmed"
-                >
-                  {{ connectedCount }} of {{ totalCount }} connected
-                </p>
+          <SettingsSection
+            title="Services"
+            :description="servicesDescription"
+          >
+            <template #default>
+              <div
+                v-if="isInitialLoad"
+                class="px-4 py-3"
+              >
+                <USkeleton class="h-12 rounded-md" />
               </div>
 
+              <div
+                v-else-if="error"
+                class="px-4 py-3"
+              >
+                <UAlert
+                  color="error"
+                  variant="subtle"
+                  title="Failed to load services"
+                  :description="error.message"
+                />
+              </div>
+
+              <template v-else>
+                <IntegrationsConnectorCard
+                  v-for="connector in connectors"
+                  :key="connector.id"
+                  :connector="connector"
+                  @refresh="refresh()"
+                />
+              </template>
+            </template>
+
+            <template #actions>
               <UButton
                 color="neutral"
                 variant="ghost"
-                size="sm"
+                size="xs"
                 icon="i-lucide-refresh-cw"
                 :loading="pending"
                 aria-label="Refresh services"
                 @click="refresh()"
               />
-            </div>
-
-            <div
-              v-if="isInitialLoad"
-              class="space-y-2"
-            >
-              <USkeleton
-                v-for="index in 2"
-                :key="index"
-                class="h-14 rounded-lg"
-              />
-            </div>
-
-            <UAlert
-              v-else-if="error"
-              color="error"
-              variant="subtle"
-              title="Failed to load services"
-              :description="error.message"
-            />
-
-            <div
-              v-else
-              class="space-y-2"
-            >
-              <IntegrationsConnectorCard
-                v-for="connector in connectors"
-                :key="connector.id"
-                :connector="connector"
-                @refresh="refresh()"
-              />
-            </div>
-          </section>
+            </template>
+          </SettingsSection>
         </div>
-      </UContainer>
+      </div>
     </template>
   </UDashboardPanel>
 </template>

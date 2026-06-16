@@ -1,4 +1,4 @@
-import { memoryIdParamsSchema, patchMemoryBodySchema } from "~~/server/schemas/memory";
+import { memoryIdParamsSchema } from "~~/server/schemas/memory";
 import { deleteMemoryEntry } from "~~/server/utils/memory";
 import { requireSessionUserId } from "~~/server/utils/session";
 

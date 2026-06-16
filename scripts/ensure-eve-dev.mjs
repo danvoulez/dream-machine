@@ -3,10 +3,12 @@ import { join } from "node:path";
 
 const registryPath = join(process.cwd(), ".eve/nuxt-dev-server.json");
 const lockPath = join(process.cwd(), ".eve/nuxt-dev-server.lock");
+const eveCachePath = join(process.cwd(), "node_modules/.cache/eve");
 
-async function removeStaleRegistry() {
+async function clearEveDevArtifacts() {
   await rm(registryPath, { force: true });
   await rm(lockPath, { force: true });
+  await rm(eveCachePath, { recursive: true, force: true });
 }
 
 try {
@@ -14,7 +16,7 @@ try {
   const origin = typeof registry.origin === "string" ? registry.origin : null;
 
   if (!origin) {
-    await removeStaleRegistry();
+    await clearEveDevArtifacts();
     process.exit(0);
   }
 
@@ -23,8 +25,8 @@ try {
   });
 
   if (!response.ok) {
-    await removeStaleRegistry();
+    await clearEveDevArtifacts();
   }
 } catch {
-  await removeStaleRegistry();
+  await clearEveDevArtifacts();
 }

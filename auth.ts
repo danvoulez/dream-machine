@@ -1,1 +1,1 @@
-export { auth, getConnectUserIssuer } from "./server/utils/auth";
+export { auth } from "./server/utils/auth";

@@ -11,6 +11,10 @@ interface ImportMemoryResponse {
   memory: MemoryByCategory;
 }
 
+interface UpdateMemoryResponse {
+  entry: MemoryEntry;
+}
+
 export function useMemory() {
   const { data, pending, error, refresh } = useFetch<MemoryResponse>("/api/memory", {
     key: "user-memory",
@@ -32,6 +36,15 @@ export function useMemory() {
     await refresh();
   }
 
+  async function updateEntry(id: string, content: string) {
+    const result = await $fetch<UpdateMemoryResponse>(`/api/memory/${id}`, {
+      method: "PATCH",
+      body: { content },
+    });
+    await refresh();
+    return result.entry;
+  }
+
   async function copyExportPrompt() {
     await navigator.clipboard.writeText(MEMORY_EXPORT_PROMPT);
   }
@@ -43,6 +56,7 @@ export function useMemory() {
     refresh,
     importMemory,
     deleteEntry,
+    updateEntry,
     copyExportPrompt,
     exportPrompt: MEMORY_EXPORT_PROMPT,
   };

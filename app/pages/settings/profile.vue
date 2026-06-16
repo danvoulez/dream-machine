@@ -73,22 +73,16 @@ function resetForm() {
     :ui="{ body: 'p-0 sm:p-0' }"
   >
     <template #header>
-      <Navbar>
-        <template #title>
-          <h1 class="text-sm font-medium text-highlighted">
-            Settings
-          </h1>
-        </template>
-      </Navbar>
+      <Navbar />
     </template>
 
     <template #body>
-      <UContainer class="max-w-3xl py-8 sm:py-10">
-        <header class="mb-6 space-y-1">
-          <h1 class="text-2xl font-semibold tracking-tight text-highlighted">
+      <div class="mx-auto w-full max-w-2xl px-6 py-8">
+        <header class="mb-8">
+          <h1 class="mb-1 text-lg font-medium text-highlighted">
             Settings
           </h1>
-          <p class="text-sm text-muted">
+          <p class="max-w-lg text-sm text-muted">
             Manage your identity, memory, and integrations.
           </p>
         </header>
@@ -97,16 +91,16 @@ function resetForm() {
 
         <div
           v-if="pending"
-          class="space-y-4"
+          class="space-y-8"
         >
-          <USkeleton class="h-48 rounded-xl" />
-          <USkeleton class="h-32 rounded-xl" />
+          <USkeleton class="h-48 rounded-lg" />
+          <USkeleton class="h-32 rounded-lg" />
         </div>
 
         <form
           v-else
           id="profile-form"
-          class="space-y-6"
+          class="space-y-8"
           @submit.prevent="handleSave"
         >
           <SettingsSection
@@ -119,8 +113,7 @@ function resetForm() {
             >
               <UInput
                 v-model="form.name"
-                size="lg"
-                class="w-full"
+                class="w-full max-w-md"
                 placeholder="Your name"
               />
             </SettingsRow>
@@ -129,7 +122,7 @@ function resetForm() {
               label="Email"
               description="Used for sign-in. Contact support to change it."
             >
-              <p class="py-2.5 text-sm text-toned">
+              <p class="text-sm text-toned">
                 {{ profile?.email }}
               </p>
             </SettingsRow>
@@ -150,8 +143,7 @@ function resetForm() {
             >
               <UTextarea
                 v-model="form.bio"
-                :rows="4"
-                size="lg"
+                :rows="3"
                 class="w-full"
                 placeholder="Staff engineer at Acme. Building observability tools. Based in Paris."
                 autoresize
@@ -165,6 +157,7 @@ function resetForm() {
             description="Locale and regional settings."
           >
             <SettingsRow
+              inline
               label="Timezone"
               description="Used for schedules and time-aware replies."
             >
@@ -177,13 +170,15 @@ function resetForm() {
                 :filter-fields="['label', 'value', 'description']"
                 placeholder="Search timezone…"
                 icon="i-lucide-globe"
-                size="lg"
-                class="w-full"
+                class="w-48"
                 :ui="{ content: 'min-w-(--reka-combobox-trigger-width)' }"
               />
             </SettingsRow>
 
-            <SettingsRow label="Language">
+            <SettingsRow
+              inline
+              label="Language"
+            >
               <UInputMenu
                 v-model="form.locale"
                 :items="locales"
@@ -193,8 +188,7 @@ function resetForm() {
                 :filter-fields="['label', 'value', 'description']"
                 placeholder="Search language…"
                 icon="i-lucide-languages"
-                size="lg"
-                class="w-full"
+                class="w-40"
               />
             </SettingsRow>
           </SettingsSection>
@@ -205,7 +199,7 @@ function resetForm() {
           :memory="memory"
           :pending="memoryPending"
         />
-      </UContainer>
+      </div>
     </template>
 
     <template #footer>
@@ -219,9 +213,9 @@ function resetForm() {
       >
         <div
           v-if="isDirty && !pending"
-          class="border-t border-default/70 bg-default/95 backdrop-blur supports-[backdrop-filter]:bg-default/80"
+          class="border-t border-default bg-elevated/95 backdrop-blur supports-[backdrop-filter]:bg-elevated/90"
         >
-          <UContainer class="max-w-3xl">
+          <div class="mx-auto w-full max-w-2xl px-6">
             <div class="flex items-center justify-between gap-4 py-3">
               <p class="text-sm text-muted">
                 You have unsaved changes
@@ -229,7 +223,7 @@ function resetForm() {
               <div class="flex gap-2">
                 <UButton
                   color="neutral"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   :disabled="saving"
                   @click="resetForm"
@@ -247,7 +241,7 @@ function resetForm() {
                 </UButton>
               </div>
             </div>
-          </UContainer>
+          </div>
         </div>
       </Transition>
     </template>

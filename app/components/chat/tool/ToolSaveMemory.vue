@@ -7,6 +7,15 @@ import {
   normalizeSaveMemoryInput,
 } from "~/utils/chat/save-memory";
 
+interface SaveMemoryResult {
+  category: string;
+  saved: boolean;
+}
+
+interface SaveMemoryOutput {
+  results?: SaveMemoryResult[];
+}
+
 const props = defineProps<{
   parts: EveDynamicToolPart[];
   canRespond?: boolean;
@@ -48,6 +57,25 @@ const allSaved = computed(() =>
   props.parts.every(part => part.state === "output-available"),
 );
 
+function saveResultsForPart(part: EveDynamicToolPart): SaveMemoryResult[] {
+  if (part.state !== "output-available") {
+    return [];
+  }
+
+  const output = part.output as SaveMemoryOutput | undefined;
+  return output?.results ?? [];
+}
+
+const saveResults = computed(() =>
+  props.parts.flatMap(part => saveResultsForPart(part)),
+);
+
+const allUnchanged = computed(() =>
+  allSaved.value
+  && saveResults.value.length > 0
+  && saveResults.value.every(result => !result.saved),
+);
+
 const allDeclined = computed(() =>
   props.parts.every(part =>
     part.state === "output-denied"
@@ -70,7 +98,7 @@ const statusLabel = computed(() => {
     return "Skipped";
   }
   if (allSaved.value) {
-    return "Saved";
+    return allUnchanged.value ? "Unchanged" : "Saved";
   }
   return "Saving…";
 });
@@ -83,7 +111,7 @@ const statusDotClass = computed(() => {
     return "bg-neutral-400/90";
   }
   if (allSaved.value) {
-    return "bg-emerald-400/90";
+    return allUnchanged.value ? "bg-neutral-400/90" : "bg-emerald-400/90";
   }
   return "bg-amber-400/90";
 });
@@ -112,6 +140,12 @@ function respond(optionId: "approve" | "deny") {
 
   emit("inputResponses", responses);
 }
+
+watch(allSaved, (saved) => {
+  if (saved && !allUnchanged.value) {
+    refreshNuxtData("user-memory");
+  }
+});
 </script>
 
 <template>

@@ -12,7 +12,7 @@ function isActive(path: string) {
 </script>
 
 <template>
-  <nav class="flex gap-1 border-b border-default/80">
+  <nav class="flex gap-1 border-b border-default">
     <NuxtLink
       v-for="item in items"
       :key="item.to"

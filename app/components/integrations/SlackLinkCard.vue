@@ -48,10 +48,10 @@ async function copyCode() {
 </script>
 
 <template>
-  <div class="rounded-lg border border-default/70 bg-elevated/30">
-    <div class="flex items-center gap-3 px-3 py-2.5 sm:px-3.5 sm:py-3">
+  <div>
+    <div class="flex items-center gap-3 px-4 py-3">
       <div
-        class="flex size-8 shrink-0 items-center justify-center rounded-md border border-default/60 bg-default/50"
+        class="flex size-8 shrink-0 items-center justify-center rounded-md border border-default bg-elevated"
       >
         <UIcon
           name="i-simple-icons-slack"
@@ -61,18 +61,18 @@ async function copyCode() {
 
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-          <h3 class="text-sm font-medium text-highlighted">
+          <h3 class="text-sm text-highlighted">
             Slack
           </h3>
           <span
             v-if="!pending"
-            class="inline-flex items-center gap-1.5 text-[11px] text-dimmed"
+            class="inline-flex items-center gap-1.5 text-[11px] text-muted"
           >
             <span
               class="size-1.5 shrink-0 rounded-full"
               :class="isLinked
-                ? 'bg-emerald-400/90 shadow-[0_0_6px_1px_rgba(52,211,153,0.35)]'
-                : 'bg-muted/60'"
+                ? 'bg-emerald-400/90'
+                : 'bg-toned'"
             />
             {{ isLinked ? "Linked" : "Not linked" }}
           </span>
@@ -86,7 +86,7 @@ async function copyCode() {
             > · @{{ slackLink.userName }}</span>
           </template>
           <template v-else>
-            Uses your Adam profile and service connections in Slack.
+            Uses your profile and service connections in Slack.
           </template>
         </p>
       </div>
@@ -117,7 +117,7 @@ async function copyCode() {
 
     <div
       v-if="!isLinked && pendingCode"
-      class="border-t border-default/60 px-3 py-3 sm:px-3.5"
+      class="border-t border-default px-4 py-3"
     >
       <ol class="space-y-2 text-xs text-muted">
         <li class="flex gap-2">
@@ -131,7 +131,7 @@ async function copyCode() {
       </ol>
 
       <div class="mt-3 flex items-center gap-2">
-        <code class="rounded-md border border-default/70 bg-default/60 px-2.5 py-1 font-mono text-sm tracking-widest text-toned">
+        <code class="rounded-md border border-default bg-elevated px-2.5 py-1 font-mono text-sm tracking-widest text-highlighted">
           {{ pendingCode }}
         </code>
         <UButton
@@ -152,7 +152,7 @@ async function copyCode() {
 
     <p
       v-if="error"
-      class="border-t border-default/60 px-3 py-2 text-xs text-error sm:px-3.5"
+      class="border-t border-default px-4 py-2 text-xs text-error"
     >
       {{ error.message }}
     </p>

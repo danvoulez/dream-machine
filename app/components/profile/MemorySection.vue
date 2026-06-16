@@ -15,12 +15,15 @@ const props = defineProps<{
 
 const importOpen = ref(false);
 const deletingId = ref<string | null>(null);
+const editingEntry = ref<MemoryEntry | null>(null);
+const editContent = ref("");
+const savingEdit = ref(false);
 const expandedCategories = reactive(
   Object.fromEntries(MEMORY_CATEGORIES.map(category => [category, false])) as Record<MemoryCategory, boolean>,
 );
 const expandedEntries = ref<Set<string>>(new Set());
 
-const { deleteEntry } = useMemory();
+const { deleteEntry, updateEntry } = useMemory();
 const toast = useToast();
 
 const PREVIEW_LENGTH = 100;
@@ -80,6 +83,37 @@ async function handleDelete(entry: MemoryEntry) {
   }
   finally {
     deletingId.value = null;
+  }
+}
+
+function openEdit(entry: MemoryEntry) {
+  editingEntry.value = entry;
+  editContent.value = entry.content;
+}
+
+function closeEdit() {
+  editingEntry.value = null;
+  editContent.value = "";
+}
+
+async function handleSaveEdit() {
+  const entry = editingEntry.value;
+  const content = editContent.value.trim();
+  if (!entry || !content || savingEdit.value) {
+    return;
+  }
+
+  savingEdit.value = true;
+  try {
+    await updateEntry(entry.id, content);
+    toast.add({ title: "Memory updated", color: "neutral" });
+    closeEdit();
+  }
+  catch {
+    toast.add({ title: "Could not update entry", color: "error" });
+  }
+  finally {
+    savingEdit.value = false;
   }
 }
 </script>
@@ -147,13 +181,13 @@ async function handleDelete(entry: MemoryEntry) {
           :key="category"
           v-model:open="expandedCategories[category]"
           :unmount-on-hide="false"
-          class="border-b border-default/60 last:border-b-0"
+          class="border-b border-default last:border-b-0"
           :ui="{ content: 'overflow-hidden' }"
         >
           <button
             type="button"
             class="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors sm:px-5"
-            :class="isCategoryOpen(category) ? 'bg-elevated/25' : 'hover:bg-elevated/20'"
+            :class="isCategoryOpen(category) ? 'bg-accented' : 'hover:bg-accented/60'"
           >
             <UIcon
               name="i-lucide-chevron-down"
@@ -178,7 +212,7 @@ async function handleDelete(entry: MemoryEntry) {
           </button>
 
           <template #content>
-            <div class="border-t border-default/50 px-4 pb-4 pt-3 sm:px-5">
+            <div class="border-t border-default px-4 pb-4 pt-3 sm:px-5">
               <div
                 v-if="entriesFor(category)[0]"
                 class="group"
@@ -211,8 +245,18 @@ async function handleDelete(entry: MemoryEntry) {
                     color="neutral"
                     variant="link"
                     size="xs"
-                    icon="i-lucide-trash-2"
+                    icon="i-lucide-pencil"
                     class="ms-auto h-auto px-0 py-0 text-[11px] opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="Edit memory entry"
+                    @click.stop="openEdit(entriesFor(category)[0]!)"
+                  />
+
+                  <UButton
+                    color="neutral"
+                    variant="link"
+                    size="xs"
+                    icon="i-lucide-trash-2"
+                    class="h-auto px-0 py-0 text-[11px] opacity-0 transition-opacity group-hover:opacity-100"
                     :loading="deletingId === entriesFor(category)[0]!.id"
                     aria-label="Delete memory entry"
                     @click.stop="handleDelete(entriesFor(category)[0]!)"
@@ -226,5 +270,40 @@ async function handleDelete(entry: MemoryEntry) {
     </SettingsSection>
 
     <ProfileImportMemoryModal v-model:open="importOpen" />
+
+    <UModal
+      :open="editingEntry !== null"
+      title="Edit memory"
+      :ui="{ footer: 'justify-end gap-2' }"
+      @update:open="(value) => { if (!value) closeEdit(); }"
+    >
+      <template #body>
+        <UTextarea
+          v-model="editContent"
+          :rows="8"
+          autoresize
+          class="w-full"
+          placeholder="Memory content"
+        />
+      </template>
+
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="closeEdit"
+        >
+          Cancel
+        </UButton>
+        <UButton
+          color="neutral"
+          :loading="savingEdit"
+          :disabled="!editContent.trim()"
+          @click="handleSaveEdit"
+        >
+          Save
+        </UButton>
+      </template>
+    </UModal>
   </section>
 </template>

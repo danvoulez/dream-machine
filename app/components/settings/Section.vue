@@ -6,21 +6,15 @@ defineProps<{
 </script>
 
 <template>
-  <section class="overflow-hidden rounded-xl border border-default/70 bg-elevated/20">
-    <div
-      v-if="title || description || $slots.actions"
-      class="flex items-start justify-between gap-3 border-b border-default/60 px-4 py-3 sm:px-5"
-    >
+  <section>
+    <div class="mb-3 flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <h2
-          v-if="title"
-          class="text-sm font-medium text-highlighted"
-        >
+        <h2 class="text-[10px] font-medium uppercase tracking-wider text-muted">
           {{ title }}
         </h2>
         <p
           v-if="description"
-          class="mt-0.5 text-xs text-muted"
+          class="mt-1 text-xs text-muted"
         >
           {{ description }}
         </p>
@@ -29,7 +23,7 @@ defineProps<{
       <slot name="actions" />
     </div>
 
-    <div class="divide-y divide-default/60">
+    <div class="divide-y divide-default rounded-lg border border-default">
       <slot />
     </div>
   </section>

@@ -122,12 +122,6 @@ export async function setMemoryForCategory(
   };
 }
 
-export async function listMemoryEntriesForUser(userId: string): Promise<MemoryEntry[]> {
-  const grouped = await listMemoryForUser(userId);
-  return MEMORY_CATEGORIES.flatMap(category => grouped[category]);
-}
-
-
 export async function importMemoryForUser(userId: string, raw: string) {
   const sections = parseMemoryImport(raw);
   const created: MemoryEntry[] = [];
@@ -209,21 +203,4 @@ export async function updateMemoryEntry(userId: string, id: string, content: str
     .limit(1);
 
   return row ? rowToEntry(row) : undefined;
-}
-
-export function buildMemoryPromptSection(memory: MemoryByCategory) {
-  const parts: string[] = [];
-
-  for (const category of MEMORY_CATEGORIES) {
-    const entries = memory[category];
-    if (!entries.length) {
-      continue;
-    }
-
-    const label = category.replace(/_/g, " ").replace(/\b\w/g, char => char.toUpperCase());
-    parts.push(`## ${label}`);
-    parts.push(entries[0]!.content);
-  }
-
-  return parts.join("\n\n");
 }

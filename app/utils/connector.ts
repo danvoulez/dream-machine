@@ -46,16 +46,6 @@ export function parseTestResult(line: string): ParsedTestResult {
   return { title: line };
 }
 
-export function tagColor(tag: string): "error" | "info" | "neutral" {
-  if (/bug/i.test(tag)) {
-    return "error";
-  }
-  if (/feature/i.test(tag)) {
-    return "info";
-  }
-  return "neutral";
-}
-
 export function testResultsHeading(connectorId: string) {
   if (connectorId === "linear") {
     return "Issues";

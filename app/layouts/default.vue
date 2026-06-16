@@ -56,15 +56,23 @@ defineShortcuts({
     >
       <template #header="{ collapsed }">
         <NuxtLink
-          v-if="!collapsed"
           to="/"
-          class="flex items-center gap-2"
+          class="flex items-center gap-2.5 min-w-0"
+          :class="collapsed ? 'mx-auto' : ''"
         >
-          <Logo class="size-8 shrink-0" />
-          <span class="text-xl font-bold text-highlighted">{{ agent.name }}</span>
+          <Logo class="h-3.5 w-auto shrink-0 text-highlighted" />
+          <span
+            v-if="!collapsed"
+            class="truncate text-base font-semibold text-highlighted"
+          >
+            {{ agent.name }}
+          </span>
         </NuxtLink>
 
-        <UDashboardSidebarCollapse class="ms-auto" />
+        <UDashboardSidebarCollapse
+          v-if="!collapsed"
+          class="ms-auto"
+        />
       </template>
 
       <template #default="{ collapsed }">
@@ -123,7 +131,7 @@ defineShortcuts({
       :groups="searchGroups"
     />
 
-    <div class="m-4 flex flex-1 min-w-0 overflow-hidden rounded-lg bg-default/75 shadow ring ring-default lg:ml-0">
+    <div class="m-2 flex flex-1 min-w-0 overflow-hidden rounded-xl bg-muted shadow-sm ring ring-default lg:ml-0">
       <slot />
     </div>
   </UDashboardGroup>

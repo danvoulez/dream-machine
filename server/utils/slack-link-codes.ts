@@ -87,8 +87,3 @@ export async function consumeSlackLinkCode(input: {
 
   return { ok: true as const, appUserId: row.appUserId };
 }
-
-export function parseSlackLinkCommand(text: string) {
-  const match = text.match(/\blink\s+([A-Z0-9]{6})\b/i);
-  return match?.[1]?.toUpperCase();
-}

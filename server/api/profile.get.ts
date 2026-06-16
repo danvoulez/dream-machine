@@ -1,5 +1,4 @@
-import { patchProfileBodySchema } from "~~/server/schemas/profile";
-import { getProfileWithUser, updateProfileForUser } from "~~/server/utils/profile";
+import { getProfileWithUser } from "~~/server/utils/profile";
 import { requireSessionUserId } from "~~/server/utils/session";
 
 export default defineEventHandler(async (event) => {

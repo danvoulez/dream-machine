@@ -1,4 +1,3 @@
-import { CONNECT_USER_ISSUER } from "#shared/connect";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth";
 import { db, schema } from "@nuxthub/db";
@@ -17,7 +16,3 @@ export const auth = betterAuth({
     enabled: true,
   },
 });
-
-export function getConnectUserIssuer() {
-  return CONNECT_USER_ISSUER;
-}

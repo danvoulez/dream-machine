@@ -1,5 +1,5 @@
-import type { MemoryByCategory } from "#shared/types/memory";
-import type { UserProfile } from "#shared/types/profile";
+import type { MemoryByCategory } from "../../shared/types/memory.js";
+import type { UserProfile } from "../../shared/types/profile.js";
 import { appOrigin, internalHeaders } from "./internal-api.js";
 
 export interface UserContextPayload {

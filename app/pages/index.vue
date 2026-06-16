@@ -20,12 +20,12 @@ function createChat(prompt: string) {
   void startChat(text);
 }
 
-function summarizeDay() {
-  void startChat("Summarize my day using the daily-summary skill.");
-}
-
 function onSubmit() {
   createChat(input.value);
+}
+
+function summarizeDay() {
+  void startChat("Summarize my day using the daily-summary skill.");
 }
 
 const quickChats = [
@@ -63,7 +63,7 @@ const quickChats = [
     </template>
 
     <template #body>
-      <div class="flex flex-1">
+      <div class="hero-glow flex flex-1">
         <UContainer class="flex flex-1 flex-col justify-center gap-4 py-8 sm:gap-6">
           <div class="space-y-1">
             <h1 class="text-3xl font-bold text-highlighted sm:text-4xl">

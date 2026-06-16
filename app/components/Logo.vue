@@ -1,28 +1,11 @@
 <template>
   <svg
-    width="32"
-    height="32"
-    viewBox="0 0 32 32"
-    fill="none"
+    viewBox="0 0 76 65"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
+    class="inline-block shrink-0"
   >
-    <rect
-      width="32"
-      height="32"
-      rx="8"
-      class="fill-primary"
-    />
-    <text
-      x="16"
-      y="22"
-      text-anchor="middle"
-      fill="white"
-      font-size="15"
-      font-weight="600"
-      font-family="ui-sans-serif, system-ui, sans-serif"
-    >
-      A
-    </text>
+    <path d="M37.5274 0L75.0548 65H0L37.5274 0Z" />
   </svg>
 </template>

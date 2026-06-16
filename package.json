@@ -1,6 +1,20 @@
 {
-  "name": "adam",
+  "name": "personal-agent-template",
   "version": "0.0.0",
+  "description": "A durable personal AI assistant template built with Eve, Nuxt 4, and Better Auth",
+  "license": "MIT",
+  "author": "Hugo Richard",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HugoRCD/personal-agent-template"
+  },
+  "bugs": {
+    "url": "https://github.com/HugoRCD/personal-agent-template/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@9.15.0",
   "type": "module",
   "imports": {
     "#*": "./agent/*"
@@ -34,6 +48,7 @@
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.112",
+    "@iconify-json/simple-icons": "^1.2.48",
     "@types/node": "25.9.1",
     "typescript": "^5.9.3",
     "vue-tsc": "^2.2.12"

@@ -1,19 +1,12 @@
 import { defineTool } from "eve/tools";
 import { always } from "eve/tools/approval";
 import { z } from "zod";
+import { MEMORY_CATEGORIES } from "../lib/memory-categories.js";
 import { saveMemoryRemote } from "../lib/memory-internal.js";
 
-const categories = [
-  "work_context",
-  "personal_context",
-  "active_focus",
-  "instructions_preferences",
-  "project_history",
-] as const;
-
 const updateSchema = z.object({
-  category: z.enum(categories).describe("Memory category to update"),
-    content: z.string().min(1).describe("Full replacement prose for this category (not a partial delta)"),
+  category: z.enum(MEMORY_CATEGORIES).describe("Memory category to update"),
+  content: z.string().min(1).describe("Full replacement prose for this category (not a partial delta)"),
 });
 
 export default defineTool({

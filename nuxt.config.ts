@@ -38,7 +38,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: "en" },
-      title: "Personal Agent Template",
+      title: "V",
       titleTemplate: "%s",
       charset: "utf-8",
       viewport: "width=device-width, initial-scale=1",
@@ -46,7 +46,7 @@ export default defineNuxtConfig({
         {
           name: "description",
           content:
-            "A durable personal AI assistant template built with Eve, Nuxt 4, and Better Auth.",
+            "Your personal AI agent. Chat on the web or Slack, query Linear, and pick up where you left off.",
         },
         { name: "theme-color", content: "#1b1718" },
         { name: "color-scheme", content: "light dark" },

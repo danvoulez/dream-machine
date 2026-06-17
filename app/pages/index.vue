@@ -64,9 +64,14 @@ const quickChats = [
     <template #body>
       <div class="hero-glow flex flex-1">
         <UContainer class="flex flex-1 flex-col justify-center gap-4 py-8 sm:gap-6">
-          <h1 class="text-3xl font-bold text-highlighted sm:text-4xl">
-            {{ greeting }}
-          </h1>
+          <div class="space-y-1">
+            <h1 class="text-3xl font-bold text-highlighted sm:text-4xl">
+              {{ greeting }}
+            </h1>
+            <p class="text-sm text-muted sm:text-base">
+              V — your personal agent
+            </p>
+          </div>
 
           <UChatPrompt
             v-model="input"

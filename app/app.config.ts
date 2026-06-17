@@ -1,9 +1,9 @@
 export default defineAppConfig({
   site: {
-    name: "Personal Agent Template",
-    title: "Personal Agent Template",
+    name: "V",
+    title: "V",
     description:
-      "A durable personal AI assistant template built with Eve, Nuxt 4, and Better Auth. Web chat, Slack, Linear, and long-term memory.",
+      "Your personal AI agent. Chat on the web or Slack, query Linear, and pick up where you left off.",
     tagline: "Vercel × Eve",
     author: "Hugo Richard",
     repo: "https://github.com/HugoRCD/personal-agent-template",

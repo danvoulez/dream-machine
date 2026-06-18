@@ -122,7 +122,7 @@ async function handleSaveEdit() {
   <section>
     <SettingsSection
       title="Memory"
-      description="Long-term context V uses across web and Slack."
+      description="Long-term context V uses across web, Slack, and iMessage."
     >
       <template
         v-if="hasMemory && !pending"

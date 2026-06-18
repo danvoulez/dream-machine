@@ -18,6 +18,7 @@ const loading = ref(false);
 
 const highlights = [
   { icon: "i-lucide-message-square", label: "Web chat" },
+  { icon: "i-lucide-smartphone", label: "iMessage" },
   { icon: "i-simple-icons-slack", label: "Slack" },
   { icon: "i-simple-icons-linear", label: "Linear" },
   { icon: "i-lucide-brain", label: "Long-term memory" },
@@ -175,7 +176,7 @@ async function handleSubmit() {
               V
             </h1>
             <p class="text-sm leading-relaxed text-muted sm:text-base">
-              A durable AI assistant with long-term memory. Chat on the web or Slack, query Linear, and pick up where you left off.
+              A durable AI assistant with long-term memory. Chat on the web, Slack, or iMessage — query Linear and pick up where you left off.
             </p>
           </div>
 

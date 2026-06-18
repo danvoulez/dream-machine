@@ -9,9 +9,9 @@ const totalCount = computed(() => connectors.value?.length ?? 0);
 
 const servicesDescription = computed(() => {
   if (isInitialLoad.value || error.value) {
-    return "OAuth tools available in chat and Slack once linked.";
+    return "OAuth tools available in chat, Slack, and iMessage once linked.";
   }
-  return `${connectedCount.value} of ${totalCount.value} connected · OAuth tools available in chat and Slack once linked.`;
+  return `${connectedCount.value} of ${totalCount.value} connected · OAuth tools available in chat, Slack, and iMessage once linked.`;
 });
 </script>
 

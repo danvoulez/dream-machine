@@ -105,7 +105,7 @@ function resetForm() {
         >
           <SettingsSection
             title="Profile"
-            description="How V identifies you across web and Slack."
+            description="How V identifies you across web, Slack, and iMessage."
           >
             <SettingsRow
               label="Name"

@@ -12,7 +12,7 @@
 
 ---
 
-Open source personal agent template. Web chat, Slack, Linear, and long-term memory — one codebase, durable sessions, user-approved memory saves.
+Open source personal agent template. Web chat, Slack, iMessage, Linear, and long-term memory — one codebase, durable sessions, user-approved memory saves.
 
 ## Features
 
@@ -23,6 +23,10 @@ Chat with your agent in the browser. Threads resume across sessions, tool calls 
 ### Slack — Same Agent, Different Surface
 
 DMs and @mentions on Slack. Link your Slack account to your web profile so memory and context follow you across channels.
+
+### iMessage — Text Your Agent
+
+Reach V over iMessage via [Sendblue](https://chat-sdk.dev/adapters/vendor-official/sendblue). Add your phone number in **Profile**, then message the Sendblue line — same memory and context as web and Slack.
 
 ### Linear — Issues On Demand
 
@@ -40,7 +44,7 @@ Morning briefing skill: active focus from memory, assigned Linear issues, and a 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Web chat · Slack DMs / mentions               │
+│              Web chat · Slack DMs / mentions · iMessage           │
 └───────────────────────────────┬─────────────────────────────────┘
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -102,13 +106,13 @@ Personal Agent Template ships with **V** as the example persona. See the [Custom
 - Rename your agent (name, slug, persona)
 - Change the AI model
 - Add tools and skills
-- Configure Slack and Linear integrations
+- Configure Slack, iMessage, and Linear integrations
 - Theme the UI
 - Deploy your fork
 
 ## Memory
 
-Long-term memory is injected into every Eve session for authenticated users (web and linked Slack).
+Long-term memory is injected into every Eve session for authenticated users (web, linked Slack, and iMessage).
 
 1. Open **Profile → Import Memory**
 2. Copy the export prompt into ChatGPT, Claude, etc.
@@ -123,9 +127,9 @@ V can also propose facts via **`save_memory`** — approve or skip in chat. Edit
 
 1. **Auth**: Users sign in via Better Auth (email/password)
 2. **Session start**: Eve fetches profile + memory and injects into agent instructions
-3. **Chat**: Web UI streams through Eve; Slack events hit the slack channel
+3. **Chat**: Web UI streams through Eve; Slack events hit the slack channel; iMessage via Sendblue
 4. **Tools**: Agent calls weather, save_memory, Linear MCP as needed
-5. **Internal API**: Agent reads/writes memory and Slack links via authenticated Nitro routes
+5. **Internal API**: Agent reads/writes memory, Slack links, and phone links via authenticated Nitro routes
 
 ## Development
 

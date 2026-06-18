@@ -46,7 +46,7 @@ export default defineNuxtConfig({
         {
           name: "description",
           content:
-            "Your personal AI agent. Chat on the web or Slack, query Linear, and pick up where you left off.",
+            "Your personal AI agent. Chat on the web, Slack, or iMessage — query Linear and pick up where you left off.",
         },
         { name: "theme-color", content: "#1b1718" },
         { name: "color-scheme", content: "light dark" },

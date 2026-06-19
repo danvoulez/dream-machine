@@ -1,4 +1,4 @@
-import type { SendFn } from "eve/channels";
+import type { SendFn, SendOptions } from "eve/channels";
 import { defineChannel, POST } from "eve/channels";
 import type { SendblueMessagePayload } from "chat-adapter-sendblue";
 import { agent } from "../../shared/agent.js";
@@ -18,6 +18,17 @@ import {
 
 const WEBHOOK_ROUTE = "/eve/v1/sendblue/webhook";
 
+const IMESSAGE_CHANNEL_CONTEXT = [
+  "Channel: iMessage (Sendblue). There is no browser UI in this thread.",
+  "Answer the user's question directly with tools when needed.",
+  "Do not call save_memory unless they explicitly ask you to remember or save something.",
+] as const;
+
+interface PendingInputRequest {
+  requestId: string;
+  toolName: string;
+}
+
 interface SendblueChannelState {
   threadId: string | null;
   contactNumber: string | null;
@@ -27,9 +38,9 @@ interface SendblueChannelState {
   pendingToolCallMessage: string | null;
 }
 
-function chatUrl() {
-  const origin = process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "");
-  return origin ? `${origin}/chat` : "the web chat";
+interface SendblueChannelContext {
+  sendblue: ReturnType<typeof getSendblueAdapter>;
+  state: SendblueChannelState;
 }
 
 function firstNonEmptyLine(text: string) {
@@ -66,6 +77,94 @@ function threadIdForState(
   return state.threadId;
 }
 
+const pendingInputByThread = new Map<string, PendingInputRequest[]>();
+
+interface InflightSend {
+  send: SendFn<SendblueChannelState>;
+  auth: SendOptions<SendblueChannelState>["auth"];
+  continuationToken: string;
+  state: SendblueChannelState;
+}
+
+let inflightSend: InflightSend | null = null;
+
+function parseApprovalReply(text: string): "approve" | "deny" | null {
+  const normalized = text.trim().toLowerCase();
+  if (/^(yes|y|oui|ok|approve|remember)$/u.test(normalized)) {
+    return "approve";
+  }
+  if (/^(no|n|non|skip|deny)$/u.test(normalized)) {
+    return "deny";
+  }
+  return null;
+}
+
+function isSaveMemoryRequest(request: PendingInputRequest) {
+  return request.toolName === "save_memory";
+}
+
+function denyResponses(requests: readonly PendingInputRequest[]) {
+  return requests.map(request => ({
+    requestId: request.requestId,
+    optionId: "deny" as const,
+  }));
+}
+
+async function resolvePendingInput(
+  threadId: string,
+  text: string,
+  send: SendFn<SendblueChannelState>,
+  sendOptions: SendOptions<SendblueChannelState>,
+) {
+  const pending = pendingInputByThread.get(threadId);
+  if (!pending?.length) {
+    return false;
+  }
+
+  const onlySaveMemory = pending.every(isSaveMemoryRequest);
+  const approval = onlySaveMemory ? "deny" : parseApprovalReply(text);
+
+  if (!approval) {
+    await postToThread(
+      threadId,
+      onlySaveMemory
+        ? `Skipping memory save — edit your profile at ${profileSettingsUrl()}.`
+        : "Reply YES to approve or NO to skip the pending action.",
+    );
+    return true;
+  }
+
+  pendingInputByThread.delete(threadId);
+
+  try {
+    inflightSend = {
+      send,
+      auth: sendOptions.auth,
+      continuationToken: sendOptions.continuationToken,
+      state: sendOptions.state,
+    };
+    await send(
+      { inputResponses: pending.map(request => ({
+        requestId: request.requestId,
+        optionId: approval,
+      })) },
+      sendOptions,
+    );
+  } finally {
+    inflightSend = null;
+  }
+
+  if (onlySaveMemory) {
+    await postToThread(
+      threadId,
+      `Memory saves are not available in iMessage. Edit your profile at ${profileSettingsUrl()}.`,
+    );
+    return false;
+  }
+
+  return true;
+}
+
 async function dispatchInbound(
   payload: SendblueMessagePayload,
   send: SendFn<SendblueChannelState>,
@@ -99,28 +198,41 @@ async function dispatchInbound(
 
   const fromNumber = resolveSendblueLineNumber(payload);
 
+  const sendOptions = {
+    auth,
+    continuationToken: threadId,
+    state: {
+      threadId,
+      contactNumber,
+      fromNumber,
+      groupId: payload.group_id?.length ? payload.group_id : null,
+      isGroup: Boolean(payload.group_id?.length),
+      pendingToolCallMessage: null,
+    } satisfies SendblueChannelState,
+  };
+
   try {
+    const blocked = await resolvePendingInput(threadId, text, send, sendOptions);
+    if (blocked) {
+      return;
+    }
+
+    inflightSend = { send, auth, continuationToken: threadId, state: sendOptions.state };
     await send(
-      { message: text },
       {
-        auth,
-        continuationToken: threadId,
-        state: {
-          threadId,
-          contactNumber,
-          fromNumber,
-          groupId: payload.group_id?.length ? payload.group_id : null,
-          isGroup: Boolean(payload.group_id?.length),
-          pendingToolCallMessage: null,
-        } satisfies SendblueChannelState,
+        message: text,
+        context: [...IMESSAGE_CHANNEL_CONTEXT],
       },
+      sendOptions,
     );
   } catch (error) {
     console.error("[sendblue] agent send failed", error);
+  } finally {
+    inflightSend = null;
   }
 }
 
-export default defineChannel<SendblueChannelState>({
+export default defineChannel<SendblueChannelState, SendblueChannelContext>({
   kindHint: "sendblue",
 
   state: {
@@ -220,7 +332,7 @@ export default defineChannel<SendblueChannelState>({
       channel.state.pendingToolCallMessage = null;
 
       if (pending) {
-        await channel.sendblue.startTyping(threadId).catch(() => undefined);
+        await postToThread(threadId, pending);
         return;
       }
 
@@ -235,9 +347,16 @@ export default defineChannel<SendblueChannelState>({
       }
 
       if (event.finishReason === "tool-calls") {
-        channel.state.pendingToolCallMessage = event.message
+        const pending = event.message
           ? firstNonEmptyLine(event.message) ?? null
           : null;
+        channel.state.pendingToolCallMessage = pending;
+
+        if (pending) {
+          await postToThread(threadId, pending);
+        } else {
+          await postToThread(threadId, "Working on that — I'll reply in a moment.");
+        }
         return;
       }
 
@@ -256,13 +375,49 @@ export default defineChannel<SendblueChannelState>({
         return;
       }
 
-      const prompts = event.requests.map((request) => request.prompt).join("\n\n");
+      const pending = event.requests.map(request => ({
+        requestId: request.requestId,
+        toolName: request.action.toolName,
+      }));
+      const onlySaveMemory = pending.every(isSaveMemoryRequest);
+
+      if (onlySaveMemory && inflightSend) {
+        await postToThread(
+          threadId,
+          `Memory saves need the web profile on iMessage — skipping. Edit at ${profileSettingsUrl()}.`,
+        );
+        try {
+          await inflightSend.send(
+            { inputResponses: denyResponses(pending) },
+            {
+              auth: inflightSend.auth,
+              continuationToken: inflightSend.continuationToken,
+              state: channel.state,
+            },
+          );
+        } catch (error) {
+          console.error("[sendblue] save_memory auto-deny failed", error);
+        }
+        return;
+      }
+
+      pendingInputByThread.set(threadId, pending);
+
+      if (onlySaveMemory) {
+        await postToThread(
+          threadId,
+          `Memory saves are not available in iMessage. Edit your profile at ${profileSettingsUrl()}.`,
+        );
+        return;
+      }
+
+      const prompts = event.requests.map(request => request.prompt).join("\n\n");
       await postToThread(
         threadId,
         [
           prompts,
           "",
-          `Open ${chatUrl()} in your browser to approve or deny this action.`,
+          "Reply YES to approve or NO to skip.",
         ].join("\n"),
       );
     },
@@ -282,7 +437,7 @@ export default defineChannel<SendblueChannelState>({
           ]
         : [
             `Authorization is required for ${event.name}.`,
-            `Open ${chatUrl()} or ${profileSettingsUrl()} to continue.`,
+            `Open ${profileSettingsUrl()} to connect integrations, then try again.`,
           ];
 
       await postToThread(threadId, lines.join("\n"));

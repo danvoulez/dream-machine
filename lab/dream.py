@@ -11,7 +11,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,24 +20,24 @@ from .errors import LabError
 from .receipt import canonical_json, sha256_text
 from .store import append
 
-DDMM_ROOT = "Users/ubl-ops/fontes-dm/DDMM/"
-SCHEMA_ROOT = DDMM_ROOT + "schemas/"
-EXAMPLE_ROOT = DDMM_ROOT + "examples/"
+DREAM_ROOT_DEFAULT = "tests/fixtures/dream-machine"
+EXAMPLE_DIR = "examples"
+# Paths below are relative to the Dream Machine pack root.
 REQUIRED_DREAM_FILES = {
-    "readme": DDMM_ROOT + "README.md",
-    "implementation_spec": DDMM_ROOT + "DREAM_MACHINE_IMPLEMENTATION_SPEC.md",
-    "invariants": DDMM_ROOT + "INVARIANTS.md",
-    "acceptance_tests": DDMM_ROOT + "ACCEPTANCE_TESTS.md",
-    "ids": DDMM_ROOT + "IDS.md",
-    "cli_contract": DDMM_ROOT + "CLI.md",
-    "task_graph": DDMM_ROOT + "TASK_GRAPH.md",
-    "risk_register": DDMM_ROOT + "RISKS_AND_MITIGATIONS.md",
+    "readme": "README.md",
+    "implementation_spec": "DREAM_MACHINE_IMPLEMENTATION_SPEC.md",
+    "invariants": "INVARIANTS.md",
+    "acceptance_tests": "ACCEPTANCE_TESTS.md",
+    "ids": "IDS.md",
+    "cli_contract": "CLI.md",
+    "task_graph": "TASK_GRAPH.md",
+    "risk_register": "RISKS_AND_MITIGATIONS.md",
 }
 SCHEMA_FILES = {
-    "claim": SCHEMA_ROOT + "claim.schema.json",
-    "source_manifest": SCHEMA_ROOT + "source_manifest.schema.json",
-    "canonical_map": SCHEMA_ROOT + "canonical_map.schema.json",
-    "dream_answer": SCHEMA_ROOT + "dream_answer.schema.json",
+    "claim": "schemas/claim.schema.json",
+    "source_manifest": "schemas/source_manifest.schema.json",
+    "canonical_map": "schemas/canonical_map.schema.json",
+    "dream_answer": "schemas/dream_answer.schema.json",
 }
 REF_PATTERN = re.compile(r"^(source|artifact|extraction|chunk|claim|map|act):")
 
@@ -69,22 +68,20 @@ def _example_expectation(path: str) -> bool | None:
     return None
 
 
-def load_schemas(zip_path: str | Path = "fontes-dm.zip") -> dict[str, dict[str, Any]]:
-    with zipfile.ZipFile(zip_path) as archive:
-        return {name: json.loads(archive.read(path)) for name, path in SCHEMA_FILES.items()}
+def load_schemas(root: str | Path = DREAM_ROOT_DEFAULT) -> dict[str, dict[str, Any]]:
+    root = Path(root)
+    return {name: json.loads((root / rel).read_text(encoding="utf-8")) for name, rel in SCHEMA_FILES.items()}
 
 
-def load_examples(zip_path: str | Path = "fontes-dm.zip") -> list[ExampleCase]:
+def load_examples(root: str | Path = DREAM_ROOT_DEFAULT) -> list[ExampleCase]:
     cases: list[ExampleCase] = []
-    with zipfile.ZipFile(zip_path) as archive:
-        for name in sorted(archive.namelist()):
-            if not name.startswith(EXAMPLE_ROOT) or not name.endswith(".json"):
-                continue
-            schema_name = _schema_name_for_example(name)
-            expect_valid = _example_expectation(name)
-            if schema_name is None or expect_valid is None:
-                continue
-            cases.append(ExampleCase(name, schema_name, expect_valid, json.loads(archive.read(name))))
+    for path in sorted((Path(root) / EXAMPLE_DIR).rglob("*.json")):
+        name = str(path)
+        schema_name = _schema_name_for_example(name)
+        expect_valid = _example_expectation(name)
+        if schema_name is None or expect_valid is None:
+            continue
+        cases.append(ExampleCase(name, schema_name, expect_valid, json.loads(path.read_text(encoding="utf-8"))))
     return cases
 
 
@@ -254,9 +251,9 @@ def register_candidate(
     payload: dict[str, Any],
     *,
     schemas: dict[str, dict[str, Any]] | None = None,
-    zip_path: str | Path = "fontes-dm.zip",
+    root: str | Path = DREAM_ROOT_DEFAULT,
 ) -> dict[str, Any]:
-    schemas = schemas or load_schemas(zip_path)
+    schemas = schemas or load_schemas(root)
     if schema_name not in schemas:
         raise LabError(f"unknown Dream schema: {schema_name}")
     errors = validate_payload(schema_name, payload, schemas)
@@ -284,13 +281,12 @@ def register_candidate(
     )
 
 
-def verify_dream_machine(zip_path: str | Path = "fontes-dm.zip") -> dict[str, Any]:
-    with zipfile.ZipFile(zip_path) as archive:
-        names = set(archive.namelist())
-    missing_files = [key for key, path in REQUIRED_DREAM_FILES.items() if path not in names]
-    missing_schemas = [key for key, path in SCHEMA_FILES.items() if path not in names]
-    schemas = load_schemas(zip_path) if not missing_schemas else {}
-    cases = load_examples(zip_path)
+def verify_dream_machine(root: str | Path = DREAM_ROOT_DEFAULT) -> dict[str, Any]:
+    base = Path(root)
+    missing_files = [key for key, rel in REQUIRED_DREAM_FILES.items() if not (base / rel).is_file()]
+    missing_schemas = [key for key, rel in SCHEMA_FILES.items() if not (base / rel).is_file()]
+    schemas = load_schemas(base) if not missing_schemas else {}
+    cases = load_examples(base)
     results: list[dict[str, Any]] = []
     for case in cases:
         errors = validate_payload(case.schema_name, case.payload, schemas)
@@ -308,9 +304,9 @@ def verify_dream_machine(zip_path: str | Path = "fontes-dm.zip") -> dict[str, An
     failures = [result for result in results if not result["ok"]]
     return {
         "ok": not missing_files and not missing_schemas and not failures,
-        "zip": str(zip_path),
-        "required_files": {key: {"path": path, "present": key not in missing_files} for key, path in REQUIRED_DREAM_FILES.items()},
-        "schemas": {key: {"path": path, "present": key not in missing_schemas} for key, path in SCHEMA_FILES.items()},
+        "root": str(base),
+        "required_files": {key: {"path": rel, "present": key not in missing_files} for key, rel in REQUIRED_DREAM_FILES.items()},
+        "schemas": {key: {"path": rel, "present": key not in missing_schemas} for key, rel in SCHEMA_FILES.items()},
         "missing_files": missing_files,
         "missing_schemas": missing_schemas,
         "examples": len(results),

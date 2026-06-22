@@ -1,18 +1,18 @@
 """Santo André Lab Pack vector harness.
 
-This module is the production-local harness for the pack vectors bundled in
-``fontes-dm.zip``.  It treats the zip as source material, validates each vector's
-fixture envelope, and applies pack-stage interpretation checks from the Lab Pack
-law set.  The checks intentionally run *after* foundation Canon in the source
-pack: this harness does not recompute LogLine receipt hashes; it verifies that the
-Lab runtime reads pack obligations without improvising routes or creating false
-greens.
+This module is the production-local harness for the pack vectors kept under
+``tests/fixtures/santo-andre-vectors/``.  Vectors live in ``valid/``, ``invalid/``
+and ``ambiguous/`` directories whose names are the expected verdict.  The harness
+validates each vector's fixture envelope and applies pack-stage interpretation
+checks from the Lab Pack law set.  The checks intentionally run *after* foundation
+Canon in the source pack: this harness does not recompute LogLine receipt hashes;
+it verifies that the Lab runtime reads pack obligations without improvising routes
+or creating false greens.
 """
 from __future__ import annotations
 
 import json
 import re
-import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -20,7 +20,7 @@ from typing import Any
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 CANON_SLOTS = ("who", "did", "this", "when", "confirmed_by", "if_ok", "if_doubt", "if_not", "status")
 PACK_HASH_FIELDS = ("pack", "template", "workflow", "policy", "qualifier", "runtime", "run")
-VECTOR_ROOT = "/packs/santo-andre-lab/vectors/"
+VECTORS_DEFAULT = "tests/fixtures/santo-andre-vectors"
 VERDICTS = {"valid", "invalid", "ambiguous"}
 
 
@@ -39,12 +39,6 @@ def is_hash(value: Any) -> bool:
 
 def is_zero_or_hash(value: Any) -> bool:
     return value == "0" or is_hash(value)
-
-
-def _category(path: str) -> str:
-    marker = VECTOR_ROOT.strip("/") + "/"
-    suffix = path.split(marker, 1)[1]
-    return suffix.split("/", 1)[0]
 
 
 def _transport(vector: dict[str, Any]) -> dict[str, Any]:
@@ -109,19 +103,20 @@ def build_registry(sources: list[VectorSource]) -> dict[str, set[str]]:
     return registry
 
 
-def load_vector_sources(zip_path: str | Path = "fontes-dm.zip") -> list[VectorSource]:
-    """Load vector JSON files with their source paths and verdict directories."""
+def load_vector_sources(root: str | Path = VECTORS_DEFAULT) -> list[VectorSource]:
+    """Load vector JSON files with their source paths and verdict directories.
+
+    Each vector's parent directory name (``valid``/``invalid``/``ambiguous``) is its
+    expected verdict category.
+    """
     sources: list[VectorSource] = []
-    with zipfile.ZipFile(zip_path) as archive:
-        names = sorted(name for name in archive.namelist() if VECTOR_ROOT in name and name.endswith(".json"))
-        for name in names:
-            category = _category(name)
-            sources.append(VectorSource(name, category, json.loads(archive.read(name))))
+    for path in sorted(Path(root).rglob("*.json")):
+        sources.append(VectorSource(str(path), path.parent.name, json.loads(path.read_text(encoding="utf-8"))))
     return sources
 
 
-def load_vectors(zip_path: str | Path = "fontes-dm.zip") -> list[dict[str, Any]]:
-    return [source.vector for source in load_vector_sources(zip_path)]
+def load_vectors(root: str | Path = VECTORS_DEFAULT) -> list[dict[str, Any]]:
+    return [source.vector for source in load_vector_sources(root)]
 
 
 def _schema_problems(source: VectorSource) -> list[str]:
@@ -235,8 +230,8 @@ def judge_vector(source: VectorSource | dict[str, Any], registry: dict[str, set[
     }
 
 
-def run_harness(zip_path: str | Path = "fontes-dm.zip") -> dict[str, Any]:
-    sources = load_vector_sources(zip_path)
+def run_harness(root: str | Path = VECTORS_DEFAULT) -> dict[str, Any]:
+    sources = load_vector_sources(root)
     registry = build_registry(sources)
     results = [judge_vector(source, registry) for source in sources]
     failures = [item for item in results if not item["ok"]]

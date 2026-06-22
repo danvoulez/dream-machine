@@ -13,13 +13,12 @@ pip install -e ".[webauthn]" pytest build
 ## Running the checks
 
 ```bash
-pytest -q                                    # full suite; test_signing skips without [webauthn]
-lab foundation suite --zip fontes-dm.zip     # RFC 8785 receipt conformance
-lab dream verify     --zip fontes-dm.zip
-lab harness          --zip fontes-dm.zip
-lab sources audit    --zip fontes-dm.zip
-lab fleet audit      --root fleet
-python -m build                              # the package must build cleanly
+pytest -q                # full suite; test_signing skips without [webauthn]
+lab foundation suite     # RFC 8785 receipt conformance (needs Node for the reference verifier)
+lab dream verify
+lab harness
+lab fleet audit --root fleet
+python -m build          # the package must build cleanly
 ```
 
 All of the above run in CI on every push and pull request.

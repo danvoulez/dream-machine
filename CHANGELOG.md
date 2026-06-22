@@ -34,6 +34,18 @@ All notable changes to this project are documented here. The format is based on
   templates. The package is installable; `pip install dream-machine-lab[webauthn]` adds
   the crypto layer.
 
+### Changed
+- **Conformance corpora replace `fontes-dm.zip`** — the 16MB / 2466-entry source bundle is
+  gone. The 92 files actually consumed are now clean, named fixtures under `tests/fixtures/`
+  (`santo-andre-vectors/`, `dream-machine/`, `logline-foundation/`). The `harness`, `dream`,
+  and `foundation` readers walk the filesystem; their CLI `--zip` flag is replaced by
+  `--source` (defaulting to the fixture dir). CI now pins Node 20 for the Foundation
+  reference verifier.
+
+### Removed
+- **`lab sources audit` / `lab/sources.py`** — the command existed only to audit the raw
+  bundle that no longer exists.
+
 ## [0.1.0]
 - Initial processual Lab runtime: append-only ledger, receipt mold, evaluator, queue,
   selector/executor split, projection doctrine, Dream Machine boundary, source-bundle

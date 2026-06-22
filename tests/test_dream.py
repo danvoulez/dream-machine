@@ -24,7 +24,7 @@ def valid_dream_answer():
 
 
 def test_dream_machine_pack_examples_validate_and_reject_as_declared():
-    result = verify_dream_machine("fontes-dm.zip")
+    result = verify_dream_machine()
     assert result["ok"], result
     assert result["examples"] == 8
     assert result["valid_examples"] == 4
@@ -35,7 +35,7 @@ def test_dream_machine_pack_examples_validate_and_reject_as_declared():
 
 
 def test_dream_claim_without_evidence_is_rejected_by_invariant():
-    schemas = load_schemas("fontes-dm.zip")
+    schemas = load_schemas()
     errors = validate_payload(
         "claim",
         {
@@ -53,7 +53,7 @@ def test_dream_claim_without_evidence_is_rejected_by_invariant():
 
 
 def test_dream_canonical_map_cannot_claim_truth_without_admitted_act():
-    schemas = load_schemas("fontes-dm.zip")
+    schemas = load_schemas()
     errors = validate_payload(
         "canonical_map",
         {
@@ -71,13 +71,13 @@ def test_dream_canonical_map_cannot_claim_truth_without_admitted_act():
 
 
 def test_dream_example_loader_maps_all_schema_cases():
-    cases = load_examples("fontes-dm.zip")
+    cases = load_examples()
     assert {case.schema_name for case in cases} == {"canonical_map", "claim", "dream_answer", "source_manifest"}
 
 
 def test_dream_register_candidate_writes_candidate_act_without_activation():
     db = connect(":memory:")
-    schemas = load_schemas("fontes-dm.zip")
+    schemas = load_schemas()
     payload = valid_dream_answer()
 
     receipt = register_candidate(db, "dream_answer", payload, schemas=schemas)
@@ -94,7 +94,7 @@ def test_dream_register_candidate_writes_candidate_act_without_activation():
 
 def test_dream_register_candidate_rejects_invalid_payload():
     db = connect(":memory:")
-    schemas = load_schemas("fontes-dm.zip")
+    schemas = load_schemas()
 
     with pytest.raises(LabError, match="Dream payload invalid"):
         register_candidate(
@@ -162,8 +162,6 @@ def test_dream_cli_register_candidate(tmp_path):
             str(payload_path),
             "--schema",
             "dream_answer",
-            "--zip",
-            "fontes-dm.zip",
         ],
         cwd=os.getcwd(),
         env=env,

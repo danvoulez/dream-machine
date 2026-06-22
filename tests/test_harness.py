@@ -2,7 +2,7 @@ from lab.harness import VectorSource, build_registry, judge_vector, load_vector_
 
 
 def test_fontes_pack_vectors_match_expected_verdicts():
-    result = run_harness("fontes-dm.zip")
+    result = run_harness()
     assert result["ok"], result
     assert result["count"] == 14
     assert result["counts"] == {"ambiguous": 3, "invalid": 8, "valid": 3}
@@ -18,7 +18,7 @@ def test_fontes_pack_vectors_match_expected_verdicts():
 
 
 def test_loader_keeps_source_path_and_directory_expectation():
-    sources = load_vector_sources("fontes-dm.zip")
+    sources = load_vector_sources()
     assert sources
     for source in sources:
         assert f"/{source.category}/" in source.path

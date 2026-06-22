@@ -8,7 +8,7 @@ from lab.receipt import mint
 
 
 def test_foundation_suite_runs_from_bundled_zip():
-    result = verify_foundation_suite("fontes-dm.zip")
+    result = verify_foundation_suite()
 
     assert result["ok"], result
     assert result["passed"] == 21
@@ -30,7 +30,7 @@ def test_engine_minted_receipt_passes_foundation_reference_verifier():
         }
     )
 
-    result = verify_engine_receipt(receipt, "fontes-dm.zip")
+    result = verify_engine_receipt(receipt)
 
     assert result["ok"], result
     assert result["kind"] == "receipt"
@@ -40,7 +40,7 @@ def test_tampered_receipt_fails_foundation_reference_verifier():
     receipt = mint({"who": "tester"})
     receipt["who"] = "tampered"
 
-    result = verify_engine_receipt(receipt, "fontes-dm.zip")
+    result = verify_engine_receipt(receipt)
 
     assert result["ok"] is False
     assert "FAILED" in result["stdout"]
@@ -50,7 +50,7 @@ def test_foundation_cli_verifies_engine_receipt(tmp_path):
     receipt_path = tmp_path / "receipt.json"
     receipt_path.write_text(json.dumps(mint({"who": "tester"})))
     proc = subprocess.run(
-        [sys.executable, "-m", "lab.cli", "foundation", "verify-receipt", str(receipt_path), "--zip", "fontes-dm.zip"],
+        [sys.executable, "-m", "lab.cli", "foundation", "verify-receipt", str(receipt_path)],
         cwd=os.getcwd(),
         env=os.environ | {"LAB_DB": str(tmp_path / "lab.sqlite")},
         check=True,

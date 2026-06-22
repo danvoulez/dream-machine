@@ -27,17 +27,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"   # LogLine Foundation reference verifier (conformance suite)
       - name: Install (with crypto extra)
         run: pip install -e ".[webauthn]" pytest
       - name: Pytest (full suite, incl. WebAuthn signing)
         run: pytest -q
       - name: Conformance & runtime audits
         run: |
-          lab foundation suite --zip fontes-dm.zip
-          lab dream verify     --zip fontes-dm.zip
-          lab harness          --zip fontes-dm.zip
-          lab sources audit    --zip fontes-dm.zip
-          lab fleet audit      --root fleet
+          lab foundation suite
+          lab dream verify
+          lab harness
+          lab fleet audit --root fleet
 
   zero-dep-core:
     name: zero-dependency core

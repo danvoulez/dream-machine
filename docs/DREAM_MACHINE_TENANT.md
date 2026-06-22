@@ -8,10 +8,10 @@ Dream Machine is a tenant of the Lab, not the Lab itself. It may ingest, classif
 
 Implemented Lab wrapper:
 
-- `lab dream verify --zip <fontes-dm.zip>`
+- `lab dream verify` (corpus defaults to `tests/fixtures/dream-machine`; override with `--source <path>`)
 - `lab dream ingest <corpus>`
 - `lab dream propose <question>`
-- `lab dream register-candidate <json-file> --schema <schema_name> --zip <fontes-dm.zip>`
+- `lab dream register-candidate <json-file> --schema <schema_name>`
 
 `ingest` computes a deterministic material manifest for a file or directory and registers it as candidate memory. It does not mutate the source corpus and it does not create an authority projection.
 

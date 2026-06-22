@@ -8,16 +8,15 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from .dream import ingest_corpus, load_schemas, propose_question, register_candidate, verify_dream_machine
+from .dream import DREAM_ROOT_DEFAULT, ingest_corpus, load_schemas, propose_question, register_candidate, verify_dream_machine
 from .errors import LabError
 from .evaluator import evaluate
 from .fleet import audit_fleet
-from .foundation import verify_foundation_suite, verify_receipt_file
+from .foundation import FOUNDATION_ROOT_DEFAULT, verify_foundation_suite, verify_receipt_file
 from .inference import build_inference_request
 from .process_catalog import write_generated_process_files
 from .receipt import mint, verify
-from .sources import audit_sources
-from .harness import run_harness
+from .harness import VECTORS_DEFAULT, run_harness
 from .projections import project_all, project_build, project_descend, project_inspect, project_verify
 from .runtime import (
     claim,
@@ -97,18 +96,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("status")
     sub.add_parser("doctor")
     harness = sub.add_parser("harness")
-    harness.add_argument("--zip", default="fontes-dm.zip")
-
-    sources = sub.add_parser("sources")
-    sources_sub = sources.add_subparsers(dest="sources_cmd", required=True)
-    sources_audit = sources_sub.add_parser("audit")
-    sources_audit.add_argument("--zip", default="fontes-dm.zip")
-    sources_audit.add_argument("--sample-limit", type=int, default=5)
+    harness.add_argument("--source", default=VECTORS_DEFAULT)
 
     dream = sub.add_parser("dream")
     dream_sub = dream.add_subparsers(dest="dream_cmd", required=True)
     dream_verify = dream_sub.add_parser("verify")
-    dream_verify.add_argument("--zip", default="fontes-dm.zip")
+    dream_verify.add_argument("--source", default=DREAM_ROOT_DEFAULT)
     dream_ingest = dream_sub.add_parser("ingest")
     dream_ingest.add_argument("corpus")
     dream_propose = dream_sub.add_parser("propose")
@@ -116,7 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
     dream_candidate = dream_sub.add_parser("register-candidate")
     dream_candidate.add_argument("json_file")
     dream_candidate.add_argument("--schema", required=True)
-    dream_candidate.add_argument("--zip", default="fontes-dm.zip")
+    dream_candidate.add_argument("--source", default=DREAM_ROOT_DEFAULT)
     for name in ("cite", "inspect"):
         p = sub.add_parser(name)
         p.add_argument("hash")
@@ -221,10 +214,10 @@ def build_parser() -> argparse.ArgumentParser:
     foundation = sub.add_parser("foundation")
     foundation_sub = foundation.add_subparsers(dest="foundation_cmd", required=True)
     foundation_suite = foundation_sub.add_parser("suite")
-    foundation_suite.add_argument("--zip", default="fontes-dm.zip")
+    foundation_suite.add_argument("--source", default=FOUNDATION_ROOT_DEFAULT)
     foundation_receipt = foundation_sub.add_parser("verify-receipt")
     foundation_receipt.add_argument("json_file")
-    foundation_receipt.add_argument("--zip", default="fontes-dm.zip")
+    foundation_receipt.add_argument("--source", default=FOUNDATION_ROOT_DEFAULT)
     return parser
 
 
@@ -282,17 +275,12 @@ def run(args: argparse.Namespace) -> Any:
             },
         }
     if args.cmd == "harness":
-        result = run_harness(args.zip)
+        result = run_harness(args.source)
         if not result["ok"]:
             raise LabError("pack vector harness failed")
         return result
-    if args.cmd == "sources" and args.sources_cmd == "audit":
-        result = audit_sources(args.zip, sample_limit=args.sample_limit)
-        if not result["ok"]:
-            raise LabError("source bundle audit failed")
-        return result
     if args.cmd == "dream" and args.dream_cmd == "verify":
-        result = verify_dream_machine(args.zip)
+        result = verify_dream_machine(args.source)
         if not result["ok"]:
             raise LabError("dream machine verification failed")
         return result
@@ -305,7 +293,7 @@ def run(args: argparse.Namespace) -> Any:
             payload = json.load(handle)
         if not isinstance(payload, dict):
             raise LabError("Dream candidate payload must be a JSON object")
-        return register_candidate(db, args.schema, payload, schemas=load_schemas(args.zip))
+        return register_candidate(db, args.schema, payload, schemas=load_schemas(args.source))
     if args.cmd in {"cite", "inspect"}:
         return require(db, args.hash)
     if args.cmd == "read":
@@ -423,9 +411,9 @@ def run(args: argparse.Namespace) -> Any:
     if args.cmd == "fleet" and args.fleet_cmd == "audit":
         return audit_fleet(args.root)
     if args.cmd == "foundation" and args.foundation_cmd == "suite":
-        return verify_foundation_suite(args.zip)
+        return verify_foundation_suite(args.source)
     if args.cmd == "foundation" and args.foundation_cmd == "verify-receipt":
-        return verify_receipt_file(args.json_file, args.zip)
+        return verify_receipt_file(args.json_file, args.source)
     raise LabError(f"unhandled command: {args.cmd}")
 
 

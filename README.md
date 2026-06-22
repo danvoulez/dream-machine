@@ -1,6 +1,6 @@
 # Dream Machine Lab
 
-[![CI](https://github.com/danvoulez/dream-machine-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/danvoulez/dream-machine-lab/actions/workflows/ci.yml)
+[![CI](https://github.com/danvoulez/dream-machine/actions/workflows/ci.yml/badge.svg)](https://github.com/danvoulez/dream-machine/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
@@ -43,13 +43,15 @@ pip install -e ".[webauthn]"
 ## Quickstart
 
 ```bash
-lab doctor                                   # environment + capability report
-lab sources audit   --zip fontes-dm.zip      # source-bundle audit
-lab foundation suite --zip fontes-dm.zip     # RFC 8785 receipt conformance vectors
-lab dream verify     --zip fontes-dm.zip     # Dream Machine schema/invariant checks
-lab harness          --zip fontes-dm.zip     # Santo André pack vectors
-lab fleet audit      --root fleet            # fleet / service allowlist audit
+lab doctor              # environment + capability report
+lab foundation suite    # RFC 8785 receipt conformance vectors (Node reference verifier)
+lab dream verify        # Dream Machine schema/invariant checks
+lab harness             # Santo André pack vectors
+lab fleet audit --root fleet   # fleet / service allowlist audit
 ```
+
+The conformance corpora live under `tests/fixtures/`; each command defaults there and
+accepts `--source <path>` (and `lab fleet audit` accepts `--root <path>`) to override.
 
 ## Architecture
 
@@ -95,8 +97,8 @@ See [SECURITY.md](SECURITY.md) for the threat model and vulnerability reporting.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[webauthn]" pytest
-pytest -q                                    # full suite (test_signing skips without the extra)
-lab foundation suite --zip fontes-dm.zip     # conformance audits
+pytest -q               # full suite (test_signing skips without the extra)
+lab foundation suite    # conformance audits
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the canon you must not break (don't revert the
@@ -113,7 +115,7 @@ canonicalizer, don't fake closure, write tests first).
 | `migrations/` | Postgres ledger DDL (`logline_acts`, realtime, RLS) |
 | `schemas/`, `docs/` | canonical schemas and doctrine documents |
 | `tests/` | pytest suite + RFC 8785 conformance vectors |
-| `fontes-dm.zip` | source-bundle fixture used by the audit tests |
+| `tests/fixtures/` | conformance corpora: `santo-andre-vectors/`, `dream-machine/`, `logline-foundation/` |
 
 ## License
 

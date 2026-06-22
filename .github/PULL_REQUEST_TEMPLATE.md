@@ -7,7 +7,7 @@
 ## Checklist
 
 - [ ] Tests added/updated and `pytest -q` passes
-- [ ] Audits pass (`lab foundation suite`, `dream verify`, `harness`, `sources audit`)
+- [ ] Audits pass (`lab foundation suite`, `dream verify`, `harness`, `fleet audit`)
 - [ ] `python -m build` succeeds (if packaging touched)
 - [ ] Canon respected: RFC 8785 conformance still green; no silent drops / fake closure /
       self-asserted authority; selectors don't execute; vendored code untouched

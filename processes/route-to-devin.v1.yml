@@ -1,0 +1,11 @@
+process_id: route-to-devin.v1
+status: active
+organ: law
+activation:
+  required_slots: [who, did, this, when, confirmed_by, if_ok, if_doubt, if_not, status]
+  must_include: [target_content_hash, target_process]
+authority_scope: []
+adapters: [route_to_devin]
+danger_tier: L3
+evidence_obligation: separate-result-act
+doubt_path: attention-raise.v1

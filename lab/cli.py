@@ -1,0 +1,443 @@
+"""Command-line interface for the fresh Lab runtime."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from typing import Any
+
+from .dream import ingest_corpus, load_schemas, propose_question, register_candidate, verify_dream_machine
+from .errors import LabError
+from .evaluator import evaluate
+from .fleet import audit_fleet
+from .foundation import verify_foundation_suite, verify_receipt_file
+from .inference import build_inference_request
+from .process_catalog import write_generated_process_files
+from .receipt import mint, verify
+from .sources import audit_sources
+from .harness import run_harness
+from .projections import project_all, project_build, project_descend, project_inspect, project_verify
+from .runtime import (
+    claim,
+    close,
+    executor_run_once,
+    clock_now,
+    clock_select_due,
+    inspect_queue,
+    queue_add,
+    queue_rebuild_due,
+    queue_list,
+    receiver_select,
+    release,
+    service_state,
+    set_service_paused,
+)
+from .store import append, connect, count, get, list_acts, require
+
+DB = os.environ.get("LAB_DB", ".lab/lab.sqlite")
+
+
+def emit_json(value: Any) -> None:
+    print(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False))
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def parse_json_object(text: str | None) -> dict[str, Any]:
+    if not text:
+        return {}
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("--data must be a JSON object")
+    return value
+
+
+def fields(args: argparse.Namespace) -> dict[str, Any]:
+    data = parse_json_object(getattr(args, "data", None))
+    for key in ["who", "did", "this", "confirmed_by", "if_ok", "if_doubt", "if_not", "status"]:
+        if hasattr(args, key) and getattr(args, key) is not None:
+            data[key] = getattr(args, key)
+    data.setdefault("when", utc_now())
+    return data
+
+
+def add_act_args(parser: argparse.ArgumentParser) -> None:
+    for name in ["who", "did", "this", "confirmed_by", "if_ok", "if_doubt", "if_not", "status"]:
+        parser.add_argument(f"--{name}", default="")
+    parser.add_argument("--data", help="AUX JSON object merged into the receipt before hashing")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="lab")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    for name in ("act", "register"):
+        add_act_args(sub.add_parser(name))
+
+    send = sub.add_parser("send")
+    send.add_argument("did")
+    send.add_argument("this")
+    send.add_argument("--to", required=True)
+    send.add_argument("--data")
+    send.add_argument("--who", default="lab.cli")
+
+    schedule = sub.add_parser("schedule")
+    schedule.add_argument("did")
+    schedule.add_argument("this")
+    schedule.add_argument("--at", required=True)
+    schedule.add_argument("--process", required=True)
+    schedule.add_argument("--adapter", default="receipt")
+    schedule.add_argument("--data")
+    schedule.add_argument("--who", default="lab.cli")
+
+    sub.add_parser("status")
+    sub.add_parser("doctor")
+    harness = sub.add_parser("harness")
+    harness.add_argument("--zip", default="fontes-dm.zip")
+
+    sources = sub.add_parser("sources")
+    sources_sub = sources.add_subparsers(dest="sources_cmd", required=True)
+    sources_audit = sources_sub.add_parser("audit")
+    sources_audit.add_argument("--zip", default="fontes-dm.zip")
+    sources_audit.add_argument("--sample-limit", type=int, default=5)
+
+    dream = sub.add_parser("dream")
+    dream_sub = dream.add_subparsers(dest="dream_cmd", required=True)
+    dream_verify = dream_sub.add_parser("verify")
+    dream_verify.add_argument("--zip", default="fontes-dm.zip")
+    dream_ingest = dream_sub.add_parser("ingest")
+    dream_ingest.add_argument("corpus")
+    dream_propose = dream_sub.add_parser("propose")
+    dream_propose.add_argument("question")
+    dream_candidate = dream_sub.add_parser("register-candidate")
+    dream_candidate.add_argument("json_file")
+    dream_candidate.add_argument("--schema", required=True)
+    dream_candidate.add_argument("--zip", default="fontes-dm.zip")
+    for name in ("cite", "inspect"):
+        p = sub.add_parser(name)
+        p.add_argument("hash")
+    h = sub.add_parser("hash")
+    h.add_argument("json_file")
+    read = sub.add_parser("read")
+    read.add_argument("--limit", type=int, default=20)
+    read.add_argument("--if-ok")
+    read.add_argument("--status")
+
+    ev = sub.add_parser("evaluate")
+    ev.add_argument("hash")
+    ev.add_argument("--process")
+
+    mine = sub.add_parser("mine")
+    mine.add_argument("frequency")
+    mine.add_argument("limit", type=int, nargs="?", default=20)
+
+    wake_spec = sub.add_parser("wake-spec")
+    wake_spec.add_argument("frequency")
+    wake_spec.add_argument("--limit", type=int, default=20)
+
+    wake_handled = sub.add_parser("wake-handled")
+    wake_handled.add_argument("source_hash")
+    wake_handled.add_argument("--who", default="runtime.receiver")
+
+    wake_receipt = sub.add_parser("wake-receipt")
+    wake_receipt.add_argument("source_hash")
+    wake_receipt.add_argument("--did", default="wake_receipt")
+    wake_receipt.add_argument("--status", default="registered")
+    wake_receipt.add_argument("--if-ok", dest="if_ok", default="memory-register.v1")
+    wake_receipt.add_argument("--if-doubt", dest="if_doubt", default="attention-raise.v1")
+    wake_receipt.add_argument("--if-not", dest="if_not", default="wake.skip")
+    wake_receipt.add_argument("--who", default="runtime.receiver")
+    wake_receipt.add_argument("--data")
+
+    queue = sub.add_parser("queue")
+    qsub = queue.add_subparsers(dest="queue_cmd", required=True)
+    qa = qsub.add_parser("add")
+    qa.add_argument("hash")
+    qa.add_argument("--process", default="memory-register.v1")
+    qa.add_argument("--adapter", default="receipt")
+    ql = qsub.add_parser("list")
+    ql.add_argument("--status", default="queued")
+    ql.add_argument("--limit", type=int, default=20)
+    qi = qsub.add_parser("inspect")
+    qi.add_argument("queue_id")
+    qc = qsub.add_parser("claim")
+    qc.add_argument("--worker", default="executor")
+    qr = qsub.add_parser("release")
+    qr.add_argument("queue_id")
+    qr.add_argument("--reason", default="released")
+    qx = qsub.add_parser("close")
+    qx.add_argument("queue_id")
+    qx.add_argument("--result-hash", required=True)
+    qb = qsub.add_parser("rebuild")
+    qb.add_argument("--now-at")
+    qb.add_argument("--from", dest="from_time")
+    qb.add_argument("--to", dest="to_time")
+    qb.add_argument("--limit", type=int, default=100)
+
+    receiver = sub.add_parser("receiver")
+    receiver.add_argument("frequency")
+    receiver.add_argument("--limit", type=int, default=20)
+
+    executor = sub.add_parser("executor")
+    executor.add_argument("mode", choices=["run", "daemon", "pause", "resume", "status"])
+    executor.add_argument("--worker", default="executor")
+    executor.add_argument("--reason", default="")
+
+    clock = sub.add_parser("clock")
+    clock.add_argument("mode", choices=["tick", "daemon", "backfill", "now"])
+    clock.add_argument("--now-at")
+    clock.add_argument("--from", dest="from_time")
+    clock.add_argument("--to", dest="to_time")
+    clock.add_argument("--limit", type=int, default=100)
+
+    project = sub.add_parser("project")
+    project.add_argument("mode", choices=["all", "build", "inspect", "descend", "verify"])
+    project.add_argument("target", nargs="?")
+    project.add_argument("--class", dest="projection_class", choices=["stable", "dynamic"], default="stable")
+    project.add_argument("--pin", help="JSON pin for dynamic projections")
+    project.add_argument("--parent", action="append", default=[])
+    project.add_argument("--ladder-level", default="L0")
+
+    infer = sub.add_parser("infer")
+    infer.add_argument("task")
+    infer.add_argument("--model", required=True)
+    infer.add_argument("--schema", required=True)
+
+    process = sub.add_parser("process")
+    process_sub = process.add_subparsers(dest="process_cmd", required=True)
+    process_generate = process_sub.add_parser("generate")
+    process_generate.add_argument("--root", default="processes")
+    process_generate.add_argument("--out")
+
+    fleet = sub.add_parser("fleet")
+    fleet_sub = fleet.add_subparsers(dest="fleet_cmd", required=True)
+    fleet_audit = fleet_sub.add_parser("audit")
+    fleet_audit.add_argument("--root", default="fleet")
+
+    foundation = sub.add_parser("foundation")
+    foundation_sub = foundation.add_subparsers(dest="foundation_cmd", required=True)
+    foundation_suite = foundation_sub.add_parser("suite")
+    foundation_suite.add_argument("--zip", default="fontes-dm.zip")
+    foundation_receipt = foundation_sub.add_parser("verify-receipt")
+    foundation_receipt.add_argument("json_file")
+    foundation_receipt.add_argument("--zip", default="fontes-dm.zip")
+    return parser
+
+
+def run(args: argparse.Namespace) -> Any:
+    db = connect(DB)
+    if args.cmd in {"act", "register"}:
+        return append(db, fields(args))
+    if args.cmd == "send":
+        data = parse_json_object(args.data)
+        data.update(
+            {
+                "who": args.who,
+                "did": args.did,
+                "this": args.this,
+                "confirmed_by": "lab.cli",
+                "if_ok": args.to,
+                "if_doubt": "attention-raise.v1",
+                "if_not": "unroutable",
+                "status": "sent",
+                "when": utc_now(),
+            }
+        )
+        return append(db, data)
+    if args.cmd == "schedule":
+        data = parse_json_object(args.data)
+        data.update(
+            {
+                "who": args.who,
+                "did": args.did,
+                "this": args.this,
+                "confirmed_by": "lab.cli",
+                "if_ok": args.process,
+                "if_doubt": "attention-raise.v1",
+                "if_not": "clock.skip",
+                "status": "scheduled",
+                "when": args.at,
+                "process_id": args.process,
+                "adapter": args.adapter,
+            }
+        )
+        return append(db, data)
+    if args.cmd == "status":
+        return {"ledger": "logline_acts", "db": DB, "count": count(db), "executor": service_state(db, "executor")}
+    if args.cmd == "doctor":
+        return {
+            "ok": True,
+            "ledger": "logline_acts",
+            "db": DB,
+            "count": count(db),
+            "executor": service_state(db, "executor"),
+            "commands": {
+                "fresh": ["act", "register", "send", "schedule", "evaluate", "queue", "clock", "executor"],
+                "selector": ["mine", "receiver", "wake-spec", "wake-handled", "wake-receipt"],
+                "emit": "deprecated",
+            },
+        }
+    if args.cmd == "harness":
+        result = run_harness(args.zip)
+        if not result["ok"]:
+            raise LabError("pack vector harness failed")
+        return result
+    if args.cmd == "sources" and args.sources_cmd == "audit":
+        result = audit_sources(args.zip, sample_limit=args.sample_limit)
+        if not result["ok"]:
+            raise LabError("source bundle audit failed")
+        return result
+    if args.cmd == "dream" and args.dream_cmd == "verify":
+        result = verify_dream_machine(args.zip)
+        if not result["ok"]:
+            raise LabError("dream machine verification failed")
+        return result
+    if args.cmd == "dream" and args.dream_cmd == "ingest":
+        return ingest_corpus(db, args.corpus)
+    if args.cmd == "dream" and args.dream_cmd == "propose":
+        return propose_question(db, args.question)
+    if args.cmd == "dream" and args.dream_cmd == "register-candidate":
+        with open(args.json_file, encoding="utf-8") as handle:
+            payload = json.load(handle)
+        if not isinstance(payload, dict):
+            raise LabError("Dream candidate payload must be a JSON object")
+        return register_candidate(db, args.schema, payload, schemas=load_schemas(args.zip))
+    if args.cmd in {"cite", "inspect"}:
+        return require(db, args.hash)
+    if args.cmd == "read":
+        return list_acts(db, args.limit, if_ok=args.if_ok, status=args.status)
+    if args.cmd == "hash":
+        with open(args.json_file, encoding="utf-8") as handle:
+            value = json.load(handle)
+        ok, message = verify(value) if isinstance(value, dict) and "hashes" in value else (True, "minted")
+        return mint(value) if message == "minted" else {"ok": ok, "message": message}
+    if args.cmd == "evaluate":
+        return evaluate(require(db, args.hash), args.process)
+    if args.cmd in {"mine", "receiver"}:
+        return receiver_select(db, args.frequency, args.limit)
+    if args.cmd == "wake-spec":
+        addressed = list_acts(db, args.limit, if_ok=args.frequency)
+        return {
+            "frequency": args.frequency,
+            "addressed": len(addressed),
+            "hashes": [receipt["id"] for receipt in addressed],
+            "effect": "no_direct_execution",
+        }
+    if args.cmd == "wake-handled":
+        require(db, args.source_hash)
+        return append(
+            db,
+            {
+                "who": args.who,
+                "did": "wake_handled",
+                "this": args.source_hash,
+                "when": utc_now(),
+                "confirmed_by": "lab.cli",
+                "if_ok": "evidence-closure.v1",
+                "if_doubt": "attention-raise.v1",
+                "if_not": "wake.skip",
+                "status": "fechado",
+            },
+        )
+    if args.cmd == "wake-receipt":
+        require(db, args.source_hash)
+        data = parse_json_object(args.data)
+        data.update(
+            {
+                "who": args.who,
+                "did": args.did,
+                "this": args.source_hash,
+                "when": utc_now(),
+                "confirmed_by": "lab.cli",
+                "if_ok": args.if_ok,
+                "if_doubt": args.if_doubt,
+                "if_not": args.if_not,
+                "status": args.status,
+            }
+        )
+        return append(db, data)
+    if args.cmd == "queue":
+        if args.queue_cmd == "add":
+            return queue_add(db, args.hash, args.process, args.adapter)
+        if args.queue_cmd == "list":
+            return queue_list(db, args.status, args.limit)
+        if args.queue_cmd == "inspect":
+            item = inspect_queue(db, args.queue_id)
+            if item is None:
+                raise LabError(f"queue item not found: {args.queue_id}")
+            return item
+        if args.queue_cmd == "claim":
+            return claim(db, args.worker)
+        if args.queue_cmd == "release":
+            return release(db, args.queue_id, reason=args.reason)
+        if args.queue_cmd == "close":
+            return close(db, args.queue_id, args.result_hash)
+        if args.queue_cmd == "rebuild":
+            return queue_rebuild_due(db, now_at=args.now_at, from_time=args.from_time, to_time=args.to_time, limit=args.limit)
+    if args.cmd == "executor":
+        if args.mode == "run":
+            return executor_run_once(db, args.worker)
+        if args.mode == "daemon":
+            result = executor_run_once(db, args.worker)
+            return {"mode": "daemon", "ran": 1 if result else 0, "result": result}
+        if args.mode == "pause":
+            return set_service_paused(db, "executor", True, args.reason)
+        if args.mode == "resume":
+            return set_service_paused(db, "executor", False, args.reason)
+        return service_state(db, "executor")
+    if args.cmd == "clock":
+        if args.mode == "now":
+            return clock_now()
+        if args.mode in {"tick", "daemon"}:
+            return {"selector": "clock", "mode": args.mode, "selected": clock_select_due(db, now_at=args.now_at, limit=args.limit), "effect": "no_direct_execution"}
+        return {"selector": "clock", "mode": args.mode, "selected": clock_select_due(db, from_time=args.from_time, to_time=args.to_time, limit=args.limit), "effect": "no_direct_execution"}
+    if args.cmd == "project":
+        if args.mode == "all":
+            return project_all(db)
+        if args.mode == "build":
+            return project_build(
+                db,
+                args.target or "lab_current_state",
+                projection_class=args.projection_class,
+                pin=parse_json_object(args.pin),
+                parent_projection_hashes=args.parent,
+                ladder_level=args.ladder_level,
+            )
+        if args.mode == "inspect":
+            if not args.target:
+                raise LabError("project inspect requires a projection hash")
+            return project_inspect(db, args.target)
+        if args.mode == "descend":
+            if not args.target:
+                raise LabError("project descend requires a projection hash")
+            return project_descend(db, args.target)
+        return project_verify(db)
+    if args.cmd == "infer":
+        return build_inference_request(db, args.task, model_id=args.model, schema_id=args.schema)
+    if args.cmd == "process" and args.process_cmd == "generate":
+        return write_generated_process_files(args.root, args.out)
+    if args.cmd == "fleet" and args.fleet_cmd == "audit":
+        return audit_fleet(args.root)
+    if args.cmd == "foundation" and args.foundation_cmd == "suite":
+        return verify_foundation_suite(args.zip)
+    if args.cmd == "foundation" and args.foundation_cmd == "verify-receipt":
+        return verify_receipt_file(args.json_file, args.zip)
+    raise LabError(f"unhandled command: {args.cmd}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    try:
+        emit_json(run(parser.parse_args(argv)))
+    except (LabError, ValueError, json.JSONDecodeError, OSError) as exc:
+        emit_json({"ok": False, "error": str(exc)})
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

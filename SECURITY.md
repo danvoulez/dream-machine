@@ -5,7 +5,7 @@
 Please report security issues **privately**. Do not open a public issue for a
 vulnerability.
 
-- Use GitHub's **[Report a vulnerability](https://github.com/danvoulez/dream-machine-lab/security/advisories/new)**
+- Use GitHub's **[Report a vulnerability](https://github.com/danvoulez/dream-machine/security/advisories/new)**
   (Security → Advisories) to open a private advisory, **or**
 - email the maintainers (see the repository owner's profile).
 

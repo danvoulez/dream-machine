@@ -48,10 +48,10 @@ dependencies = []
 webauthn = ["webauthn>=2,<3"]
 
 [project.urls]
-Homepage = "https://github.com/danvoulez/dream-machine-lab"
-Repository = "https://github.com/danvoulez/dream-machine-lab"
-Issues = "https://github.com/danvoulez/dream-machine-lab/issues"
-Changelog = "https://github.com/danvoulez/dream-machine-lab/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/danvoulez/dream-machine"
+Repository = "https://github.com/danvoulez/dream-machine"
+Issues = "https://github.com/danvoulez/dream-machine/issues"
+Changelog = "https://github.com/danvoulez/dream-machine/blob/main/CHANGELOG.md"
 
 [project.scripts]
 lab = "lab.cli:main"

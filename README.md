@@ -1,6 +1,6 @@
 # Dream Machine Lab
 
-[![CI](https://github.com/danvoulez/dream-machine-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/danvoulez/dream-machine-lab/actions/workflows/ci.yml)
+[![CI](https://github.com/danvoulez/dream-machine/actions/workflows/ci.yml/badge.svg)](https://github.com/danvoulez/dream-machine/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 

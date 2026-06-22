@@ -4,7 +4,11 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] — 2026-06-22
+
+First release: a processual, ledger-backed runtime — append-only ledger, receipt mold,
+evaluator, queue, selector/executor split, projection doctrine, and the Dream Machine
+boundary, with the determinism and authority guarantees below.
 
 ### Added
 - **Realtime delivery** — migration `0002_realtime_publication.sql` enables
@@ -46,7 +50,4 @@ All notable changes to this project are documented here. The format is based on
 - **`lab sources audit` / `lab/sources.py`** — the command existed only to audit the raw
   bundle that no longer exists.
 
-## [0.1.0]
-- Initial processual Lab runtime: append-only ledger, receipt mold, evaluator, queue,
-  selector/executor split, projection doctrine, Dream Machine boundary, source-bundle
-  and pack-vector audits.
+[0.1.0]: https://github.com/danvoulez/dream-machine/releases/tag/v0.1.0

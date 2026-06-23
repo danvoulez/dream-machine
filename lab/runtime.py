@@ -22,26 +22,40 @@ DOUBT_DID = "doubt"
 # recognize the state without parsing free text (LAB roadmap, Dia 1 §11). The granular
 # grant reasons are intentionally finer than the spec's "grant_invalid" family — they say
 # precisely which grant invariant failed.
+# Grouped by mold family (see docs/RECEIPT_MOLDS.md). Kept exhaustive: every reason the
+# selector/executor/grant/authority/signature layers can emit must appear here, so a future
+# LLM recognizes states without parsing free text. test_receipt_molds.py pins completeness.
 DOUBT_REASONS = frozenset({
     # contract / activation
     "no_matching_process_contract",  # spec: unknown_process
     "process_not_active",            # spec: process_not_runnable
     "incomplete",                    # spec: missing_required_fields
+    # adapter
     "no_adapter_configured",         # contract names no adapter at all
     "adapter_not_registered",        # contract names an adapter with no implementation
     "dispatch_mismatch",             # queued adapter disagrees with the contract
-    # grant / authority (spec families grant_required / grant_invalid, made precise)
+    # grant required (spec family: grant_required)
     "missing_required_grant",
+    # grant invalid (spec family: grant_invalid), made precise
     "grant_not_found",
     "grant_subject_mismatch",
     "grant_process_mismatch",
-    "grant_expired",
+    "grant_adapter_mismatch",
+    "who_not_authorized",
+    "grant_not_active",
     "grant_revoked",
-    "budget_exhausted",
+    "grant_expired",
+    "missing_grant_expiry",
+    "missing_timeout",
     "missing_sandbox_scope",
+    "missing_network_policy",
+    "budget_exhausted",
+    # authority / signature binding
     "missing_authority",
     "unregistered_authority",
     "grant_unsigned",
+    "signoff_signer_mismatch",
+    "signature_layer_unavailable",
     # evidence
     "evidence_obligation_unmet",     # spec: evidence_incomplete
 })

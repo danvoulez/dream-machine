@@ -37,7 +37,8 @@ aux:
     - markdown_projection
   canon_basis:
     - LogLine Foundation receipt discipline (nine slots + AUX + tuple/content/envelope hash, JCS 8785, append-only)
-    - Universal Inbox v3 (Awakening Layer); v4 and v5 to be reconciled
+    - The three method layers — Awakening/Universal Inbox (v3), Projections (v4), Attention (v5)
+    - Law — register anything; activation is earned by form; there is no candidate state in the ledger
   standards_as_vocabulary:
     - { name: in-toto / SLSA, confirms: "digest / evidence / envelope vocabulary" }
     - { name: W3C VC / DID, confirms: "grant / issuer / subject / status vocabulary" }
@@ -118,7 +119,36 @@ From `LAB FINAL SPEC v0.md` and the LLM-facing canon:
   added by *adding/updating contracts, schemas, adapters, projections — not new daemons* (:433).
 - **Closure states** include `fechado, doubted, ghost, retired, superseded` (§9, :460–467):
   supersession is a first-class lifecycle — the cadence of rules.
-- **Universal Inbox v3 Awakening law**: *"Address canonically if you want to be heard."*
+- **The three method layers** (not three versions of one thing):
+  - **Awakening / Universal Inbox (v3)** (§11): *"Register yourself fully if you want to be
+    woken. Address canonically if you want to be heard."* A sender can *trigger* but never
+    *define* a receiver's behavior; a malformed message rings only a bell already wired; never
+    infer effect from string shape (explicit mode → process contract → executor approval →
+    adapter action).
+  - **Projections (v4)** (§14): the Lab's eyes — `authoritative:false`, `rebuildable:true`,
+    declaring sources + `input_hashes` + `class`. Dynamic projections are **ladders** for LLM
+    reasoning (L0 raw Acts → … → L5 candidate Acts); "an LLM climbs to think and descends to
+    verify"; every abstraction is traceable to lower-level hashes.
+  - **Attention (v5)** (§15): scarce, **governed presence** — `doubted` feeds attention; it is
+    *not an error queue*; it prevents the system from pretending uncertainty is failure or
+    silently escalating it into action.
+
+## Registration vs activation (the v3 law)
+
+This corrects an old two-phase misreading. **Everything may register.** Registration means *the
+Lab remembers this* — it is custody, not trust, not approval, not correctness. A registered Act
+is truth-as-recorded the instant it is registered.
+
+**Activation is earned by form, and it is separate.** If the registration's form matches a
+registered process contract (complete slots/AUX, resolvable citations, active process, authority/
+grant/budget satisfied), it activates — *good*. If it does not, **it is just a register**: a
+remembered, inert fact. Nothing is rejected; evaluation classifies.
+
+**There is no "candidate" state in the ledger.** "candidate" lives only *before* registration —
+as a v4 projection-ladder output or a dream-machine (imagination) proposal. The LLM may emit
+candidate Acts while reasoning; the moment one is registered it is a register, never a
+half-truth awaiting promotion. The Lab's power is precisely this: it promotes the register of
+*anything*, and lets form — not a gatekeeper — decide what moves.
 
 ## The wrong model
 
@@ -283,8 +313,10 @@ The central correction, expressed as work. The order matters and each step compo
 3. Preserve ambiguity as if_doubt / attention / open_reconciliations — never discard it.
 4. Validate the Act shape (against the receipt/contract schema).
 5. Attach or cite the source-material hash (a file initiates; the Act remembers its seed).
-6. Register accepted Acts as receipts in the ledger.
-7. Generate Markdown projections FROM the registered Acts.
+6. Register the Acts as receipts — everything may register. Whether an Act then *activates* a
+   process is decided by its form (the v3 law), not by an acceptance gate; an Act that activates
+   nothing is still a valid register, remembered and citable.
+7. Generate Markdown projections FROM the registered Acts (v4).
 8. Build spec/contract/norm projections from the ledger — not the reverse.
 ```
 
@@ -317,9 +349,13 @@ Registry + Spec Schema; projections already carry a `projection_spec_hash`), **D
 2. Which `did` families are official for digested Acts (e.g. `process-contract`, `norm`,
    `decision`, `vocabulary`)?
 3. How is source-material hash / body hash represented alongside the Act?
-4. How do we reconcile **Universal Inbox v4 and v5** into the digestion vocabulary? (This record
-   is grounded mainly in v3 + the FINAL SPEC.)
-5. When does a *candidate* Act become *registered* truth?
+4. How do digested Acts surface through **Projections v4** (which ladder levels) and
+   **Attention v5** (what becomes governed presence vs. inert register)? The three layers are now
+   read from canon (§11/§14/§15); what remains is the v4/v5 vocabulary for *digested* Acts.
+5. A digested Act is registered immediately (everything may register); a *proposal* that is not
+   yet registered lives in imagination (dream-machine) or a projection ladder. Where exactly does
+   the digestion IDE draw that line — what does a human/process see before choosing to register?
+   (Note: this is NOT a candidate-promotion gate; there is no candidate state in the ledger.)
 6. How are Markdown projections regenerated deterministically from Acts?
 7. How are corrections/supersessions represented without editing old Acts?
 

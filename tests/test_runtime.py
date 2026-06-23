@@ -314,10 +314,26 @@ def test_executor_pause_blocks_dispatch():
         executor_run_once(db)
 
 
-def test_unknown_adapter_marks_queue_failed():
+def test_executor_refuses_contract_adapter_without_registered_implementation():
     db = connect(':memory:')
-    act = append(db, full())
-    q = queue_add(db, act['id'], 'memory-register.v1', adapter='missing')
+    # route-to-devin.v1 (L3, no grant) declares adapter 'route_to_devin', which has no
+    # registered implementation. The executor re-evaluates and fails closed with a durable
+    # doubt BEFORE reaching the adapter — it never enqueues-then-crashes, and the queue is
+    # resolved (closed), not marked failed.
+    act = append(db, full(if_ok='route-to-devin.v1', process_id='route-to-devin.v1',
+                          target_content_hash='deadbeef', target_process='worker-run.v1'))
+    queue_add(db, act['id'], 'route-to-devin.v1', adapter='route_to_devin')
+    closed = executor_run_once(db)
+    result = get(db, closed['result_hash'])
+    assert result['status'] == 'doubted'
+    assert result['did'] == 'not_dispatched'
+    assert result['reason'] == 'adapter_not_registered'
+    assert queue_list(db, 'failed') == []
+
+
+def test_run_adapter_rejects_unknown_adapter_name():
+    # Defensive layer: even though the selector/executor gate unregistered adapters before
+    # dispatch, run_adapter itself still refuses an unknown name rather than no-op.
+    from lab.adapters import run_adapter
     with pytest.raises(AdapterError):
-        executor_run_once(db)
-    assert queue_list(db, 'failed')[0]['queue_id'] == q['queue_id']
+        run_adapter('missing', {}, {'queue_id': 'q', 'source_hash': 's', 'process_id': 'p'})

@@ -5,5 +5,9 @@ activation:
   must_include: []
 authority_scope: []
 adapters: []
+# §20 — notification is the first IRREVERSIBLE outbound effect (a bell that cannot be
+# un-rung). Classified L5: requires a strong grant and a future effect-spec; with no
+# registered adapter it cannot execute locally. See docs/OUTBOUND_MEMBRANE_NOTES.md.
+danger_tier: L5
 evidence_obligation: separate-result-act
 doubt_path: attention-raise.v1

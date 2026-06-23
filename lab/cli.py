@@ -8,6 +8,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
+from .bootstrap import DEFAULT_BENCH_DB, bench_status, bootstrap_local, genesis_local, reset_bench
 from .dream import DREAM_ROOT_DEFAULT, ingest_corpus, load_schemas, propose_question, register_candidate, verify_dream_machine
 from .errors import LabError
 from .evaluator import evaluate
@@ -95,6 +96,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("status")
     sub.add_parser("doctor")
+
+    bootstrap = sub.add_parser("bootstrap")
+    bsub = bootstrap.add_subparsers(dest="bootstrap_cmd", required=True)
+    for name in ("local", "reset-bench", "status"):
+        bsub.add_parser(name).add_argument("--db", default=DEFAULT_BENCH_DB)
+    bgen = bsub.add_parser("genesis")
+    bgen.add_argument("--db", default=DEFAULT_BENCH_DB)
+    bgen.add_argument("--identity", default=None)
     harness = sub.add_parser("harness")
     harness.add_argument("--source", default=VECTORS_DEFAULT)
 
@@ -222,6 +231,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> Any:
+    if args.cmd == "bootstrap":
+        # Bench operations target the bench DB, never the real ledger — dispatch before
+        # the default connect(DB) so they never create or touch .lab/lab.sqlite.
+        if args.bootstrap_cmd == "local":
+            return bootstrap_local(args.db)
+        if args.bootstrap_cmd == "reset-bench":
+            return reset_bench(args.db)
+        if args.bootstrap_cmd == "genesis":
+            return genesis_local(connect(args.db), identity=args.identity)
+        if args.bootstrap_cmd == "status":
+            return bench_status(connect(args.db), args.db)
     db = connect(DB)
     if args.cmd in {"act", "register"}:
         return append(db, fields(args))

@@ -6,6 +6,10 @@ activation:
   must_include: [target_content_hash, target_process]
 authority_scope: []
 adapters: [route_to_devin]
-danger_tier: L3
+# §21 — routing work to Devin (an external autonomous coding agent) is a dangerous door,
+# not a shortcut. L4: external compensable effect — requires a grant; the route_to_devin
+# adapter is intentionally unregistered (contract-only/dry-run) until Day 6.
+# See docs/DEVIN_ACP_BOOTSTRAP_NOTES.md.
+danger_tier: L4
 evidence_obligation: separate-result-act
 doubt_path: attention-raise.v1

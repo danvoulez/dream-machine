@@ -20,3 +20,7 @@ class AdapterError(LabError):
 
 class AuthorityError(LabError):
     """An authority action was attempted by a non-recognized registrar."""
+
+class BootstrapError(LabError):
+    """A bench bootstrap operation was unsafe or invalid (e.g. destructive reset
+    outside the bench, or genesis on a non-empty ledger)."""

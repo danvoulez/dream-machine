@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from .adapters import run_adapter
+from .adapters import REGISTRY, run_adapter
 from .errors import Conflict, NotFound
 from .evaluator import evaluate
 from .grants import require_grant_signoff, resolve_grant, verify_grant
@@ -16,6 +16,35 @@ from .store import append, get, require, transaction
 QUEUE_STATUSES = {"queued", "claimed", "closed", "failed", "released"}
 DANGEROUS_TIERS = {"L4", "L5"}
 DOUBT_DID = "doubt"
+
+# Canonical, closed vocabulary of *why* an Act does not become a clean dispatch. A doubt
+# is never a generic error: it names the exact procedural barrier so a future LLM can
+# recognize the state without parsing free text (LAB roadmap, Dia 1 §11). The granular
+# grant reasons are intentionally finer than the spec's "grant_invalid" family — they say
+# precisely which grant invariant failed.
+DOUBT_REASONS = frozenset({
+    # contract / activation
+    "no_matching_process_contract",  # spec: unknown_process
+    "process_not_active",            # spec: process_not_runnable
+    "incomplete",                    # spec: missing_required_fields
+    "no_adapter_configured",         # contract names no adapter at all
+    "adapter_not_registered",        # contract names an adapter with no implementation
+    "dispatch_mismatch",             # queued adapter disagrees with the contract
+    # grant / authority (spec families grant_required / grant_invalid, made precise)
+    "missing_required_grant",
+    "grant_not_found",
+    "grant_subject_mismatch",
+    "grant_process_mismatch",
+    "grant_expired",
+    "grant_revoked",
+    "budget_exhausted",
+    "missing_sandbox_scope",
+    "missing_authority",
+    "unregistered_authority",
+    "grant_unsigned",
+    # evidence
+    "evidence_obligation_unmet",     # spec: evidence_incomplete
+})
 ADAPTER_ACU_COST = {
     "worker_run": 1,
     "workflow_run": 1,
@@ -70,6 +99,25 @@ def _existing_doubt(db: sqlite3.Connection, source_hash: str) -> str | None:
         (DOUBT_DID, source_hash),
     ).fetchone()
     return row["content_hash"] if row else None
+
+
+def _unregistered_adapter_block(decision: dict[str, Any]) -> dict[str, Any]:
+    """Demote an activatable decision whose adapter has no registered implementation.
+
+    A contract may name an adapter that does not yet exist in the registry (e.g.
+    ``route_to_devin``). That is "no real adapter" per the activation law: it is not
+    runnable and must fail closed as a durable ``adapter_not_registered`` doubt rather
+    than enqueue and crash at dispatch. Keeps the runtime in agreement with the
+    generated runnable-process catalog (``process_catalog._readiness``).
+    """
+    blocked = dict(decision)
+    blocked.update({
+        "activate": False,
+        "queueable": False,
+        "activation_state": "doubted",
+        "reason": "adapter_not_registered",
+    })
+    return blocked
 
 
 def raise_doubt(
@@ -145,8 +193,10 @@ def clock_select_due(
         decision = evaluate(receipt, process_id)
         queued = None
         doubt = None
+        if decision.get("activate") and decision["adapter"] not in REGISTRY:
+            decision = _unregistered_adapter_block(decision)
         if decision.get("activate"):
-            queued = queue_add(db, row["content_hash"], decision["process_id"], receipt.get("adapter", "receipt"))
+            queued = queue_add(db, row["content_hash"], decision["process_id"], decision["adapter"])
         else:
             doubt = raise_doubt(db, row["content_hash"], decision, who="runtime.clock", frequency=process_id)
         selected.append({
@@ -327,8 +377,10 @@ def receiver_select(db: sqlite3.Connection, frequency: str, limit: int = 20) -> 
         decision = evaluate(receipt)
         queued = None
         doubt = None
+        if decision.get("activate") and decision["adapter"] not in REGISTRY:
+            decision = _unregistered_adapter_block(decision)
         if decision.get("activate"):
-            queued = queue_add(db, row["content_hash"], decision["process_id"], receipt.get("adapter", "receipt"))
+            queued = queue_add(db, row["content_hash"], decision["process_id"], decision["adapter"])
         else:
             doubt = raise_doubt(db, row["content_hash"], decision, who="runtime.receiver", frequency=frequency)
         selected.append({
@@ -504,6 +556,26 @@ def executor_run_once(db: sqlite3.Connection, worker: str = "executor") -> dict[
         dangerous_decision = dangerous_control_decision(db, source, item, decision)
         if dangerous_decision is not None:
             return close_without_dispatch(db, item, dangerous_decision, worker)
+        if item["adapter"] != decision.get("adapter"):
+            # The queue is a projection of the evaluator's decision, never a place to
+            # reinterpret the contract. If the queued adapter disagrees with the one the
+            # contract resolves now, the row is corrupt — refuse rather than dispatch.
+            mismatch = dict(decision)
+            mismatch.update({
+                "activate": False,
+                "queueable": False,
+                "activation_state": "doubted",
+                "reason": "dispatch_mismatch",
+                "queued_adapter": item["adapter"],
+                "expected_adapter": decision.get("adapter"),
+            })
+            return close_without_dispatch(db, item, mismatch, worker)
+        if decision.get("adapter") not in REGISTRY:
+            # The contract resolves an adapter with no registered implementation. Grant
+            # and signoff checks (above) have already passed for dangerous work, so this
+            # is purely "no real adapter" — fail closed with a durable doubt instead of
+            # reaching run_adapter and raising.
+            return close_without_dispatch(db, item, _unregistered_adapter_block(decision), worker)
         append(
             db,
             {

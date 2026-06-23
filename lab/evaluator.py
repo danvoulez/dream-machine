@@ -59,6 +59,10 @@ def evaluate(receipt: dict, process_id: str | None = None, catalog=None) -> dict
         out.update({"activate": False, "activation_state": "incompleto", "queueable": False, "reason": "incomplete"})
     elif contract.danger_tier in DANGEROUS_TIERS and "grant_id" not in receipt:
         out.update({"activate": False, "activation_state": "doubted", "queueable": False, "reason": "missing_required_grant"})
+    elif not contract.adapters:
+        # Contract-only: matched and complete, but it names no adapter. It is not
+        # runnable and must never fall back to the receipt adapter — doubt instead.
+        out.update({"activate": False, "activation_state": "doubted", "queueable": False, "reason": "no_adapter_configured"})
     else:
         out.update({"activate": True, "activation_state": "ativável", "queueable": True, "reason": "complete"})
     return out

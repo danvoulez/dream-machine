@@ -252,10 +252,9 @@ def test_attested_enrollment_then_signoff_end_to_end():
 
 # --- #2: L4/L5 executor requires a verified signed grant (crown end-to-end) --------
 def test_executor_reaches_adapter_only_with_valid_signed_grant():
-    from lab.errors import AdapterError
     from lab.grants import record_grant_signoff, register_grant
     from lab.runtime import executor_run_once, queue_add, queue_list
-    from lab.store import append
+    from lab.store import append, get
 
     db = connect(":memory:")
     register_genesis_authority(db, "dan@minilab.work")
@@ -279,7 +278,16 @@ def test_executor_reaches_adapter_only_with_valid_signed_grant():
         "confirmed_by": "test", "if_ok": "worker-run.v1", "if_doubt": "attention-raise.v1",
         "if_not": "stop", "status": "registered", "process_id": "worker-run.v1", "grant_id": g["id"],
     })
-    q = queue_add(db, src["id"], "worker-run.v1", adapter="missing")
-    with pytest.raises(AdapterError):  # grant verified + passkey signoff verified; only stub adapter missing
-        executor_run_once(db)
-    assert queue_list(db, "failed")[0]["queue_id"] == q["queue_id"]
+    # Queue the contract's real adapter (the executor revalidates the queued adapter
+    # against the contract now).
+    queue_add(db, src["id"], "worker-run.v1", adapter="worker_run")
+    closed = executor_run_once(db)
+    result = get(db, closed["result_hash"])
+    # Grant verified + passkey signoff verified — every dangerous-work gate passed. The
+    # only remaining barrier is that 'worker_run' has no registered adapter, so the work
+    # fails closed at the adapter gate (reason is adapter_not_registered, never a grant_*
+    # reason — proving the full grant/signoff chain was satisfied first).
+    assert result["status"] == "doubted"
+    assert result["did"] == "not_dispatched"
+    assert result["reason"] == "adapter_not_registered"
+    assert queue_list(db, "failed") == []

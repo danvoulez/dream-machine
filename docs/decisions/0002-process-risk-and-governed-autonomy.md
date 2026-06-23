@@ -20,7 +20,7 @@ aux:
   danger_tier: L0
   companions:
     - ADR-0001 (LogLine-native digestion — how a thing comes to be)
-    - ADR-0003 (Projections & Attention — planned)
+    - ADR-0003 (Projections & Attention — the eyes and governed presence)
   references:
     - { kind: canon, ref: "LAB FINAL SPEC v0.md §11 (v3 awakening), §12 (danger tiers), §13 (authority/grants)" }
     - { kind: lab, ref: "docs/DANGER_TIERS.md (L-axis = consequence)" }
@@ -51,7 +51,7 @@ metaphysics of who is allowed to be right.
 ```text
 ADR-0001  what a thing IS and how it COMES TO BE   (digestion, Act, envelope, custody)
 ADR-0002  how a thing is TREATED and MOVES, and how the Lab GROWS   (process, risk, automation, learning)
-ADR-0003  how a thing is SEEN and what earns ATTENTION   (projections v4, attention v5 — planned)
+ADR-0003  how a thing is SEEN and what earns ATTENTION   (projections v4, attention v5)
 ```
 
 ## Law 1 — Process, not source privilege

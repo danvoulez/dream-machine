@@ -69,7 +69,7 @@ how things *move* or how the Lab *grows*; that is its companion:
 
 - **ADR-0002 — Process, risk, and governed autonomy**: process-not-source-privilege, the risk
   matrix, scale, automation, jurisprudence, autonomy, and the enzyme-authority boundary.
-- **ADR-0003 — Projections & Attention (v4/v5)** *(planned)*: the eyes and the governed presence.
+- **ADR-0003 — Projections & Attention (v4/v5)**: the eyes and the governed presence.
 
 Read together they are complementary: **ADR-0001 = how a thing comes to be · ADR-0002 = how it
 is treated and moves · ADR-0003 = how it is seen and what earns attention.**

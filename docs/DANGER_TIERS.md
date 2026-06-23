@@ -18,6 +18,10 @@ whether dangerous-work controls (grant, signoff, budget, sandbox) apply.
 
 `evaluator.DANGEROUS_TIERS = {"L4", "L5"}` — only these require a grant at activation.
 
+> **Two axes, not one.** This **L-axis** is *consequence of one act*. A separate **A-axis**
+> (`AUTOMATION_DOCTRINE.md`) governs *continuity / self-movement*, and an automation level is
+> **capped by** the danger tier here. Laws binding them: [ADR-0002](decisions/0002-process-risk-and-governed-autonomy.md).
+
 ## Current catalog classification
 
 | Process | Tier | Why |

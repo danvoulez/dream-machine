@@ -61,6 +61,19 @@ This document is, deliberately, only a seed and a projection of itself: the roug
 material an LLM digests into one or more LogLine Acts, and the human-readable rendering those
 Acts can later project back into. The truth is the registered Act, not this file.
 
+## Scope and companion records
+
+This record governs **what a thing is and how it comes to be** — digestion, the Act, the
+envelope, custody, and the registration-vs-activation law. It deliberately does **not** govern
+how things *move* or how the Lab *grows*; that is its companion:
+
+- **ADR-0002 — Process, risk, and governed autonomy**: process-not-source-privilege, the risk
+  matrix, scale, automation, jurisprudence, autonomy, and the enzyme-authority boundary.
+- **ADR-0003 — Projections & Attention (v4/v5)** *(planned)*: the eyes and the governed presence.
+
+Read together they are complementary: **ADR-0001 = how a thing comes to be · ADR-0002 = how it
+is treated and moves · ADR-0003 = how it is seen and what earns attention.**
+
 ## Correction being made
 
 The first draft framed the Lab as if the document were the noble body that later "receives an

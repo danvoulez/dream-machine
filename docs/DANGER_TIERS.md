@@ -25,16 +25,13 @@ whether dangerous-work controls (grant, signoff, budget, sandbox) apply.
 | memory-register.v1 | L0 | local ledger receipt |
 | attention-raise.v1 | L0 | local doubt surface (contract-only) |
 | evidence-closure.v1 | L0 | contract-only |
-| github-check.v1 | L0 | contract-only (no door yet — Day 6) |
-| notification.v1 | L0* | contract-only today; **becomes L5 irreversible** when wired (Day 2 §20 / Day 6) |
+| github-check.v1 | L0 | contract-only (no door yet — Day 6); becomes L3 with a github adapter |
+| notification.v1 | **L5** | §20 — first irreversible outbound effect; grant-gated, no local adapter |
 | projection-build.v1 | L1 | rebuildable local projection |
 | inference.v1 | L3 | external model call, no irreversible effect |
-| route-to-devin.v1 | L3 | external route; **adapter not yet registered** → not runnable until Day 6 |
+| route-to-devin.v1 | **L4** | §21 — dangerous external delegation to Devin; grant-gated, adapter unregistered until Day 6 |
 | worker-run.v1 | L4 | external compensable work |
 | workflow-run.v1 | L5 | external irreversible orchestration |
-
-\* `notification.v1` is classified L0 only because it is contract-only with no adapter today;
-§20 hardens it to an irreversible (L5) effect before any door exists. Tracked there.
 
 ## Enforced by
 

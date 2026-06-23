@@ -314,15 +314,16 @@ def test_executor_pause_blocks_dispatch():
         executor_run_once(db)
 
 
-def test_executor_refuses_contract_adapter_without_registered_implementation():
+def test_executor_refuses_contract_adapter_without_registered_implementation(monkeypatch):
+    import lab.adapters as adapters_mod
     db = connect(':memory:')
-    # route-to-devin.v1 (L3, no grant) declares adapter 'route_to_devin', which has no
-    # registered implementation. The executor re-evaluates and fails closed with a durable
-    # doubt BEFORE reaching the adapter — it never enqueues-then-crashes, and the queue is
-    # resolved (closed), not marked failed.
-    act = append(db, full(if_ok='route-to-devin.v1', process_id='route-to-devin.v1',
-                          target_content_hash='deadbeef', target_process='worker-run.v1'))
-    queue_add(db, act['id'], 'route-to-devin.v1', adapter='route_to_devin')
+    # projection-build.v1 (L1, no grant) declares adapter 'projection'. Simulate its
+    # implementation not being registered (e.g. before it is built / after it is pulled).
+    # The executor re-evaluates and fails closed with a durable doubt BEFORE reaching the
+    # adapter — it never enqueues-then-crashes, and the queue is resolved, not marked failed.
+    act = append(db, full(if_ok='projection-build.v1', process_id='projection-build.v1'))
+    queue_add(db, act['id'], 'projection-build.v1', adapter='projection')
+    monkeypatch.delitem(adapters_mod.REGISTRY, 'projection')
     closed = executor_run_once(db)
     result = get(db, closed['result_hash'])
     assert result['status'] == 'doubted'

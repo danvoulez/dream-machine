@@ -30,8 +30,11 @@ def test_runnable_processes_reflect_adapter_and_grant_readiness():
     assert rows["worker-run.v1"]["status"] == "blocked"
     assert rows["worker-run.v1"]["reason"] == "requires grant/budget/sandbox"
     assert rows["workflow-run.v1"]["status"] == "blocked"
-    assert rows["route-to-devin.v1"]["status"] == "contract-only"
-    assert rows["route-to-devin.v1"]["reason"] == "adapter not configured: route_to_devin"
+    # §21 — route-to-devin is now L4 (dangerous external delegation): grant-gated, blocked.
+    assert rows["route-to-devin.v1"]["status"] == "blocked"
+    assert rows["route-to-devin.v1"]["reason"] == "requires grant/budget/sandbox"
+    # §20 — notification is now L5 (irreversible outbound): blocked.
+    assert rows["notification.v1"]["status"] == "blocked"
 
 
 def test_rendered_catalogs_include_generated_warning_and_tables():

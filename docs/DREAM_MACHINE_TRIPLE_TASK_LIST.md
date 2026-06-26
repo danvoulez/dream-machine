@@ -252,6 +252,10 @@ A later same-day session moved from contract-writing into implementation. Deltas
   cards, and declared-affordance buttons to the UI.
 - Add integration tests proving the portal can request/render projections but
   cannot register receipts, dispatch executors, mutate ledgers, or authorize L5.
+- Build the OAuth client registration crossing as the first Envelope
+  additive-spine client (see §11): commit the acts-side dry-run adapter, then
+  record the real Supabase POST as an Envelope `Shift`/`ShiftResult` with transport
+  and custody, act intact. Resolve the L3-vs-grant governance question.
 
 ## Detailed Execution Breakdown
 
@@ -695,6 +699,71 @@ Done when:
 - The install plan names Cloudflare Tunnel, macOS execution, local inference,
   and preventive maintenance explicitly.
 - The topology does not redefine LogLine, Envelope, Membrane, or Processual UI.
+
+### 11. OAuth Client Registration Crossing — first Envelope additive-spine client
+
+Status: design done; acts-side dry-run implemented but UNCOMMITTED; the
+membrane/Envelope crossing not yet built. This is the first concrete client of
+the Envelope Additive Spine (see Session Update 2026-06-26) and validates it
+end-to-end: a process recognizes an act and moves it across an external boundary,
+and that movement is recorded additively as a `Shift` while the act stays intact.
+
+Primary repos:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts` (acts-side dry-run, consequence)
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger` (the crossing record, observability)
+
+Existing (LogLine-Acts, UNCOMMITTED in the dirty tree — do not lose):
+
+- `lab/oauth.py` — dry-run adapter. `external_effect: false`, `api_called: false`;
+  builds the canonical RFC 7591 client-metadata request deterministically and
+  emits `request_hash` / `client_metadata_hash` as evidence + a candidate act.
+- `tools/register_oauth_client.py` — the edge effect: the ONE place the real
+  Supabase Auth admin POST happens, outside the kernel. Currently a bare `urllib`
+  POST with no envelope/membrane discipline.
+- `processes/oauth-client.v1.yml` — process contract, `danger_tier: L3`,
+  `evidence_must_include: [request_hash, client_metadata_hash]`.
+- `tests/test_oauth_client.py`, plus the `oauth-client` entry in `lab/adapters.py`.
+
+The split (decided this session):
+
+- The **acts-side dry-run adapter is legitimate LogLine consequence work** —
+  recording the intent and evidence of a crossing. It is committable as-is on the
+  LogLine side.
+- The **real POST is the membrane crossing** and currently bypasses the membrane.
+  It should become a TypeScript edge program that performs the POST and records the
+  crossing as an Envelope `Shift` (kind `effect`): `input_hash` references the
+  act's `content_hash`, `transport` carries `sent_to: supabase` + channel, custody
+  records the handoff, and a `ShiftResult` binds the returned `client_id`. The act
+  is never subtracted (additive law).
+
+Governance note:
+
+- `danger_tier: L3` is BELOW the grant gate (`DANGEROUS_TIERS = {L4, L5}` in
+  `lab/evaluator.py` / `lab/runtime.py`), so oauth-client.v1 runs with no grant.
+  Harmless for the dry-run (it does nothing), but the real edge effect — creating
+  an OAuth client that returns a `client_secret` — is governed by nothing in the
+  kernel by design. Revisit whether the real crossing should require an L4 grant
+  once it goes through the membrane.
+
+Depends on:
+
+- Envelope Additive Spine foundation (DONE, merged to Envelope-Ledger main).
+- A way to record an external-effect `Shift` + `ShiftResult` for a boundary
+  crossing in the Envelope-Ledger store (the shift/shiftResult stores exist).
+
+Done when:
+
+- The acts-side dry-run adapter is committed in LogLine-Acts.
+- A TypeScript edge crosser performs the Supabase POST and records an Envelope
+  `Shift`/`ShiftResult` for the crossing, with transport + custody, leaving the
+  wrapped act byte-for-byte intact.
+- The returned `client_id` is bound via `ShiftResult`; the `client_secret` is
+  handled at the edge only and never enters a receipt or projection.
+- A test proves the crossing is recorded additively (act `content_hash` unchanged)
+  and that the dry-run request and the real request derive from the same builder.
+- The L3-vs-grant governance question above is explicitly resolved (keep L3, or
+  raise to L4 with a grant), not left implicit.
 
 ## Runtime Reality Scan
 

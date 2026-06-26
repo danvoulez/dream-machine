@@ -100,6 +100,49 @@ This section is the operational truth of the task list as of 2026-06-26. It
 separates what is already done from what is partially done and what remains
 open.
 
+### Session Update — 2026-06-26 (implementation pass)
+
+A later same-day session moved from contract-writing into implementation. Deltas:
+
+- **LogLine Hash Excellence (§2): substantially hardened.** Added
+  `Dream-Machine-LogLine-Acts/tests/test_receipt_hardening.py` — frozen golden
+  receipt vectors, the LIP-0007 composition profile (tuple/content split,
+  AUX-in-content-hash, closed `hashes` object, forbidden fields, dotted version,
+  bare-hex), determinism/tamper coverage, and a cross-engine parity test that
+  runs the same `vectors/receipt/{valid,invalid}` corpus the JS gate
+  (`verify-receipt.mjs`) runs — Python and JS now agree on all 20 receipt-shaped
+  vectors. Found and fixed a real authority bug: `verify()` accepted a receipt
+  with an extra `envelope_hash` smuggled into the `hashes` object; `lab/receipt.py`
+  now enforces a closed `hashes` set (`HASH_FIELDS`). Python suite 242 passing;
+  JS gate 21/21.
+  **Caveat: this work is currently UNCOMMITTED in the LogLine-Acts dirty tree
+  (two files: `lab/receipt.py`, `tests/test_receipt_hardening.py`).**
+  Still pending in §2: the citation composition profile (which hash a receipt
+  cites another by) and the portal read-only hash inspection API.
+
+- **NEW workstream — Envelope Additive Spine (foundation): DONE and merged.**
+  The Envelope definition was reframed (see
+  `Dream-Machine-Envelope-Ledger/docs/superpowers/specs/2026-06-26-envelope-additive-spine-design.md`):
+  the LogLine act is a frozen monomer; processes are enzymes (recognition =
+  movement); movement is emergent and therefore must be observed; the Envelope is
+  the additive record (a `Shift` per recognition-movement), never subtractive
+  ("add, never subtract"). Shipped the foundation slice to
+  `Dream-Machine-Envelope-Ledger` `main`: the canonical `Envelope` object (intact
+  `content` + shifts + custody + transport), the dual hash (`thin_envelope_hash`
+  skin-only vs full `envelope_hash`), additive-law validation, and append-only
+  constructors. 103 tests passing, final review APPROVE. Follow-on plans (own
+  spec→plan cycles): `board_act`/`proposal` additive-binding retrofit, the
+  queryability index (with the attention governor — queryability is
+  unlimited/derived, but model perception is Scene-bounded and attention is
+  scarce), Scene/attention governance, and the OAuth crossing as first client.
+  This is a new prerequisite that sits alongside §3: it redefines what an
+  Envelope *is* before the projection-excellence fields are added.
+
+- **Envelope-Ledger now builds.** The repo was extracted from its `@tabuleiro`
+  monorepo without its root tsconfig (dangling `extends: ../../tsconfig.json`),
+  so it did not `tsc` or `vitest` at all. Replaced with a self-contained tsconfig;
+  the repo is now git-initialized with a green baseline plus the foundation merged.
+
 ### Done
 
 - Folder cut completed:
@@ -161,10 +204,12 @@ open.
 - Envelope vocabulary is clean in the canonical Board docs, but not yet migrated
   in `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src` and
   `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/tests`.
-- LogLine content-addressing is already strong in implementation, but still
-  needs the "best in class" hardening tasks:
-  cross-language vectors, canonicalization parity tests, hash inspection API,
-  and composition profile.
+- LogLine content-addressing hardening is now largely done (see Session Update
+  2026-06-26): golden vectors, Python↔JS canonicalization parity over the shared
+  conformance corpus, the LIP-0007 composition profile, and tamper coverage, plus
+  a real `verify()` closed-`hashes` fix. Remaining: the portal hash inspection API
+  and the citation composition profile (which hash cites which). NOTE: the
+  hardening files are still UNCOMMITTED in the LogLine-Acts tree.
 - Envelope Dynamic Projections already exist in implementation, but still need
   the "best in class" hardening tasks:
   projection pin fields, parent projection hashes, ladder levels, freshness,
@@ -291,7 +336,11 @@ Done when:
 
 ### 2. LogLine Hash Excellence
 
-Status: partially done in runtime, pending hardening.
+Status: hardening substantially done (golden vectors + Python↔JS parity +
+LIP-0007 composition profile + tamper, plus a real `verify()` closed-`hashes`
+bug fixed); citation-composition profile and portal hash-inspection API still
+pending. NOTE: the hardening files (`lab/receipt.py`, `tests/test_receipt_hardening.py`)
+are UNCOMMITTED in the LogLine-Acts tree — see Session Update 2026-06-26.
 
 Primary repo:
 

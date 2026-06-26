@@ -1,0 +1,174 @@
+version: dream-machine-core-technologies.v0
+status: draft_locked
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  reference_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+  projection_contract: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-projections.v0.yml
+
+purpose: >
+  Declare the two crown technologies of the Dream Machine, why both stay, what
+  each must be best at, and how the membrane keeps their jurisdictions distinct.
+
+decision:
+  both_stay: true
+  no_single_winner: true
+  authority_winner: logline_content_addressing
+  perception_winner: envelope_dynamic_projection
+  membrane_rule: >
+    Content-addressed receipts and dynamic projections must interoperate through
+    references, not by redefining each other's primitives.
+
+technologies:
+  logline_content_addressing:
+    owner: logline
+    jurisdiction: consequence
+    existing_runtime_surfaces:
+      receipt_minting: /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/lab/receipt.py
+      append_only_store: /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/lab/store.py
+      receipt_tests: /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/tests/test_receipt.py
+      signing_tests: /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/tests/test_signing.py
+    best_at:
+      - composability
+      - registered_consequence
+      - offline_verification
+      - signature_binding
+      - immutable_citation
+      - process_law_reference
+    current_strengths:
+      - nine_slot_tuple_material
+      - jcs_rfc8785_canonicalization
+      - sha256_content_identity
+      - id_equals_content_hash
+      - tuple_hash_separate_from_content_hash
+      - append_only_table_guards
+      - forbidden_transport_result_evidence_fields
+      - generated_slot_indexes
+    excellence_bar:
+      required:
+        - canonical_bytes_are_stable_across_languages
+        - content_hash_changes_when_canonical_content_changes
+        - tuple_hash_changes_when_any_slot_changes
+        - id_always_equals_content_hash
+        - registered_receipts_are_append_only
+        - signatures_bind_to_content_hash
+        - verification_works_without_chat_context
+        - references_use_hashes_not_hidden_state
+      future_hardening:
+        - publish_cross_language_hash_vectors
+        - add_rust_python_js_canonicalization_parity_tests
+        - add_merkle_or_dag_composition_profile
+        - define_hash_reference_api_for_portal
+        - expose_read_only_hash_inspection_to_runtime_projection
+    must_not:
+      - store_projection_truth
+      - absorb_llm_narrative_state
+      - authorize_from_projection_alone
+      - add_new_runtime_anatomy_beyond_the_nine_slots
+
+  envelope_dynamic_projection:
+    owner: envelope
+    jurisdiction: cognition
+    existing_runtime_surfaces:
+      projection_builder: /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/projection.ts
+      projection_identity: /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/identity/projection.ts
+      projection_store: /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/store/projections.ts
+      projection_verifier: /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/verify.ts
+      public_api: /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/board.ts
+    best_at:
+      - observability
+      - synthesis
+      - navigation
+      - live_context
+      - attention_salience
+      - proposal_explanation
+      - model_friendly_workbench
+    current_strengths:
+      - projection_hash_identity
+      - source_prefix_tracking
+      - shift_provenance
+      - shift_result_binding
+      - open_findings
+      - narrative_blocks
+      - audience_specific_views
+      - verification_of_projection_prefix
+    excellence_bar:
+      required:
+        - every_projection_cites_source_refs
+        - every_projection_records_shift_provenance
+        - every_projection_declares_authoritative_false
+        - stale_or_partial_views_are_visible
+        - open_findings_remain_visible_until_resolved
+        - projection_hash_recomputes_from_identity_body
+        - projection_blocks_map_to_portal_blocks
+        - projection_output_cannot_register_or_dispatch
+      future_hardening:
+        - add_projection_pin_shape_model_prompt_params_seed
+        - add_parent_projection_hashes
+        - add_ladder_level_l0_to_l5
+        - add_freshness_and_ttl_policy
+        - add_loss_accounting_for_evaporated_events
+        - add_projection_diff_and_changes_since
+        - add_contract_tests_against_portal_response_shape
+    must_not:
+      - claim_sovereign_consequence
+      - replace_content_hash_identity
+      - hide_model_or_prompt_context
+      - convert_salience_into_authority
+      - render_effectful_button_without_affordance
+
+comparison:
+  not_competitors: true
+  better_for_authority: logline_content_addressing
+  better_for_cognition: envelope_dynamic_projection
+  conflict_rule: >
+    If a dynamic projection disagrees with registered consequence, rebuild the
+    projection. Do not reinterpret registered consequence to satisfy a projection.
+  composition_rule: >
+    Registered consequence composes by content hash. Dynamic projections compose
+    by source refs, projection lineage, and freshness metadata.
+
+portal_runtime_policy:
+  first_tool: runtime_projection
+  request_questions:
+    - what_registered_consequence_exists
+    - what_current_projection_sees
+    - what_changed_since_previous_projection
+    - what_requires_registration_before_consequence
+  output_contract: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-projections.v0.yml
+  required_limits:
+    - cannot_register_receipt
+    - cannot_dispatch_executor
+    - cannot_mutate_logline_ledger
+    - cannot_mutate_envelope_ledger
+    - cannot_authorize_l5
+
+readiness_tasks:
+  logline_hash_excellence:
+    - add_cross_language_hash_vectors
+    - add_portal_hash_inspection_endpoint
+    - define_receipt_reference_bundle_for_projection_cards
+    - document_hash_composition_profile
+  envelope_projection_excellence:
+    - add_projection_pin_fields
+    - add_projection_lineage_fields
+    - add_freshness_fields
+    - add_partial_source_loss_fields
+    - add_projection_diff_operation
+    - add_portal_projection_normalizer
+  membrane_excellence:
+    - enforce_hash_refs_for_consequence
+    - enforce_projection_refs_for_perception
+    - reject_runtime_projection_outputs_without_cannot_do
+    - reject_effectful_affordances_without_logline_authority
+
+validator_rules:
+  - id: both_crown_technologies_present
+    text: The membrane is incomplete if either LogLine content addressing or Envelope dynamic projection is removed.
+  - id: no_projection_authority
+    text: A projection may inform attention and proposals but must not become sovereign consequence.
+  - id: no_hash_narrative_takeover
+    text: Hash identity must not be forced to carry dynamic narrative state.
+  - id: registered_consequence_rebuilds_projection
+    text: Registered consequence wins over stale or conflicting projections.

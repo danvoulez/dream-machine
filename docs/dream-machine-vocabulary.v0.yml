@@ -1,0 +1,229 @@
+version: dream-machine-vocabulary.v0
+status: draft
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  logline_jurisdiction: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/logline-jurisdiction.v0.yml
+  envelope_jurisdiction: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-jurisdiction.v0.yml
+  envelope_sanitization: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-sanitization.v0.yml
+
+purpose: >
+  Reserve jurisdictional vocabulary so future schemas, agents, projections, and
+  UI affordances cannot define the same primitive twice.
+
+global_rules:
+  - id: no_double_definition
+    text: A term may have exactly one owning jurisdiction unless this file marks it shared.
+  - id: no_unqualified_poisoned_terms
+    text: Candidate, admission, admitted, and act are invalid when unqualified.
+  - id: reference_is_not_ownership
+    text: A domain may reference another domain term only through declared membrane fields.
+  - id: display_label_is_not_schema_term
+    text: UI text may be friendly, but machine-readable fields must use this vocabulary.
+
+banned_unqualified_terms:
+  candidate:
+    reason: Overloaded between pre-registration imagination, Board workbench state, and LogLine consequence.
+    replacements:
+      logline: receipt_proposal
+      envelope: proposal
+      membrane: translation_package
+      processual_ui: proposal_card
+  admission:
+    reason: Overloaded between BoardCommit and LogLine receipt registration.
+    replacements:
+      logline: receipt_registration
+      envelope: board_commit
+      membrane: crossing_permission
+      processual_ui: approval_turn
+  admitted:
+    reason: Hides whether a state is Envelope-local or LogLine-sovereign.
+    replacements:
+      logline: registered
+      envelope: board_committed
+      membrane: crossed
+      processual_ui: approved_for_submission
+  act:
+    reason: Bare act lets Envelope and LogLine claim the same primitive.
+    replacements:
+      logline: logline_act
+      envelope: board_act
+      membrane: source_ref
+      processual_ui: rendered_source_ref
+
+owned_terms:
+  logline:
+    consequence:
+      owner: logline
+      allowed_terms:
+        - sovereign_consequence
+        - sovereign_status
+        - activation
+        - closure
+        - executor_outcome
+    registration:
+      owner: logline
+      allowed_terms:
+        - registered_receipt
+        - receipt_registration
+        - content_hash
+        - logline_act
+        - receipt_proposal
+    governance:
+      owner: logline
+      allowed_terms:
+        - process_contract
+        - grant
+        - danger_tier
+        - automation_level
+        - evidence_obligation
+        - l5_authorization
+    attention:
+      owner: logline
+      allowed_terms:
+        - attention_obligation
+        - process_triggered_attention
+        - doubt
+
+  envelope:
+    cognition:
+      owner: envelope
+      allowed_terms:
+        - event
+        - source_digest
+        - proposal
+        - proposal_version
+        - proposal_version_hash
+        - board_act
+        - board_act_hash
+        - board_commit
+        - board_committed
+    observability:
+      owner: envelope
+      allowed_terms:
+        - shift
+        - shift_hash
+        - shift_result
+        - result_hash
+        - finding
+        - finding_id
+        - verification
+        - tamper_detected
+    projection:
+      owner: envelope
+      allowed_terms:
+        - projection
+        - projection_hash
+        - projection_pin
+        - source_prefix
+        - ladder_level
+        - partial_selection_reason
+        - narrative_block
+    attention:
+      owner: envelope
+      allowed_terms:
+        - salience
+        - attention_anomaly
+        - open_finding
+        - unresolved_gap
+
+  membrane:
+    crossing:
+      owner: membrane
+      allowed_terms:
+        - ownership_map
+        - vocabulary_map
+        - reference_map
+        - crossing_map
+        - conflict_map
+        - translation_package
+        - crossing_permission
+        - affordance_rule
+        - risk_tier_compatibility
+        - attention_compatibility
+    translation:
+      owner: membrane
+      allowed_terms:
+        - envelope_proposal_to_logline_receipt_proposal
+        - envelope_finding_to_logline_attention
+        - logline_receipt_to_envelope_projection_source
+
+  processual_ui:
+    interaction:
+      owner: processual_ui
+      allowed_terms:
+        - chat_thread
+        - rendered_card
+        - proposal_card
+        - attention_card
+        - projection_card
+        - visible_affordance
+        - human_question
+        - approval_turn
+        - ui_attention_interrupt
+
+shared_terms:
+  projection:
+    allowed: true
+    must_declare_source_jurisdiction: true
+    logline_meaning: Non-authoritative rebuildable view over registered receipts.
+    envelope_meaning: Non-authoritative cognition and narrative view over events, proposals, BoardActs, findings, and source refs.
+    membrane_rule: Projection objects crossing the membrane must declare source jurisdiction and source refs.
+  attention:
+    allowed: true
+    must_declare_source_jurisdiction: true
+    logline_meaning: Process-triggered obligation.
+    envelope_meaning: Salience or anomaly.
+    processual_ui_meaning: Rendered interruption.
+    membrane_rule: UI interruption requires an affordance and attention compatibility rule.
+  approval:
+    allowed: true
+    must_declare_source_jurisdiction: true
+    logline_meaning: Grant/signoff path for consequence.
+    envelope_meaning: Confirmation evidence inside BoardCommit.
+    processual_ui_meaning: Human approval turn in chat.
+    membrane_rule: UI approval is not LogLine authority unless attached to a LogLine grant path.
+
+validator_rules:
+  - id: reject_unqualified_candidate
+    match: "\\bcandidate\\b"
+    allowed_only_in:
+      - ban_notice
+      - migration_history
+  - id: reject_unqualified_admission
+    match: "\\badmission\\b"
+    allowed_only_in:
+      - ban_notice
+      - migration_history
+  - id: reject_unqualified_admitted
+    match: "\\badmitted\\b"
+    allowed_only_in:
+      - ban_notice
+      - migration_history
+  - id: reject_unqualified_act
+    match: "\\bact\\b"
+    allowed_only_in:
+      - ban_notice
+      - migration_history
+      - logline_act
+      - board_act
+  - id: require_projection_source_jurisdiction
+    applies_to: projection
+    required_fields:
+      - source_jurisdiction
+      - source_refs
+  - id: require_button_affordance
+    applies_to: visible_affordance
+    required_fields:
+      - affordance_id
+      - risk_tier
+      - authority_route
+
+readiness:
+  complete_when:
+    - reference_map_uses_only_allowed_terms
+    - crossing_map_uses_only_allowed_terms
+    - projection_contract_uses_only_allowed_terms
+    - action_contract_uses_only_allowed_terms
+

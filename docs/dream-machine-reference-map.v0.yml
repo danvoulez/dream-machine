@@ -1,0 +1,283 @@
+version: dream-machine-reference-map.v0
+status: draft
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  vocabulary: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-vocabulary.v0.yml
+  logline_jurisdiction: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/logline-jurisdiction.v0.yml
+  envelope_jurisdiction: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-jurisdiction.v0.yml
+
+purpose: >
+  Declare which hashes and identifiers may cross jurisdictional boundaries.
+  A reference gives traceability. It does not transfer ownership, authority, or
+  consequence.
+
+global_rules:
+  - id: cite_before_claiming
+    text: Cross-domain claims must cite source refs.
+  - id: reference_not_authority
+    text: Referencing another domain object does not import that domain's authority.
+  - id: owner_validates_identity
+    text: The owner jurisdiction validates identity, hash body, and lifecycle.
+  - id: membrane_validates_crossing
+    text: The membrane validates whether a reference may cross for the requested use.
+
+ref_kinds:
+  logline:
+    content_hash:
+      owner: logline
+      kind: hash
+      identifies: registered_receipt_or_logline_act_content
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+    receipt_hash:
+      owner: logline
+      kind: hash
+      identifies: registered_receipt
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+    logline_act_id:
+      owner: logline
+      kind: id_or_hash
+      identifies: logline_act
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+    process_id:
+      owner: logline
+      kind: id
+      identifies: process_contract_or_process_instance
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+    process_contract_hash:
+      owner: logline
+      kind: hash
+      identifies: process_contract
+      may_be_cited_by:
+        - envelope
+        - membrane
+    grant_id:
+      owner: logline
+      kind: id_or_hash
+      identifies: grant
+      may_be_cited_by:
+        - membrane
+        - processual_ui
+    queue_id:
+      owner: logline
+      kind: id
+      identifies: rebuildable_queue_projection_item
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+    result_hash:
+      owner: logline
+      kind: hash
+      identifies: executor_or_process_result
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+    attention_id:
+      owner: logline
+      kind: id_or_hash
+      identifies: attention_obligation
+      may_be_cited_by:
+        - envelope
+        - membrane
+        - processual_ui
+
+  envelope:
+    event_id:
+      owner: envelope
+      kind: id
+      identifies: event
+      durability: may_evaporate
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    source_digest:
+      owner: envelope
+      kind: hash
+      identifies: canonical_event_window_without_zone
+      durability: durable
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    shift_hash:
+      owner: envelope
+      kind: hash
+      identifies: shift
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    shift_result_hash:
+      owner: envelope
+      kind: hash
+      identifies: shift_result
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    proposal_id:
+      owner: envelope
+      kind: id
+      identifies: proposal
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    proposal_version_hash:
+      owner: envelope
+      kind: hash
+      identifies: proposal_version
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    board_act_hash:
+      owner: envelope
+      kind: hash
+      identifies: board_act
+      authority_scope: envelope_only
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    finding_id:
+      owner: envelope
+      kind: id_or_hash
+      identifies: finding
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+    projection_hash:
+      owner: envelope
+      kind: hash
+      identifies: projection
+      authoritative: false
+      may_be_cited_by:
+        - logline
+        - membrane
+        - processual_ui
+
+allowed_reference_edges:
+  envelope_to_logline:
+    may_cite:
+      - content_hash
+      - receipt_hash
+      - logline_act_id
+      - process_id
+      - process_contract_hash
+      - grant_id
+      - queue_id
+      - result_hash
+      - attention_id
+    may_claim:
+      - observed_logline_source
+      - projection_source
+      - proposal_context
+    must_not_claim:
+      - logline_registration
+      - sovereign_consequence
+      - l5_authorization
+
+  logline_to_envelope:
+    may_cite:
+      - event_id
+      - source_digest
+      - shift_hash
+      - shift_result_hash
+      - proposal_id
+      - proposal_version_hash
+      - board_act_hash
+      - finding_id
+      - projection_hash
+    may_claim:
+      - source_evidence
+      - proposal_input
+      - finding_context
+    must_not_claim:
+      - ownership_of_shift_identity
+      - ownership_of_board_commit
+      - envelope_projection_shape
+
+  ui_to_runtime:
+    may_cite:
+      - content_hash
+      - receipt_hash
+      - process_id
+      - grant_id
+      - attention_id
+      - proposal_id
+      - proposal_version_hash
+      - board_act_hash
+      - finding_id
+      - projection_hash
+    may_claim:
+      - rendered_source
+      - selected_source
+      - human_response
+    must_not_claim:
+      - runtime_truth
+      - dispatch_authority
+      - receipt_registration
+
+reference_bundles:
+  envelope_proposal_source_bundle:
+    owner: membrane
+    contains:
+      - proposal_id
+      - proposal_version_hash
+      - source_digest
+      - shift_hash
+      - shift_result_hash
+    use: Translate an Envelope Proposal into a LogLine receipt proposal package.
+  envelope_projection_source_bundle:
+    owner: membrane
+    contains:
+      - projection_hash
+      - source_digest
+      - board_act_hash
+      - finding_id
+    use: Let the portal chief render a projection with traceable source refs.
+  logline_authority_bundle:
+    owner: membrane
+    contains:
+      - content_hash
+      - process_id
+      - grant_id
+      - attention_id
+    use: Let UI or Envelope know which LogLine authority path governs an affordance.
+
+validator_rules:
+  - id: reject_unknown_ref_kind
+    text: Every cross-domain ref must appear in ref_kinds.
+  - id: require_owner_on_ref
+    text: Every ref must declare owner jurisdiction.
+  - id: reject_authority_transfer
+    text: A ref cannot be used to claim authority outside its owner jurisdiction.
+  - id: require_projection_source_refs
+    text: A projection crossing to UI must include source_refs.
+  - id: require_translation_bundle_for_receipt_proposal
+    text: Envelope material submitted toward LogLine registration must use a translation bundle.
+
+readiness:
+  complete_when:
+    - crossing_map_uses_reference_edges
+    - projection_contract_uses_reference_bundles
+    - action_contract_uses_logline_authority_bundle
+

@@ -1,0 +1,125 @@
+version: dream-machine-installable-topology.v0
+status: draft_locked
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  crossing_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-crossing-map.v0.yml
+  conflict_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-conflict-map.v0.yml
+  core_technologies: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-core-technologies.v0.yml
+  portal_chief: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-portal-chief.v0.md
+
+purpose: >
+  Declare the final deployable topology for a single installed Dream Machine
+  copy on the LAB 8GB machine. This topology describes deployment and operations;
+  it does not create new jurisdiction primitives.
+
+installable:
+  shape: single_copy
+  target_machine: LAB_8GB
+  operating_system: macos
+  ingress: cloudflare_tunnel
+  local_inference_available: true
+  preventive_maintenance_required: true
+
+topology:
+  canyon:
+    role: public_mouth_ingress
+    transport: cloudflare_tunnel
+    owns:
+      - ingress_endpoint
+      - inbound_request_boundary
+      - raw_arrival_surface
+    must_not_own:
+      - authority
+      - consequence
+      - projection_truth
+      - execution_permission
+    rules:
+      - ingress_does_not_grant_authority
+      - every_arrival_must_be_persisted_or_rejected_with_trace
+      - public_input_must_cross_membrane_before_runtime_use
+
+  golden_bridge:
+    role: macos_execution_and_machine_operations
+    environment: macos
+    owns:
+      - local_process_supervision
+      - scheduled_machine_tasks
+      - service_restart_policy
+      - local_filesystem_boundary
+      - preventive_maintenance
+      - runtime_diagnostics
+    must_not_own:
+      - logline_consequence
+      - envelope_projection_shape
+      - ui_approval_authority
+    maintenance_obligations:
+      - health_checks
+      - disk_checks
+      - backup_status_checks
+      - log_rotation
+      - service_restart_checks
+      - model_runtime_availability_checks
+      - tunnel_status_checks
+
+  manhattan:
+    role: local_cognition_and_projection_workbench
+    owns:
+      - local_inference_availability
+      - projection_workbench_runtime
+      - local_model_context
+      - dynamic_projection_support
+    must_not_own:
+      - registered_consequence
+      - l5_authorization
+      - executor_dispatch_authority
+    rules:
+      - local_inference_may_generate_projection
+      - local_inference_may_generate_finding
+      - local_inference_may_generate_salience
+      - local_inference_must_not_register_consequence
+
+jurisdiction_mapping:
+  canyon_maps_to:
+    - membrane.crossing
+    - processual_ui.interaction
+  golden_bridge_maps_to:
+    - machine_operations
+    - adapter_execution_boundary
+  manhattan_maps_to:
+    - envelope.cognition
+    - envelope.dynamic_projection_workspace
+  logline_remains:
+    - consequence_authority
+    - content_hash_anchor
+    - grant_and_closure_owner
+
+portal_chief_flow:
+  - watch_canyon_for_arrivals
+  - request_manhattan_projection_for_understanding
+  - use_logline_refs_for_authority_context
+  - route_machine_operation_needs_through_golden_bridge
+  - render_cards_without_claiming_authority
+
+install_plan_requirements:
+  - package_as_single_local_copy
+  - configure_cloudflare_tunnel_ingress
+  - configure_macos_launch_or_service_supervision
+  - configure_local_inference_runtime
+  - configure_preventive_maintenance_jobs
+  - configure_contract_validation
+  - configure_backup_status_check
+
+validation_rules:
+  - id: topology_not_jurisdiction
+    text: Manhattan, Golden Bridge, and Canyon are deployment topology names, not owning jurisdictions.
+  - id: ingress_not_authority
+    text: Cloudflare Tunnel ingress cannot grant LogLine authority.
+  - id: local_inference_not_consequence
+    text: Local inference may produce projections and findings, but not registered consequence.
+  - id: macos_execution_needs_route
+    text: macOS execution must route through declared authority and safety boundaries.
+  - id: maintenance_is_required
+    text: The installable must include preventive maintenance checks.
+

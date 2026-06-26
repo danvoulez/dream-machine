@@ -1,0 +1,152 @@
+version: logline-jurisdiction.v0
+status: draft
+date: "2026-06-26"
+
+domain:
+  id: logline
+  jurisdiction: consequence
+  short_law: LogLine decides what becomes sovereign consequence.
+
+canonical_sources:
+  - /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0001-logline-native-representation.md
+  - /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0002-process-risk-and-governed-autonomy.md
+  - /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0003-projections-and-attention.md
+
+native_primitives:
+  registered_receipt:
+    role: custody_unit
+    authoritative: true
+    notes:
+      - Registration remembers the material as a record.
+      - Registration is not activation.
+  logline_act:
+    role: frozen_intention
+    authoritative: true
+    canonical_shape:
+      required_slots:
+        - who
+        - did
+        - this
+        - when
+        - confirmed_by
+        - if_ok
+        - if_doubt
+        - if_not
+        - status
+      aux_allowed: true
+      identity: content_hash
+      canonicalization: jcs-rfc8785
+  process_contract:
+    role: treatment_law
+    authoritative: true
+    owns:
+      - activation_requirements
+      - evidence_obligations
+      - grant_requirements
+      - closure_conditions
+      - danger_tier
+      - automation_level
+  grant:
+    role: authority_token
+    authoritative: true
+  closure:
+    role: consequence_terminal_state
+    authoritative: true
+  executor_outcome:
+    role: governed_runtime_result
+    authoritative: true
+  attention_obligation:
+    role: process_triggered_handoff
+    authoritative: true_when_registered_by_process
+
+laws:
+  - id: everything_may_register
+    text: Everything may register; form and process decide whether it activates.
+  - id: no_ledger_candidate_state
+    text: LogLine has no ledger-level pre-registration proposal state.
+  - id: registration_not_activation
+    text: Registration is custody; activation is earned by process conformance.
+  - id: consequence_by_process
+    text: Consequence moves only through registered process, grants, and executor discipline.
+  - id: projections_not_truth
+    text: Projections may guide and summarize but never outrank registered receipts.
+  - id: l5_authority
+    text: L5 authorization belongs only to LogLine grants and approval paths.
+  - id: enzyme_boundary
+    text: LLMs may reveal structure and propose; they may not self-ratify, execute, mutate canon, or close their own loop.
+
+owns:
+  consequence:
+    includes:
+      - sovereign_status
+      - activation
+      - closure
+      - grant_decision
+      - executor_dispatch_authority
+      - l5_authorization
+  process_governance:
+    includes:
+      - danger_tier_l0_l5
+      - automation_level_a0_a5
+      - process_contract_evaluation
+      - evidence_obligation
+      - adapter_permission
+  registration:
+    includes:
+      - receipt_shape
+      - content_hash
+      - resolvable_citations
+      - supersession
+
+does_not_own:
+  - event_evaporation_policy
+  - envelope_shift_identity
+  - proposal_lifecycle
+  - board_commit_state
+  - narrative_projection_blocks
+  - llm_cognition_workspace
+  - ui_thread_state
+  - visible_card_layout
+
+may_reference_envelope:
+  allowed_refs:
+    - event_hash
+    - source_digest
+    - shift_hash
+    - shift_result_hash
+    - proposal_id
+    - proposal_version_hash
+    - board_act_hash
+    - finding_id
+    - projection_hash
+  rule: References do not import Envelope authority into LogLine.
+  requires_membrane_field: true
+
+may_receive_from_envelope:
+  translation_packages:
+    - envelope_proposal_to_logline_receipt_proposal
+    - envelope_projection_to_attention_obligation
+    - envelope_finding_to_logline_doubt_or_process_input
+  rule: Envelope output remains non-sovereign until registered through LogLine process.
+
+forbidden_claims:
+  - LogLine must not define Envelope Proposal lifecycle.
+  - LogLine must not define BoardAct identity or ShiftResult identity.
+  - LogLine must not treat an Envelope BoardCommit as sovereign registration.
+  - LogLine must not treat UI approval as a grant.
+  - LogLine must not treat a dynamic projection as truth.
+
+conflict_rules:
+  consequence:
+    winner: logline
+  projection_inconsistent_with_registered_receipt:
+    action: rebuild_projection
+  envelope_board_commit_claims_sovereign_consequence:
+    action: reject_crossing_until_translated_and_registered
+
+readiness:
+  complete_when:
+    - vocabulary_map_cites_this_jurisdiction
+    - reference_map_lists_envelope_refs_allowed_here
+    - receipt_proposal_translation_package_exists
+    - l4_l5_grant_rules_are_cross_referenced

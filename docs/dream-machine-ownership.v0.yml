@@ -1,0 +1,253 @@
+version: dream-machine-ownership.v0
+status: draft_locked
+date: "2026-06-26"
+
+purpose: >
+  Declare Dream Machine jurisdiction ownership before any membrane, projection,
+  action, or UI schema is encoded. Future agents should inspect this file before
+  proposing schemas or runtime integrations.
+
+source_sets:
+  logline:
+    canonical_docs:
+      - /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0001-logline-native-representation.md
+      - /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0002-process-risk-and-governed-autonomy.md
+      - /Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0003-projections-and-attention.md
+    status: structurally_strong
+    sanitizer_required: false
+    jurisdiction_doc: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/logline-jurisdiction.v0.yml
+  envelope:
+    canonical_docs:
+      - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md
+      - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md
+      - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md
+      - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md
+      - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md
+    status: structurally_strong_sanitized_first_pass
+    sanitizer_required: complete_first_pass
+    sanitizer_manifest: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-sanitization.v0.yml
+    jurisdiction_doc: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-jurisdiction.v0.yml
+    preserve:
+      - shift_first_identity_model
+      - produced_object_cites_shift
+      - output_hash_never_in_shift_identity
+      - shift_result_binds_shift_to_output
+      - event_evaporation_with_source_digest
+      - projection_valid_by_prefix
+      - finding_as_reconciliation_object
+
+domains:
+  logline:
+    jurisdiction: consequence
+    owns:
+      - registered_receipt
+      - logline_act
+      - process_contract
+      - grant
+      - activation
+      - closure
+      - executor_outcome
+      - sovereign_status
+      - l5_authorization
+      - process_triggered_attention_obligation
+    must_not_own:
+      - llm_narrative_state
+      - ui_thread_state
+      - envelope_proposal_lifecycle
+      - dynamic_projection_workspace
+      - board_commit_state
+
+  envelope:
+    jurisdiction: cognition
+    owns:
+      - event
+      - source_digest
+      - shift
+      - shift_result
+      - proposal
+      - proposal_version
+      - board_act
+      - envelope_act
+      - finding
+      - narrative_projection
+      - projection_pin
+      - envelope_attention_salience
+    must_not_own:
+      - sovereign_consequence
+      - logline_grant
+      - logline_receipt_registration
+      - executor_dispatch_authority
+      - external_commit
+      - l5_authorization
+
+  membrane:
+    jurisdiction: crossing
+    owns:
+      - ownership_map
+      - vocabulary_map
+      - reference_map
+      - translation_package
+      - crossing_permission
+      - conflict_rule
+      - affordance_rule
+      - attention_compatibility
+      - risk_tier_compatibility
+    must_not_own:
+      - consequence
+      - cognition_content
+      - ui_rendering
+
+  processual_ui:
+    jurisdiction: interaction
+    owns:
+      - chat_thread
+      - rendered_card
+      - human_question
+      - human_approval_turn
+      - visible_affordance
+      - ui_attention_interrupt
+    may:
+      - request
+      - render
+      - ask
+      - approve
+      - explain
+    must_not:
+      - register_receipts
+      - dispatch
+      - close
+      - remember_as_authority
+      - claim_runtime_truth
+
+vocabulary:
+  banned_unqualified_terms:
+    - candidate
+    - admission
+    - admitted
+    - act
+  replacement_terms:
+    candidate:
+      envelope: proposal
+      membrane: translation_package
+      logline: receipt_proposal
+      ui: proposal_card
+    admission:
+      envelope: confirmation_or_sealing_or_board_commit
+      membrane: crossing_permission
+      logline: receipt_registration
+      ui: approval_turn
+    admitted:
+      envelope: sealed_or_confirmed_or_board_committed
+      logline: registered
+      ui: approved_for_submission
+    act:
+      envelope: board_act_or_envelope_act
+      logline: logline_act
+      ui: rendered_source_ref
+
+rules:
+  - id: no_double_definition
+    text: A concept may have exactly one owning jurisdiction.
+  - id: references_not_ownership
+    text: A domain may reference another domain's object only through declared membrane fields.
+  - id: no_unqualified_contaminated_terms
+    text: Candidate, admission, admitted, and act require a jurisdiction-qualified owner and approved replacement.
+  - id: consequence_winner
+    text: LogLine wins all disputes about consequence.
+  - id: cognition_winner
+    text: Envelope wins all disputes about narrative and projection shape, unless contradicted by registered LogLine consequence.
+  - id: crossing_winner
+    text: Membrane wins all disputes about crossing permission.
+  - id: ui_non_authority
+    text: UI renders and asks; it does not register receipts, dispatch, close, or remember as authority.
+  - id: projection_non_truth
+    text: Projections are eyes, not truth.
+  - id: rebuild_bad_projection
+    text: A projection inconsistent with LogLine consequence must be rebuilt.
+  - id: button_requires_affordance
+    text: A UI button is valid only when backed by a declared affordance.
+  - id: danger_routes_to_logline
+    text: Irreversible or dangerous actions must route through LogLine authority and approval.
+  - id: l5_logline_only
+    text: Envelope may perceive and narrate L5, but only LogLine may authorize L5.
+
+risk_tiers:
+  envelope:
+    max_native_tier: L4
+    may_describe_l5: true
+    may_authorize_l5: false
+  logline:
+    max_native_tier: L5
+    owns_l5_authorization: true
+  crossing_rule:
+    envelope_l4_to_logline_l5:
+      allowed: true
+      requires: logline_grant_package
+      envelope_role: describe_only
+
+attention:
+  envelope_attention:
+    role: salience
+    authoritative: false
+  logline_attention:
+    role: process_triggered_obligation
+    authoritative: true_when_registered_by_process
+  ui_attention:
+    role: rendered_interruption
+    authoritative: false
+    requires_affordance: true
+
+membrane_maps:
+  ownership:
+    declares: who_owns_each_concept
+  core_technologies:
+    declares: which_two_technologies_must_be_best_and_how_they_interoperate
+  installable_topology:
+    declares: final_single_copy_lab_8gb_deployable_shape
+  vocabulary:
+    declares: reserved_words_and_required_replacements
+  reference:
+    declares: what_ids_and_hashes_may_be_cited_across_domains
+  crossing:
+    declares: what_may_cross_between_domains
+  conflict:
+    declares: who_wins_when_views_disagree
+
+next_readiness_sequence:
+  - freeze_vocabulary_and_ban_overloaded_terms
+  - declare_canonical_doc_sets
+  - sanitize_envelope_board_docs
+  - write_logline_and_envelope_jurisdiction_docs
+  - promote_this_ownership_map_from_seed_to_locked
+  - write_vocabulary_map
+  - write_reference_map
+  - declare_core_technology_excellence_bars
+  - write_envelope_to_logline_translation_package
+  - write_projection_response_contract
+  - write_action_affordance_contract
+  - write_crossing_map
+  - write_conflict_map
+  - write_projection_schema
+  - write_portal_chief_doctrine
+  - write_installable_topology
+  - add_validators
+  - wire_runtime_projection
+
+completed_readiness:
+  - freeze_vocabulary_and_ban_overloaded_terms
+  - declare_canonical_doc_sets
+  - sanitize_envelope_board_docs
+  - write_logline_and_envelope_jurisdiction_docs
+  - promote_this_ownership_map_from_seed_to_locked
+  - write_vocabulary_map
+  - write_reference_map
+  - declare_core_technology_excellence_bars
+  - write_envelope_to_logline_translation_package
+  - write_projection_response_contract
+  - write_action_affordance_contract
+  - write_crossing_map
+  - write_conflict_map
+  - write_projection_schema
+  - write_portal_chief_doctrine
+  - write_installable_topology
+  - add_validators

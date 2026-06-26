@@ -1,0 +1,79 @@
+version: envelope-sanitization.v0
+status: first_pass_complete
+date: "2026-06-26"
+
+scope:
+  sanitized_docs:
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md
+  not_in_scope:
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/tests
+    - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/dist
+
+preserved:
+  - Shift identity never includes output_hash.
+  - Produced objects cite the Shift that produced them.
+  - ShiftResult binds a Shift to its produced output after output hash exists.
+  - Event source_digest survives event evaporation.
+  - Projection source prefix validity remains mandatory.
+
+replacements:
+  Candidate: Proposal
+  candidate: proposal
+  candidate_id: proposal_id
+  candidate_version_hash: proposal_version_hash
+  candidate_version_body: proposal_version_body
+  Act: BoardAct
+  act: board_act
+  act_hash: board_act_hash
+  prev_act_hash: prev_board_act_hash
+  Acts: BoardActs
+  acts: board_acts
+  Admission: BoardCommit
+  admission: board_commit
+  admitted: board_committed
+  admit: commit
+
+current_vocabulary:
+  envelope_objects:
+    - Event
+    - Proposal
+    - BoardAct
+    - Shift
+    - ShiftResult
+    - Finding
+    - Projection
+  lifecycle:
+    - pending
+    - editing
+    - ready
+    - board_committed
+    - rejected
+    - withdrawn
+    - expired
+  commands_and_functions:
+    - commit_proposal
+    - can_confirm
+    - load_latest_board_act_for_update
+    - store_board_act
+    - load_board_acts
+  tables:
+    - proposals
+    - board_acts
+
+validation:
+  banned_unqualified_terms:
+    - candidate
+    - admission
+    - admitted
+    - act
+  scan_result:
+    status: clean
+    note: >
+      Remaining occurrences are allowed only inside the explicit ban notice in
+      BOARD SPEC_v0.2.md or as parts of approved identifiers such as
+      board_act_hash.

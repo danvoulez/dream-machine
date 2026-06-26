@@ -1,0 +1,196 @@
+version: dream-machine-actions.v0
+status: draft
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  vocabulary: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-vocabulary.v0.yml
+  reference_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+  projections: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-projections.v0.yml
+
+purpose: >
+  Define which runtime actions may appear as Processual UI affordances. A visible
+  button is never just a UI idea; it must be backed by a declared affordance,
+  risk tier, source refs, and authority route.
+
+tool_boundary:
+  runtime_projection:
+    side_effects: false
+    may_return_affordances: true
+  runtime_action_intent:
+    side_effects: false
+    creates: action_intent_package
+    may_require_human_approval: true
+  runtime_commit:
+    side_effects: true
+    allowed_only_when:
+      - backed_by_logline_authority
+      - explicit_human_approval_turn_present
+      - grants_satisfied
+      - evidence_refs_present
+    default_for_ui: forbidden
+
+affordance_shape:
+  required_fields:
+    - affordance_id
+    - label
+    - kind
+    - source_refs
+    - risk_tier
+    - authority_route
+    - result_mode
+    - cannot_do
+  fields:
+    affordance_id:
+      type: string
+    label:
+      type: string
+      rule: Human-facing label only; not a schema authority term.
+    kind:
+      values:
+        - inspect
+        - explain
+        - request_projection
+        - prepare_translation_package
+        - submit_receipt_proposal
+        - answer_attention
+        - request_grant
+        - dismiss_ui_card
+    source_refs:
+      type: array
+      required: true
+    risk_tier:
+      type: string
+      values:
+        - L0
+        - L1
+        - L2
+        - L3
+        - L4
+        - L5
+    authority_route:
+      type: object
+      required:
+        - owner
+        - required_process
+        - approval_required
+        - grants_required
+    result_mode:
+      values:
+        - read_only
+        - intent_package
+        - logline_receipt_proposal
+        - requires_logline_registration
+    cannot_do:
+      type: array
+      required: true
+
+standard_affordances:
+  inspect_source:
+    kind: inspect
+    max_risk_tier: L0
+    result_mode: read_only
+    authority_owner: envelope_or_logline_source_owner
+    button_allowed: true
+  request_projection:
+    kind: request_projection
+    max_risk_tier: L0
+    result_mode: read_only
+    authority_owner: envelope
+    button_allowed: true
+  prepare_translation_package:
+    kind: prepare_translation_package
+    max_risk_tier: L3
+    result_mode: intent_package
+    authority_owner: membrane
+    button_allowed: true
+  submit_receipt_proposal:
+    kind: submit_receipt_proposal
+    max_risk_tier: L4
+    result_mode: logline_receipt_proposal
+    authority_owner: logline
+    button_allowed: true_with_approval
+  request_grant:
+    kind: request_grant
+    max_risk_tier: L5
+    result_mode: requires_logline_registration
+    authority_owner: logline
+    button_allowed: true_with_approval
+  execute_effect:
+    kind: forbidden_direct_ui_action
+    button_allowed: false
+    reason: Effects must route through LogLine authority and executor discipline.
+
+risk_rules:
+  L0:
+    ui_may_render_button: true
+    approval_required: false
+    logline_required: false
+  L1:
+    ui_may_render_button: true
+    approval_required: maybe
+    logline_required: maybe
+  L2:
+    ui_may_render_button: true
+    approval_required: true
+    logline_required: maybe
+  L3:
+    ui_may_render_button: true
+    approval_required: true
+    logline_required: true_for_external_integration
+  L4:
+    ui_may_render_button: true_with_approval
+    approval_required: true
+    logline_required: true
+    grants_required: true
+  L5:
+    ui_may_render_button: only_for_requesting_logline_grant_or_attention
+    approval_required: true
+    logline_required: true
+    grants_required: true
+    envelope_role: describe_only
+
+cannot_do_defaults:
+  - register_receipt_without_logline_process
+  - dispatch_executor_from_ui
+  - authorize_l5_from_envelope
+  - treat_approval_turn_as_grant
+  - mutate_ledger_from_projection
+
+validation_rules:
+  - id: button_requires_affordance
+    text: Every rendered button must cite an affordance_id from this contract.
+  - id: affordance_requires_source_refs
+    text: Every affordance must cite source_refs.
+  - id: l4_l5_requires_logline
+    text: L4 and L5 affordances must route through LogLine authority.
+  - id: no_direct_effect_button
+    text: UI must not render direct external effect execution.
+  - id: approval_not_authority
+    text: UI approval is an interaction artifact, not a LogLine grant.
+  - id: projection_cannot_commit
+    text: Projection responses may suggest affordances but cannot commit actions.
+
+example_affordance:
+  affordance_id: aff_prepare_translation_demo
+  label: Prepare receipt proposal
+  kind: prepare_translation_package
+  source_refs:
+    - ref_kind: proposal_id
+      ref: prop_001
+      owner: envelope
+    - ref_kind: proposal_version_hash
+      ref: sha256:proposal_version
+      owner: envelope
+  risk_tier: L2
+  authority_route:
+    owner: membrane
+    required_process: envelope-proposal-to-logline-package.v0
+    approval_required: true
+    grants_required: []
+  result_mode: intent_package
+  cannot_do:
+    - register_receipt_without_logline_process
+    - dispatch_executor_from_ui
+    - authorize_l5_from_envelope
+

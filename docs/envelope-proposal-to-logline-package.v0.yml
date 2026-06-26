@@ -1,0 +1,270 @@
+version: envelope-proposal-to-logline-package.v0
+status: draft
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  vocabulary: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-vocabulary.v0.yml
+  reference_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+  logline_jurisdiction: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/logline-jurisdiction.v0.yml
+  envelope_jurisdiction: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-jurisdiction.v0.yml
+
+purpose: >
+  Define how an Envelope Proposal can cross the membrane as a LogLine receipt
+  proposal package. This package does not register a receipt and does not create
+  sovereign consequence.
+
+source_domain:
+  id: envelope
+  object: proposal
+  required_refs:
+    - proposal_id
+    - proposal_version_hash
+    - source_digest
+    - shift_hash
+    - shift_result_hash
+  optional_refs:
+    - finding_id
+    - projection_hash
+    - board_act_hash
+
+target_domain:
+  id: logline
+  object: receipt_proposal
+  registration_authority: false
+  requires_logline_process: true
+
+package_shape:
+  type: object
+  required_fields:
+    - package_id
+    - package_version
+    - source_jurisdiction
+    - target_jurisdiction
+    - source_refs
+    - proposed_receipt
+    - evidence_refs
+    - risk
+    - authority_route
+    - cannot_do
+  fields:
+    package_id:
+      type: string
+      meaning: Membrane-local package identifier.
+    package_version:
+      type: string
+      value: v0
+    source_jurisdiction:
+      type: string
+      value: envelope
+    target_jurisdiction:
+      type: string
+      value: logline
+    source_refs:
+      type: object
+      required:
+        - proposal_id
+        - proposal_version_hash
+        - source_digest
+        - shift_hash
+        - shift_result_hash
+    proposed_receipt:
+      type: object
+      meaning: LogLine-shaped receipt proposal, not a registered receipt.
+      required_slots:
+        - who
+        - did
+        - this
+        - when
+        - confirmed_by
+        - if_ok
+        - if_doubt
+        - if_not
+        - status
+      aux_required: true
+    evidence_refs:
+      type: array
+      items:
+        - source_digest
+        - shift_hash
+        - shift_result_hash
+        - proposal_version_hash
+        - finding_id
+        - projection_hash
+    risk:
+      type: object
+      required:
+        - envelope_risk
+        - proposed_logline_danger_tier
+    authority_route:
+      type: object
+      required:
+        - registration_process_id
+        - required_grants
+        - approval_required
+    cannot_do:
+      type: array
+      required_values:
+        - register_receipt
+        - activate_process
+        - authorize_l5
+        - dispatch_executor
+
+slot_mapping:
+  who:
+    from: envelope.proposal.slots.who
+    rule: Preserve responsible actor or role, normalized for LogLine.
+  did:
+    from: envelope.proposal.slots.what
+    rule: Map controlled Board verb to LogLine did vocabulary through process contract.
+  this:
+    from:
+      - envelope.proposal.slots.gloss
+      - envelope.proposal.slots.object
+      - envelope.proposal.slots.scope
+    rule: Produce concise LogLine object phrase.
+  when:
+    from: package_created_at
+    rule: Use package creation time unless source process supplies a stronger event time.
+  confirmed_by:
+    from: authority_route.proposed_confirmer
+    rule: Must remain proposed until LogLine confirmation.
+  if_ok:
+    from: target_process.if_ok
+    rule: Must be supplied by LogLine process contract or remain doubt.
+  if_doubt:
+    from: target_process.if_doubt
+    default: attention-raise.v1
+  if_not:
+    from: target_process.if_not
+    default: stop
+  status:
+    value: proposed
+    rule: Never set registered in this package.
+  aux:
+    required_fields:
+      - source_jurisdiction
+      - source_refs
+      - proposal_confidence
+      - envelope_risk
+      - proposed_logline_danger_tier
+      - translation_notes
+      - cannot_do
+
+risk_mapping:
+  envelope_l0:
+    proposed_logline_danger_tier: L0
+    approval_required: false
+  envelope_l1:
+    proposed_logline_danger_tier: L1
+    approval_required: maybe
+  envelope_l2:
+    proposed_logline_danger_tier: L2
+    approval_required: true
+  envelope_l3:
+    proposed_logline_danger_tier: L3
+    approval_required: true
+  envelope_l4:
+    proposed_logline_danger_tier: L4
+    approval_required: true
+    required_grants:
+      - logline_grant_package
+  envelope_describes_l5:
+    proposed_logline_danger_tier: L5
+    approval_required: true
+    required_grants:
+      - logline_grant_package
+      - l5_signoff
+    envelope_role: describe_only
+
+crossing_rules:
+  - id: proposal_is_not_receipt
+    text: The package contains a receipt proposal, not a registered receipt.
+  - id: board_commit_is_not_required
+    text: A Proposal may be translated before or after BoardCommit if source refs are explicit.
+  - id: source_digest_required
+    text: Source digest is mandatory for provenance.
+  - id: logline_process_required
+    text: Registration requires a LogLine process contract and confirmation path.
+  - id: no_l5_authorization
+    text: Envelope may describe L5 but cannot authorize it.
+  - id: no_ui_registration
+    text: UI approval may answer a question but cannot register the receipt by itself.
+
+validation_rules:
+  - id: reject_registered_status
+    path: proposed_receipt.status
+    invalid_values:
+      - registered
+      - active
+      - closed
+  - id: require_source_refs
+    path: source_refs
+    required:
+      - proposal_id
+      - proposal_version_hash
+      - source_digest
+      - shift_hash
+      - shift_result_hash
+  - id: require_cannot_do
+    path: cannot_do
+    required:
+      - register_receipt
+      - activate_process
+      - authorize_l5
+      - dispatch_executor
+  - id: reject_unqualified_terms
+    vocabulary: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-vocabulary.v0.yml
+
+example_minimal:
+  package_id: pkg_demo_001
+  package_version: v0
+  source_jurisdiction: envelope
+  target_jurisdiction: logline
+  source_refs:
+    proposal_id: prop_001
+    proposal_version_hash: sha256:proposal_version
+    source_digest: sha256:source_window
+    shift_hash: sha256:condensation_shift
+    shift_result_hash: sha256:shift_result
+  proposed_receipt:
+    who: human:pilot
+    did: start_engine
+    this: engine:A before taxi
+    when: "2026-06-26T00:00:00Z"
+    confirmed_by: proposed:human:pilot
+    if_ok: continue
+    if_doubt: attention-raise.v1
+    if_not: stop
+    status: proposed
+    aux:
+      source_jurisdiction: envelope
+      source_refs:
+        proposal_id: prop_001
+        proposal_version_hash: sha256:proposal_version
+      proposal_confidence: 0.92
+      envelope_risk: L2
+      proposed_logline_danger_tier: L2
+      translation_notes: Demo mapping from BoardActSlots to LogLine receipt slots.
+      cannot_do:
+        - register_receipt
+        - activate_process
+        - authorize_l5
+        - dispatch_executor
+  evidence_refs:
+    - sha256:source_window
+    - sha256:condensation_shift
+    - sha256:shift_result
+  risk:
+    envelope_risk: L2
+    proposed_logline_danger_tier: L2
+  authority_route:
+    registration_process_id: logline-registration.v1
+    required_grants: []
+    approval_required: true
+  cannot_do:
+    - register_receipt
+    - activate_process
+    - authorize_l5
+    - dispatch_executor
+

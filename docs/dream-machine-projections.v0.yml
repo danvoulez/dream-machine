@@ -1,0 +1,228 @@
+version: dream-machine-projections.v0
+status: draft
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  core_technologies: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-core-technologies.v0.yml
+  vocabulary: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-vocabulary.v0.yml
+  reference_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+
+purpose: >
+  Define the first UI-facing runtime projection response contract for the
+  Processual UI portal chief. This contract is read-only and non-authoritative.
+
+tool_boundary:
+  first_tool: runtime_projection
+  safe: true
+  side_effects: false
+  later_tools:
+    - runtime_action_intent
+    - runtime_commit
+  forbidden_for_projection:
+    - register_receipt
+    - dispatch_executor
+    - authorize_l5
+    - mutate_envelope_ledger
+    - mutate_logline_ledger
+
+projection_request:
+  required_fields:
+    - intent
+    - scope
+  optional_fields:
+    - filters
+    - as_of
+    - audience
+    - max_blocks
+    - include_affordances
+  intents:
+    - overview
+    - arrival_detail
+    - process_detail
+    - waiting_on_me
+    - open_findings
+    - proposal_detail
+    - board_act_detail
+    - logline_receipt_detail
+    - danger_review
+    - changes_since
+
+projection_response:
+  required_fields:
+    - projection_id
+    - intent
+    - jurisdiction
+    - authoritative
+    - freshness
+    - source_refs
+    - blocks
+    - warnings
+    - affordances
+    - cannot_do
+  fields:
+    projection_id:
+      type: string
+      meaning: UI/runtime projection response id.
+    intent:
+      type: enum
+      values_ref: projection_request.intents
+    jurisdiction:
+      type: enum
+      values:
+        - logline
+        - envelope
+        - membrane
+        - mixed
+      rule: Mixed projections must group source refs by jurisdiction.
+    authoritative:
+      type: boolean
+      value: false
+    freshness:
+      type: object
+      required:
+        - generated_at
+        - as_of
+        - stale
+      optional:
+        - ttl_ms
+        - rebuild_reason
+    source_refs:
+      type: array
+      item_ref: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+      rule: Every block must cite at least one source ref unless kind is divider.
+    blocks:
+      type: array
+      item: projection_block
+    open_findings:
+      type: array
+      optional: true
+      item_ref: finding_id
+    warnings:
+      type: array
+      item: projection_warning
+    affordances:
+      type: array
+      item: declared_affordance_ref
+      rule: Buttons may be rendered only from these entries.
+    cannot_do:
+      type: array
+      item: string
+      required_values:
+        - register_receipt
+        - dispatch_executor
+        - authorize_l5
+
+projection_block:
+  required_fields:
+    - block_id
+    - kind
+    - title
+    - body
+    - source_refs
+  fields:
+    kind:
+      values:
+        - summary
+        - source_ref
+        - proposal
+        - board_act
+        - logline_receipt
+        - finding
+        - attention
+        - risk_note
+        - warning
+        - next_step
+        - divider
+    title:
+      type: string
+    body:
+      type: string
+    source_refs:
+      type: array
+    risk_tier:
+      type: string
+      optional: true
+    authority_route:
+      type: object
+      optional: true
+    display_priority:
+      type: integer
+      optional: true
+
+projection_warning:
+  kinds:
+    - stale_projection
+    - partial_source
+    - mixed_jurisdiction
+    - envelope_only
+    - requires_logline_registration
+    - l5_describe_only
+    - missing_grant
+    - unresolved_finding
+  required_fields:
+    - kind
+    - message
+    - source_refs
+
+source_rules:
+  - id: projections_are_eyes
+    text: Projection responses are non-authoritative views.
+  - id: cite_sources
+    text: Projection blocks must cite source refs.
+  - id: mixed_jurisdiction_grouping
+    text: Mixed projections must separate LogLine and Envelope sources.
+  - id: rebuild_on_conflict
+    text: A projection inconsistent with LogLine consequence must be rebuilt.
+  - id: cannot_do_required
+    text: Projection responses must declare limits.
+  - id: no_button_without_affordance
+    text: UI buttons may only render from declared affordances.
+
+standard_cannot_do:
+  - register_receipt
+  - activate_process
+  - dispatch_executor
+  - authorize_l5
+  - mutate_logline_ledger
+  - mutate_envelope_ledger
+  - treat_projection_as_truth
+
+example_minimal:
+  projection_id: proj_demo_001
+  intent: waiting_on_me
+  jurisdiction: mixed
+  authoritative: false
+  freshness:
+    generated_at: "2026-06-26T00:00:00Z"
+    as_of:
+      logline: content_hash:demo
+      envelope: projection_hash:demo
+    stale: false
+  source_refs:
+    - ref_kind: finding_id
+      ref: finding_demo_001
+      owner: envelope
+    - ref_kind: process_id
+      ref: attention-raise.v1
+      owner: logline
+  blocks:
+    - block_id: block_summary
+      kind: summary
+      title: Waiting on human confirmation
+      body: Envelope sees an unresolved finding that may need a LogLine attention obligation.
+      source_refs:
+        - finding_demo_001
+      risk_tier: L2
+  open_findings:
+    - finding_demo_001
+  warnings:
+    - kind: requires_logline_registration
+      message: This can be shown and proposed, but not registered from projection alone.
+      source_refs:
+        - finding_demo_001
+  affordances: []
+  cannot_do:
+    - register_receipt
+    - dispatch_executor
+    - authorize_l5

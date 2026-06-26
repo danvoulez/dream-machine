@@ -1,0 +1,1142 @@
+# Dream Machine Triple Task List
+
+Status: coordination task list after machine-readable membrane seed and runtime reality scan.
+
+Date: 2026-06-26
+
+This task list acknowledges that the three parts are at different stages of
+development and were built under different pressures. The goal is not to merge
+them. The goal is to let each jurisdiction become clearer, then connect them
+through an explicit membrane.
+
+## Constitutional Cut
+
+This is one institution with three jurisdictions and a customs office:
+
+```text
+LogLine
+  owns consequence
+
+Envelope
+  owns cognition
+
+Membrane
+  owns crossing
+
+Processual UI
+  owns interaction
+```
+
+The strongest membrane law is:
+
+```text
+No domain may define another domain's primitive.
+A domain may reference another domain's primitive only through declared membrane fields.
+```
+
+The first deliverable is therefore not a LogLine schema or an Envelope schema.
+The first deliverable is the ownership map. Until ownership is machine-readable,
+every later schema risks defining the same concept twice.
+
+Initial machine-readable seed:
+
+- `dream-machine-ownership.v0.yml`
+
+## Final Installable Shape
+
+The final project shape is a single installable Dream Machine copy running on
+the LAB 8GB machine.
+
+This is the deployable topology:
+
+```text
+Canyon
+  public mouth / ingress
+  Cloudflare Tunnel
+
+Golden Bridge
+  runtime bridge / machine operations
+  macOS execution
+  preventive maintenance
+
+Manhattan
+  local cognition / projection workbench
+  local inference available
+  Envelope Dynamic Projections
+```
+
+This trio is deployment topology, not a fourth jurisdiction. The jurisdictions
+remain LogLine, Envelope, Membrane, and Processual UI. The installable must
+respect that ownership map.
+
+Final installable requirements:
+
+- One installable package/copy for LAB 8GB.
+- Cloudflare Tunnel provides ingress; no direct public authority is inferred
+  from ingress.
+- macOS is the execution environment for local processes and machine
+  maintenance.
+- Local inference is available for Envelope Dynamic Projections and other
+  cognition tasks.
+- Preventive maintenance is part of the machine runtime obligation:
+  health checks, storage checks, service restarts, log rotation, backup status,
+  and model/runtime availability.
+- The portal chief watches Canyon, requests projections from Manhattan, and
+  routes operational needs through Golden Bridge without becoming authority.
+- LogLine content hashes remain the authority anchor regardless of deployment
+  topology.
+
+Planning impact:
+
+- The runtime projection tool must be deployable in a local-first install.
+- The ingress boundary must be explicit in crossing and conflict rules.
+- Machine maintenance should become its own contract/task before production.
+- Local inference must be treated as an Envelope capability, not a LogLine
+  authority source.
+
+## Task Status Summary
+
+This section is the operational truth of the task list as of 2026-06-26. It
+separates what is already done from what is partially done and what remains
+open.
+
+### Done
+
+- Folder cut completed:
+  `Dream-Machine-LogLine-Acts`, `Dream-Machine-Envelope-Ledger`, and
+  `Dream-Machine-Processual-UI` are the three active local folders.
+- Envelope / Board documentation sanitization completed, first pass:
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md`,
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md`,
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md`,
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md`, and
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md`.
+- Sanitization manifest written:
+  `docs/envelope-sanitization.v0.yml`.
+- Machine-readable ownership map written:
+  `docs/dream-machine-ownership.v0.yml`.
+- Machine-readable vocabulary map written:
+  `docs/dream-machine-vocabulary.v0.yml`.
+- Machine-readable reference map written:
+  `docs/dream-machine-reference-map.v0.yml`.
+- LogLine jurisdiction contract written:
+  `docs/logline-jurisdiction.v0.yml`.
+- Envelope jurisdiction contract written:
+  `docs/envelope-jurisdiction.v0.yml`.
+- Envelope-to-LogLine translation package written:
+  `docs/envelope-proposal-to-logline-package.v0.yml`.
+- Projection response contract written:
+  `docs/dream-machine-projections.v0.yml`.
+- Action affordance contract written:
+  `docs/dream-machine-actions.v0.yml`.
+- Core technologies decision written:
+  `docs/dream-machine-core-technologies.v0.yml`.
+- Final installable topology contract written:
+  `docs/dream-machine-installable-topology.v0.yml`.
+- Crossing map written:
+  `docs/dream-machine-crossing-map.v0.yml`.
+- Conflict map written:
+  `docs/dream-machine-conflict-map.v0.yml`.
+- Projection response JSON Schema written:
+  `docs/dream-machine-projections.v0.schema.json`.
+- Portal chief doctrine written:
+  `docs/dream-machine-portal-chief.v0.md`.
+- Portal understanding document written:
+  `docs/DREAM_MACHINE_PORTAL_UNDERSTANDING.md`.
+- Runtime reality scan completed:
+  LogLine already has projection runtime surfaces; Envelope already has
+  projection runtime surfaces; Processual UI does not yet have the portal tool.
+- Projection-runtime decision made:
+  Envelope Dynamic Projections prevail as the portal-facing projection runtime;
+  LogLine projections remain internal read models and proof-adjacent views.
+- Contract validator added:
+  `scripts/validate-dream-machine-contracts.mjs`.
+- Package script added:
+  `pnpm contracts:validate`.
+- Current validation passes:
+  `Dream Machine contract validation passed (15 contracts)`.
+
+### Partially Done
+
+- Envelope vocabulary is clean in the canonical Board docs, but not yet migrated
+  in `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src` and
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/tests`.
+- LogLine content-addressing is already strong in implementation, but still
+  needs the "best in class" hardening tasks:
+  cross-language vectors, canonicalization parity tests, hash inspection API,
+  and composition profile.
+- Envelope Dynamic Projections already exist in implementation, but still need
+  the "best in class" hardening tasks:
+  projection pin fields, parent projection hashes, ladder levels, freshness,
+  loss accounting, and projection diff.
+- Envelope validation already exists and is the right kind of validator for
+  Envelope:
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/validate.ts`
+  validates input shape and primitives, while
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/verify.ts`
+  verifies ledger consistency, identity hashes, ShiftResult bindings, events,
+  findings, and projection prefixes. It should be hardened, not replaced by
+  LogLine/JCS.
+- The membrane is machine-readable enough for validation, and the crossing map,
+  conflict map, portal chief doctrine, and first projection schema now exist.
+  Full JSON Schema validation against sample payloads is still pending.
+- Processual UI has the right Eve/Vercel integration pattern through
+  `save_memory`, but no Dream Machine runtime tools yet.
+
+### Pending
+
+- Write LogLine automation tier contract:
+  `logline-process-contract-automation.v0.yml`.
+- Write LogLine attention obligation contract:
+  `logline-attention-obligation.v0.yml`.
+- Write LogLine-to-Envelope reference fields contract:
+  `logline-envelope-reference-fields.v0.yml`.
+- Write Envelope risk-tier compatibility contract:
+  `envelope-risk-tier-compatibility.v0.yml`.
+- Write Envelope projection pin contract:
+  `envelope-projection-pin.v0.yml`.
+- Write Envelope action affordance contract:
+  `envelope-action-affordances.v0.yml`.
+- Migrate Envelope implementation vocabulary from the older
+  Candidate / Admission / Act naming to Proposal / Confirmation / BoardCommit /
+  BoardAct naming.
+- Implement `agent/tools/runtime_projection.ts` in Processual UI.
+- Implement the runtime projection normalizer from Envelope/LogLine outputs to
+  `dream-machine-projections.v0.yml`.
+- Add projection cards, source-reference cards, warning cards, open-finding
+  cards, and declared-affordance buttons to the UI.
+- Add integration tests proving the portal can request/render projections but
+  cannot register receipts, dispatch executors, mutate ledgers, or authorize L5.
+
+## Detailed Execution Breakdown
+
+This section expands the pending list into execution steps. Each step states the
+target artifact, what must be decided or implemented, and the exit criteria.
+
+### 0. Preserve What Is Already Done
+
+Status: done, but must remain protected.
+
+Artifacts:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md`
+- `docs/envelope-sanitization.v0.yml`
+- `docs/dream-machine-ownership.v0.yml`
+- `docs/dream-machine-vocabulary.v0.yml`
+- `docs/dream-machine-reference-map.v0.yml`
+- `docs/logline-jurisdiction.v0.yml`
+- `docs/envelope-jurisdiction.v0.yml`
+- `docs/envelope-proposal-to-logline-package.v0.yml`
+- `docs/dream-machine-core-technologies.v0.yml`
+- `docs/dream-machine-projections.v0.yml`
+- `docs/dream-machine-actions.v0.yml`
+- `scripts/validate-dream-machine-contracts.mjs`
+
+Details:
+
+- Keep the Board docs sanitized. Do not reintroduce unqualified Candidate,
+  Admission, admitted, or Act vocabulary outside explicit ban notices.
+- Keep LogLine as authority/consequence and Envelope as cognition/projection.
+- Keep the decision that Envelope Dynamic Projections are the portal-facing
+  projection runtime.
+- Keep LogLine projections as internal read models and proof-adjacent views.
+- Keep `pnpm contracts:validate` passing before and after every doc change.
+
+Done when:
+
+- The validator still passes.
+- New docs cite the existing contracts instead of redefining their primitives.
+- Any future task preserves the completed sanitization boundary.
+
+### 1. Missing Membrane Contract Artifacts
+
+Status: done.
+
+Artifacts to create:
+
+- `docs/dream-machine-crossing-map.v0.yml`
+- `docs/dream-machine-conflict-map.v0.yml`
+- `docs/dream-machine-projections.v0.schema.json`
+- `docs/dream-machine-portal-chief.v0.md`
+
+Details:
+
+- `dream-machine-crossing-map.v0.yml` must declare what can cross between
+  LogLine, Envelope, Membrane, and Processual UI. It should define direction,
+  allowed source refs, forbidden claims, required validation, and whether the
+  crossing is read-only, proposal-only, or authority-bearing.
+- `dream-machine-conflict-map.v0.yml` must declare who wins when two views
+  disagree. LogLine wins consequence; Envelope wins projection/narrative shape;
+  Membrane wins crossing permission; UI wins rendering only. Projection conflict
+  with registered consequence causes projection rebuild.
+- `dream-machine-projections.v0.schema.json` must validate the YAML projection
+  response contract as a JSON Schema. It must enforce `authoritative: false`,
+  `source_refs`, `warnings`, `affordances`, and `cannot_do`.
+- `dream-machine-portal-chief.v0.md` must describe the portal chief in human
+  terms: watches the inbox mouth, requests projections, renders processual
+  state, asks humans, routes approvals, and never becomes authority.
+
+Done when:
+
+- All four files exist. Complete.
+- `scripts/validate-dream-machine-contracts.mjs` requires them. Complete.
+- `pnpm contracts:validate` passes with the expanded contract count. Complete:
+  14 contracts.
+- Each file depends on the ownership, vocabulary, reference, core technology,
+  projection, and action contracts where relevant. Complete where relevant.
+
+### 2. LogLine Hash Excellence
+
+Status: partially done in runtime, pending hardening.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts`
+
+Existing anchors:
+
+- `lab/receipt.py`
+- `lab/store.py`
+- `tests/test_receipt.py`
+- `tests/test_signing.py`
+
+Details:
+
+- Add cross-language hash vectors for Python, JavaScript/TypeScript, and Rust
+  if Rust remains part of the LogLine runtime direction.
+- Add canonicalization parity tests proving the same nine-slot tuple and full
+  receipt body produce the same `tuple_hash` and `content_hash` across
+  supported languages.
+- Add test vectors for Unicode, numeric edge cases, key ordering, forbidden
+  fields, AUX fields, and every nine-slot mutation.
+- Define the hash composition profile:
+  when a LogLine receipt cites another receipt, whether it cites
+  `content_hash`, `tuple_hash`, `process_contract_hash`, `result_hash`, or a
+  DAG/Merkle bundle.
+- Expose a read-only hash inspection surface for the portal:
+  given a hash, return receipt metadata, canonical slots, validation status,
+  and safe source refs without granting mutation.
+- Keep the invariant nine slots as the only runtime anatomy:
+  `who`, `did`, `this`, `when`, `confirmed_by`, `if_ok`, `if_doubt`,
+  `if_not`, `status`.
+
+Done when:
+
+- Hash vectors exist and are versioned.
+- Parity tests pass across supported runtimes.
+- Any mutation to one of the nine slots changes `tuple_hash`.
+- Any mutation to canonical content changes `content_hash`.
+- Portal-facing hash inspection is read-only and cannot register, dispatch, or
+  close anything.
+
+### 3. Envelope Dynamic Projection Excellence
+
+Status: runtime exists, hardening pending.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger`
+
+Existing anchors:
+
+- `src/projection.ts`
+- `src/identity/projection.ts`
+- `src/store/projections.ts`
+- `src/validate.ts`
+- `src/verify.ts`
+- `src/board.ts`
+- `tests/verify.test.ts`
+- `tests/board-fuzz.test.ts`
+- `tests/identity.test.ts`
+
+Validator status:
+
+- Envelope already has a domain-native validator/verifier pair.
+- `src/validate.ts` validates primitive input shape:
+  hash, millis, risk tier, actor id, slots, shift context, stream config, and
+  supported canonicalization/hash algorithm.
+- `src/verify.ts` validates ledger consistency:
+  stream config hash, chain sequence, previous hash, identity hash
+  recomputation, ShiftResult binding, missing outputs, event hash, event zone,
+  finding hash, finding shift refs, projection prefix, projection hash, and open
+  finding references.
+- `tests/verify.test.ts`, `tests/board-fuzz.test.ts`, and `tests/identity.test.ts`
+  already prove clean-ledger success and tamper detection.
+- This is sufficient for the current Envelope implementation.
+- It is not yet sufficient for the future Dynamic Projection bar because those
+  fields do not exist yet in the Envelope model.
+
+Details:
+
+- Do not introduce LogLine/JCS as Envelope authority. Envelope uses its own
+  `board-json-v0` identity and verifier. The task is to harden the existing
+  Envelope verifier as Envelope grows.
+- Add an explicit projection pin shape:
+  `model`, `prompt`, `params`, `seed`, and model-call reference.
+- Add projection lineage:
+  `parent_projection_hashes`, `ladder_level`, and optional reason for descent
+  or refinement.
+- Add freshness:
+  `generated_at`, `as_of_seq`, `ttl_ms`, `stale`, `rebuild_reason`, and
+  source watermark.
+- Add partial-source and evaporation accounting:
+  when events evaporate, projections must still cite durable `source_digest`
+  and must reveal what source detail is no longer available.
+- Add `changes_since` or projection diff:
+  compare projection hashes, source refs, findings, narrative blocks, risk
+  notes, and affordances.
+- Add contract tests against `docs/dream-machine-projections.v0.yml`:
+  Envelope projection output must be normalizable into the portal projection
+  response without losing source refs, open findings, or shift provenance.
+- Extend `src/validate.ts` for the new projection fields once they exist.
+- Extend `src/verify.ts` so it catches missing pin, invalid lineage, invalid
+  ladder level, stale freshness claims, missing loss accounting, and invalid
+  projection diff references.
+- Keep Envelope projections non-authoritative:
+  they may produce salience, proposals, warnings, and affordances, but not
+  consequence.
+
+Done when:
+
+- Projection identity includes the intended provenance/freshness fields.
+- Verification catches missing lineage, stale source claims, missing open
+  findings, and projection hash mismatch.
+- Existing Envelope tests still pass.
+- New Envelope verifier tests cover pin, lineage, freshness, partial source
+  accounting, diff, and portal-contract normalization.
+- Projection diff can answer "what changed since the previous projection?"
+- A sample Envelope projection normalizes cleanly into the portal contract.
+
+### 4. Envelope Implementation Vocabulary Migration
+
+Status: docs sanitized, code not yet migrated.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger`
+
+Affected areas:
+
+- `src`
+- `tests`
+- any public exports or examples using older terms
+
+Details:
+
+- Rename implementation vocabulary from old terms to sanitized terms:
+  Candidate to Proposal, Admission to Confirmation / Sealing / BoardCommit,
+  admitted to board_committed, Act to BoardAct or EnvelopeAct where the owner is
+  Envelope.
+- Preserve storage compatibility intentionally:
+  if database table or column names cannot change immediately, create a
+  migration plan or compatibility aliases rather than silently breaking data.
+- Update tests alongside source.
+- Update public API names in a staged way:
+  either introduce new names with deprecated aliases, or perform a breaking
+  rename with a clear migration note.
+- Keep `Shift`, `ShiftResult`, `Projection`, and `Finding` identities intact.
+
+Done when:
+
+- Source and tests no longer use the old unqualified vocabulary except in
+  explicit compatibility/deprecation notices.
+- Tests pass in the Envelope repo.
+- The sanitizer manifest is updated to distinguish docs-clean from code-clean.
+- Public API names match the membrane vocabulary.
+
+### 5. Runtime Projection Tool
+
+Status: pending.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI`
+
+Files likely involved:
+
+- `agent/tools/runtime_projection.ts`
+- `agent/agent.ts`
+- `app/components/chat/message/MessageContentEve.vue`
+- `app/components/chat/tool/*`
+- `app/utils/chat/*`
+
+Details:
+
+- Implement `runtime_projection` as the first Dream Machine runtime tool.
+- Inputs should include:
+  `intent`, `scope`, optional filters, `as_of`, `audience`, `max_blocks`, and
+  `include_affordances`.
+- Source selection should support:
+  Envelope-only, LogLine-only, and mixed projections.
+- Default portal-facing projection should prefer Envelope Dynamic Projections
+  for cognition and use LogLine only for consequence/source verification.
+- The tool must normalize outputs into `dream-machine-projections.v0.yml`.
+- Every response must include:
+  `projection_id`, `intent`, `jurisdiction`, `authoritative: false`,
+  `freshness`, `source_refs`, `blocks`, `warnings`, `affordances`, and
+  `cannot_do`.
+- The tool must be read-only:
+  no receipt registration, no executor dispatch, no ledger mutation, no L5
+  authorization.
+
+Done when:
+
+- The tool can return a mock or local projection response conforming to the
+  contract.
+- It clearly reports `cannot_do`.
+- It cites source refs for every non-divider block.
+- It never mutates LogLine or Envelope.
+
+### 6. Projection Normalizer
+
+Status: pending.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI`
+
+Details:
+
+- Convert Envelope projections into portal projection blocks:
+  narrative blocks, open findings, source refs, risk notes, warnings,
+  attention blocks, and affordances.
+- Convert LogLine projections into portal blocks only as authority context or
+  proof-adjacent read models:
+  receipt counts, process state, queue/read-model state, and source hashes.
+- Preserve source refs by jurisdiction:
+  LogLine refs as `content_hash`, `receipt_hash`, `process_id`, etc.; Envelope
+  refs as `projection_hash`, `shift_hash`, `source_digest`, `finding_id`,
+  `board_act_hash`, etc.
+- Add warning rules:
+  stale projection, partial source, mixed jurisdiction, envelope-only,
+  requires LogLine registration, L5 describe-only, missing grant, unresolved
+  finding.
+- Add affordance filtering:
+  render buttons only when backed by `dream-machine-actions.v0.yml`.
+
+Done when:
+
+- A sample Envelope projection normalizes into a valid portal response.
+- A sample LogLine projection normalizes into a valid portal response.
+- A mixed response groups source refs by owner.
+- Invalid or authority-claiming projections are rejected.
+
+### 7. Projection UI Cards
+
+Status: pending.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI`
+
+Details:
+
+- Add card renderers for projection summaries, source refs, findings,
+  attention, proposal details, LogLine receipt details, risk notes, warnings,
+  and next steps.
+- Add affordance rendering from declared affordances only.
+- Keep UI authority-neutral:
+  cards may show, ask, explain, and route; they may not imply that a projection
+  itself registered consequence.
+- Add empty, stale, partial, loading, and error states.
+- Preserve the existing Eve dynamic tool-card pattern already used by
+  `save_memory`.
+
+Done when:
+
+- `runtime_projection` responses render as structured cards in chat.
+- Buttons appear only from declared affordances.
+- Warnings and `cannot_do` limits are visible.
+- Mobile and desktop layouts do not overlap or hide source refs.
+
+### 8. Safety And Integration Tests
+
+Status: pending.
+
+Primary repo:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI`
+
+Details:
+
+- Add contract validation tests for every machine-readable membrane file.
+- Add tool tests proving `runtime_projection` is read-only.
+- Add UI tests proving cards render source refs, warnings, findings, and
+  affordances.
+- Add negative tests proving the portal cannot:
+  register receipts, dispatch executors, mutate LogLine, mutate Envelope,
+  authorize L5, or treat projections as truth.
+- Add cross-repo fixture tests if practical:
+  sample LogLine receipt/projection input and sample Envelope projection input
+  normalize to the same portal response shape.
+
+Done when:
+
+- `pnpm contracts:validate` passes.
+- Processual UI tests pass.
+- Envelope tests pass after vocabulary/projection changes.
+- LogLine tests pass after hash hardening changes.
+- At least one end-to-end projection path is covered from runtime source to
+  rendered card.
+
+### 9. Recommended Execution Order
+
+Order:
+
+1. Write the missing membrane contract artifacts. Complete.
+2. Add JSON schema validation for projections and contracts.
+3. Harden Envelope Dynamic Projections because they will be the portal-facing
+   runtime.
+4. Harden LogLine hash references and inspection because they anchor authority.
+5. Migrate Envelope code vocabulary.
+6. Implement `runtime_projection`.
+7. Implement the projection normalizer.
+8. Implement projection UI cards.
+9. Add integration and safety tests.
+
+Reason:
+
+- The portal tool should not be implemented before the missing crossing and
+  conflict rules exist.
+- Projection UI should not be implemented before the normalizer exists.
+- Effectful actions should wait until read-only projection is proven safe.
+
+### 10. Final Installable And Machine Topology
+
+Status: planned.
+
+Target:
+
+- One installable Dream Machine copy on LAB 8GB.
+
+Topology names:
+
+- Canyon: public ingress mouth through Cloudflare Tunnel.
+- Golden Bridge: macOS execution and machine operations layer.
+- Manhattan: local cognition and Dynamic Projection workbench.
+
+Details:
+
+- Package the system so it can be installed as one coherent local copy on LAB
+  8GB.
+- Define Cloudflare Tunnel ingress as a transport boundary. It accepts entry
+  into the system but never grants authority by itself.
+- Define macOS execution responsibilities:
+  process launch, service supervision, local scheduled work, local filesystem
+  access, and safe execution boundaries.
+- Define preventive maintenance responsibilities:
+  health checks, disk checks, backup status, log rotation, service restart
+  policy, model availability checks, and local runtime diagnostics.
+- Define local inference as an Envelope/Manhattan capability:
+  it may produce projections, summaries, findings, and salience; it may not
+  register consequence.
+- Define how the portal chief uses the trio:
+  watch Canyon, ask Manhattan for projections, route operational needs through
+  Golden Bridge, and cite LogLine authority for consequence.
+
+Done when:
+
+- A machine-readable installable topology contract exists.
+- The contract is required by `pnpm contracts:validate`.
+- Runtime projection and maintenance tasks cite the topology contract.
+- The install plan names Cloudflare Tunnel, macOS execution, local inference,
+  and preventive maintenance explicitly.
+- The topology does not redefine LogLine, Envelope, Membrane, or Processual UI.
+
+## Runtime Reality Scan
+
+Scan date: 2026-06-26.
+
+The earlier task list was too conservative about projections. The Dream Machine
+does not need a projection runtime invented from zero. It already has projection
+runtime pieces in both sovereign halves. The missing part is the membrane-facing
+portal tool that can ask those pieces for a view, normalize the response, render
+it in chat, and refuse authority it does not own.
+
+Existing projection surfaces:
+
+- LogLine Acts:
+  `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/lab/projections.py`
+  implements rebuildable, non-authoritative projection documents with stable and
+  dynamic classes, pin metadata, parent projection hashes, `ladder_level`
+  `L0-L5`, input hashes, inspection, descent, and verification.
+- LogLine CLI:
+  `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/lab/cli.py` exposes
+  `lab project all|build|inspect|descend|verify`.
+- LogLine process law:
+  `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/processes/projection-build.v1.yml`
+  is active, `L1`, and uses the `projection` adapter.
+- Envelope Ledger:
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/projection.ts`
+  implements `buildProjection`, creates a `Shift`, stores a `Projection`, and
+  records a `ShiftResult`.
+- Envelope public API:
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/board.ts` exposes
+  `Board.buildProjection(...)`.
+- Envelope verifier:
+  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/verify.ts` checks
+  projection prefixes, open findings, projection receipts, and hash
+  recomputation.
+- Processual UI:
+  `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/agent/agent.ts` is still
+  only the agent definition, while
+  `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/agent/tools/save_memory.ts`
+  shows the existing Eve tool-card and approval pattern. No
+  `runtime_projection` tool exists yet.
+
+Reality conclusion:
+
+```text
+Projection runtime exists.
+Portal projection membrane does not yet exist.
+```
+
+Therefore the next implementation task is not "create projections." It is:
+
+```text
+Wrap existing LogLine and Envelope projection runtimes behind runtime_projection.
+Normalize both into dream-machine-projections.v0.yml.
+Render the normalized result in the Processual UI.
+Keep the response non-authoritative.
+```
+
+## Two Crown Technologies
+
+There are two technologies that must become excellent because they are the
+reason this institution exists:
+
+```text
+LogLine content-addressed receipts
+  best at composability, authority, offline verification, and consequence
+
+Envelope dynamic projections
+  best at cognition, observability, navigation, synthesis, and live context
+```
+
+They are not competing implementations of the same idea. They are different
+machines with different truth conditions.
+
+Decision:
+
+```text
+Both stay.
+Neither replaces the other.
+Hashes win authority.
+Projections win perception.
+The membrane makes them cooperate without merging their primitives.
+```
+
+LogLine content-addressing is better for anything that must be cited, replayed,
+verified, signed, composed, or treated as consequence. Its excellence bar is:
+canonical bytes, stable hash identity, append-only custody, explicit slot body,
+offline verification, signature binding, and hash-level composition.
+
+Envelope dynamic projection is better for anything that must be understood,
+summarized, navigated, compared, watched, or re-rendered for a human or model.
+Its excellence bar is: source completeness, projection lineage, model/prompt
+pinning, ladder-aware refinement, open-finding visibility, freshness,
+rebuildability, and clear non-authority.
+
+The portal chief should therefore not ask "which system is true?" It should ask:
+
+```text
+What consequence is registered?
+What does the current projection see?
+What changed since the last projection?
+What would need LogLine registration before it becomes consequence?
+```
+
+Machine-readable seed:
+
+- `dream-machine-core-technologies.v0.yml`
+
+## 1. LogLine Acts
+
+Role: sovereign consequence.
+
+LogLine owns registered truth, process law, closure, grants, and executor outcome.
+It should stay small, hard, canonical, and append-only.
+
+Canonical source set:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0001-logline-native-representation.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0002-process-risk-and-governed-autonomy.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts/docs/decisions/0003-projections-and-attention.md`
+
+### Already Strong
+
+- Canonical receipt mold with nine string slots:
+  `who`, `did`, `this`, `when`, `confirmed_by`, `if_ok`, `if_doubt`,
+  `if_not`, `status`.
+- JCS/RFC8785 canonicalization and `id = content_hash`.
+- Append-only local and Postgres ledger shape.
+- Process contracts and evaluator.
+- Danger tiers `L0-L5`.
+- Queue as rebuildable projection, not authority.
+- Executor as the only dispatcher.
+- Adapter discipline: dumb leaves, no direct ledger authority.
+- L4/L5 grant and passkey signoff doctrine.
+- Projection doctrine: projections are non-authoritative and rebuildable.
+- Projection runtime already exists:
+  `lab/projections.py` builds stable and dynamic projection docs with pin
+  metadata, parent projection hashes, ladder levels, input hashes, inspection,
+  descent, and verification.
+- Projection process already exists:
+  `projection-build.v1` routes to the `projection` adapter instead of pretending
+  a projection is a receipt.
+
+### Missing Before Ideal Membrane
+
+- Resolve Canyon's canonical target:
+  CAS + LogLine registration should supersede standalone `inbox` table unless a
+  new decision says otherwise.
+- Encode automation `A0-A5` in process contracts, not only doctrine.
+- Define the LogLine side of the attention object shape:
+  process-triggered obligation, authority requirement, and closure path.
+- Decide whether LogLine's current projection specs remain low-level ledger
+  snapshots or gain named portal-facing specs for intents such as
+  `waiting_on_me`, `process_detail`, and `danger_review`.
+- Map LogLine projection docs to `dream-machine-projections.v0.yml`:
+  `projection_hash`, `authoritative: false`, `rebuildable: true`,
+  `input_hashes`, `parent_projection_hashes`, `ladder_level`, `pin`, and
+  freshness.
+- Define explicit references to Envelope objects:
+  `event_hash`, `source_digest`, `shift_hash`, `proposal_version_hash`,
+  `projection_hash`, `finding_id`.
+- Define the LogLine receipt proposal package produced by Envelope translation.
+- Make explicit that LogLine does not own LLM narrative, projection ladders, or
+  cognition workbench state.
+- Decide how `projection-build.v1` cites Envelope projection hashes without
+  making Envelope projections authoritative.
+- Keep ADR-0001's law explicit: LogLine has no ledger-level proposal or
+  pre-registration state.
+- Keep LogLine-shaped output centered on the invariant nine slots whenever a
+  projection leads to consequence; projection metadata must not become new
+  runtime anatomy.
+
+### Deliverables
+
+- `logline-jurisdiction.v0.yml`
+- `dream-machine-core-technologies.v0.yml`
+- `logline-canyon-decision.v0.yml`
+- `logline-process-contract-automation.v0.yml`
+- `logline-attention-obligation.v0.yml`
+- `logline-envelope-reference-fields.v0.yml`
+- `logline-receipt-proposal-from-envelope.v0.yml`
+
+## 2. Envelope Ledger
+
+Role: cognition, observability, and projection workbench.
+
+Envelope owns what the runtime sees, condenses, narrates, tests, and proposes.
+It should stay rich, dynamic, and LLM-friendly without claiming sovereign
+consequence.
+
+Canonical source set:
+
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md`
+- `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md`
+
+Important qualification: these Board documents are structurally strong, but
+lexically unsafe at the Dream Machine membrane. The `Shift` / `ShiftResult`
+identity model should be preserved. The overloaded vocabulary must be sanitized
+before any membrane schema is encoded.
+
+Sanitization status: first pass complete on 2026-06-26. The canonical Envelope
+docs now use `Proposal`, `BoardAct`, `Confirmation`, `BoardCommit`, and
+`board_committed` vocabulary, with the old unqualified terms retained only in
+the explicit ban notice.
+
+### Already Strong
+
+- Event ingestion with `live`, `buffered`, and `evaporated` zones.
+- Source digests from event windows.
+- Shifts and shift results.
+- Proposal versions and lifecycle.
+- BoardAct / EnvelopeAct chain, sequence, provenance, confirmation, and audit,
+  with explicit BoardCommit fields.
+- Findings.
+- Narrative projections with blocks, audience, open findings, and sources.
+- Verification over chain, receipts, proposal lifecycle, events, findings, and
+  projection prefix.
+- UI-friendly object model for dynamic projections.
+- Projection builder already exists:
+  `src/projection.ts` validates `as_of_seq`, creates a `ProjectionSource`,
+  records a `Shift`, stores the `Projection`, and writes a `ShiftResult`.
+- Public projection API already exists through `Board.buildProjection(...)`.
+- Projection verification already exists for prefixes, open findings, missing
+  results, orphan outputs, and hash recomputation.
+
+### Missing Before Ideal Membrane
+
+- Review and lock the sanitized Envelope / Board vocabulary before writing
+  membrane contracts.
+- Propagate the sanitized Proposal / Confirmation / Sealing / BoardCommit
+  vocabulary into TypeScript code and tests. The docs are sanitized; the code
+  still uses the older Candidate / Admission / Act names.
+- State clearly that BoardAct / EnvelopeAct objects are envelope-canon, not
+  LogLine consequence.
+- Add or map `L5`: Board currently stops at `L4`, while LogLine has `L5`.
+- Define a LogLine translation package for proposals and projections.
+- Add first-class references back to LogLine objects:
+  `content_hash`, `receipt_hash`, `process_id`, `queue_id`, `result_hash`.
+- Add or map dynamic projection pin metadata compatible with LogLine projection
+  doctrine: model, prompt, params, seed, parent projection hashes, and ladder
+  level. Envelope currently has `model_call` references on `Shift`, but not the
+  same explicit projection pin shape.
+- Define action affordances for projection output:
+  what can be shown as a button, what requires approval, and what must route
+  through LogLine registration.
+- Define how an Envelope proposal becomes a membrane translation package and
+  then a LogLine receipt proposal.
+- Define which Envelope objects can evaporate and which must remain durable.
+- Decide how Envelope projection blocks map to portal response blocks without
+  losing `source.act_hashes`, open findings, and shift provenance.
+
+### Deliverables
+
+- `envelope-sanitization.v0.yml`
+- `envelope-jurisdiction.v0.yml`
+- `dream-machine-core-technologies.v0.yml`
+- `envelope-risk-tier-compatibility.v0.yml`
+- `envelope-logline-reference-fields.v0.yml`
+- `envelope-projection-pin.v0.yml`
+- `envelope-action-affordances.v0.yml`
+- `envelope-proposal-to-logline-package.v0.yml`
+
+## 3. Membrane And Processual UI
+
+Role: crossing, rendering, and human intervention.
+
+The membrane owns references, translations, crossing permissions, and conflict
+rules. The Processual UI owns conversation, rendering, and human decisions. It
+does not own runtime truth.
+
+### Already Strong
+
+- The Vercel/Eve template already supports durable chat threads.
+- Dynamic tool parts can render structured cards in the chat stream.
+- Human-in-the-loop approval and questions already exist through Eve
+  `inputRequest` and `inputResponses`.
+- Authorization prompts already appear as parked chat turns.
+- Custom tool-card pattern exists via `save_memory`.
+- The portal-chief doctrine is already captured in
+  `docs/DREAM_MACHINE_PORTAL_UNDERSTANDING.md`.
+
+### Missing Before Ideal Membrane
+
+- Machine-readable ownership map:
+  which side owns each concept and which concepts must never be defined twice.
+- Machine-readable vocabulary map:
+  reserved words, banned unqualified terms, replacements, and jurisdiction
+  qualifiers.
+- Machine-readable crossing map:
+  Envelope to LogLine, LogLine to Envelope, and both to UI.
+- Conflict rules:
+  LogLine wins on consequence; Envelope wins on narrative/projection shape;
+  projections rebuild when inconsistent with authority.
+- Projection contract for the portal chief:
+  intents, response blocks, source references, freshness, warnings, and
+  affordances.
+- Runtime tool boundary:
+  `runtime_projection` first, then approved runtime actions later.
+- Runtime source adapter:
+  choose LogLine, Envelope, or mixed projection source; invoke the existing
+  projection runtime; normalize the result; and return `cannot_do` limits.
+- UI rendering schema:
+  projection cards, attention cards, proposal cards, action buttons.
+- Eve tool integration:
+  implement `agent/tools/runtime_projection.ts` using the existing custom tool
+  pattern, then add a chat renderer beside the current `save_memory` tool card.
+- Auth identity bridge:
+  app user, Supabase user, LAB ID, grants, and Vercel Connect/MCP boundaries.
+- Validation schema so future agents can inspect the membrane before acting.
+
+### Deliverables
+
+- `dream-machine-ownership.v0.yml`
+- `dream-machine-vocabulary.v0.yml`
+- `dream-machine-reference-map.v0.yml`
+- `dream-machine-core-technologies.v0.yml`
+- `dream-machine-crossing-map.v0.yml`
+- `dream-machine-conflict-map.v0.yml`
+- `dream-machine-projections.v0.yml`
+- `dream-machine-projections.v0.schema.json`
+- `dream-machine-actions.v0.yml`
+- `dream-machine-portal-chief.v0.md`
+
+## Vocabulary Detox Before Membrane
+
+Status: required before machine-readable membrane.
+
+The current LogLine and Envelope documents are structurally strong, but the
+membrane must not inherit overloaded terms that cause jurisdiction drift.
+
+Envelope sanitization comes first. Do not write the membrane over contaminated
+vocabulary. Sanitize Envelope first; then define crossing.
+
+Banned unqualified terms:
+
+- `candidate`
+- `admission`
+- `admitted`
+- `act`
+
+Replacement law:
+
+- LogLine does not have candidates.
+- LogLine has registration, receipts, activation, grants, closure, and
+  consequence.
+- Envelope does not have candidates.
+- Envelope has proposals, versions, confirmations, Board commits, findings, and
+  projections.
+- Envelope does not have LogLine Acts.
+- Envelope has BoardActs / EnvelopeActs only.
+- Board sealed or confirmed state is not LogLine registered consequence.
+- UI approval is not LogLine authority.
+- A membrane crossing package is not a receipt.
+
+Required renames before schemas:
+
+- `Candidate` -> `Proposal`
+- `candidate_version_hash` -> `proposal_version_hash`
+- `Admission` -> `Confirmation` / `Sealing` / `BoardCommit`
+- `admitted` -> `sealed` / `confirmed` / `board_committed`
+- `Act` -> `BoardAct` or `EnvelopeAct` inside Envelope
+- `LogLine receipt candidate` -> `LogLine receipt proposal` or
+  `translated receipt package`
+
+Validator requirement:
+
+Future membrane validators must fail any schema that uses `candidate`,
+`admission`, `admitted`, or `act` without a jurisdiction-qualified owner and an
+approved replacement.
+
+## Attention Split
+
+Attention cannot belong to only one side.
+
+```text
+Envelope attention
+  role: salience
+  authoritative: false
+
+LogLine attention
+  role: process-triggered obligation
+  authoritative: true when registered by process
+
+UI attention
+  role: rendered interruption
+  authoritative: false
+  requires_affordance: true
+```
+
+The membrane needs an attention compatibility object because a projection
+noticing something is not the same as the system being allowed to interrupt a
+human.
+
+## Risk Compatibility
+
+Envelope currently has native risk tiers `L0-L4`. LogLine has `L0-L5`.
+
+This is a membrane issue, not a cosmetic enum mismatch:
+
+```text
+Envelope may perceive and narrate L5.
+Envelope may not authorize L5.
+LogLine owns L5 authorization.
+```
+
+The UI must never show an effectful L5 button unless a LogLine grant package and
+approval path are present.
+
+## Cross-Cutting Rules
+
+- Do not define the same concept twice.
+- LogLine owns consequence.
+- Envelope owns cognition and observability.
+- The membrane owns crossing permissions.
+- The UI owns rendering and human interaction.
+- Projections are eyes, not truth.
+- BoardActs / EnvelopeActs are envelope-canon unless translated into LogLine
+  receipts.
+- LogLine receipts are sovereign consequence once registered.
+- Buttons are allowed only when backed by a declared affordance.
+- Irreversible or dangerous actions must route through LogLine authority and
+  approval.
+- Projections inconsistent with authority are rebuilt; the system does not argue
+  with truth.
+- The UI may request, render, ask, approve, and explain.
+- The UI may not register receipts, dispatch, close, or remember as authority.
+
+## Readiness Sequence
+
+0. Freeze vocabulary and ban overloaded terms.
+1. Declare canonical doc sets for LogLine and Envelope.
+2. Sanitize the Envelope / Board docs before membrane encoding:
+   `BOARD SPEC`, `BOARD_DECISIONS`, `BOARD_OBJECTS`, `BOARD_LIFECYCLE`, and
+   `BOARD_VERTICAL_SLICE`.
+3. Write jurisdiction documents for LogLine and Envelope. Complete:
+   `logline-jurisdiction.v0.yml`, `envelope-jurisdiction.v0.yml`.
+4. Write the first machine-readable ownership map.
+5. Write the vocabulary map. Complete: `dream-machine-vocabulary.v0.yml`.
+6. Write the reference map between hashes and IDs. Complete:
+   `dream-machine-reference-map.v0.yml`.
+7. Write the Envelope-to-LogLine translation package. Complete:
+   `envelope-proposal-to-logline-package.v0.yml`.
+8. Scan existing projection runtimes. Complete:
+   LogLine and Envelope both already have projection runtime surfaces; the UI
+   does not yet have the portal bridge.
+9. Declare the two crown technologies and quality bars. Complete:
+   `dream-machine-core-technologies.v0.yml`.
+10. Write the projection response contract. Complete:
+   `dream-machine-projections.v0.yml`.
+11. Write the action affordance contract. Complete:
+   `dream-machine-actions.v0.yml`.
+12. Add validators for the YAML contracts. Complete:
+    `scripts/validate-dream-machine-contracts.mjs` and
+    `pnpm contracts:validate`.
+13. Wire `runtime_projection` into the Processual UI as a non-authoritative
+    portal tool over the existing LogLine and Envelope projection runtimes.
+14. Add a projection card renderer that uses declared affordances only.
+15. Add integration tests proving that the portal can request a projection but
+    cannot register, dispatch, mutate either ledger, or authorize L5.
+
+## Final Shape
+
+```text
+Dream-Machine-LogLine-Acts
+  owns authority, process law, consequence, closure
+
+Dream-Machine-Envelope-Ledger
+  owns events, shifts, proposals, findings, dynamic projections
+
+Membrane
+  owns references, translations, crossing permissions, conflict rules
+
+Dream-Machine-Processual-UI
+  owns conversation, rendering, and human intervention
+```
+
+Deployable topology:
+
+```text
+Canyon
+  Cloudflare Tunnel ingress / public mouth
+
+Golden Bridge
+  macOS execution / machine operations / preventive maintenance
+
+Manhattan
+  local inference / dynamic projection workbench
+```
+
+The ideal membrane is reached when each side can read the other's references
+without claiming the other's jurisdiction.

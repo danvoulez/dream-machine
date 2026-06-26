@@ -1,0 +1,195 @@
+version: envelope-jurisdiction.v0
+status: draft
+date: "2026-06-26"
+
+domain:
+  id: envelope
+  jurisdiction: cognition
+  short_law: Envelope decides what is seen, condensed, checked, narrated, and proposed.
+
+canonical_sources:
+  - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md
+  - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md
+  - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md
+  - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md
+  - /Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md
+
+sanitization:
+  manifest: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/envelope-sanitization.v0.yml
+  status: first_pass_complete
+  native_terms:
+    - Proposal
+    - BoardAct
+    - Confirmation
+    - BoardCommit
+    - board_committed
+
+native_primitives:
+  event:
+    role: fast_loop_observation
+    authoritative: false
+    durability: ephemeral
+    zones:
+      - live
+      - buffered
+      - evaporated
+  source_digest:
+    role: source_window_verifier
+    authoritative: false
+    durability: durable
+  proposal:
+    role: structured_possibility
+    authoritative: false
+    mutable_until: board_committed
+    identity: proposal_version_hash
+  board_act:
+    role: envelope_canon_unit
+    authoritative: true_inside_envelope
+    authoritative_for_logline: false
+    identity: board_act_hash
+    chain: prev_board_act_hash
+  shift:
+    role: agency_event
+    authoritative: true_inside_envelope
+    identity_rule: shift_identity_never_includes_output_hash
+  shift_result:
+    role: output_receipt
+    authoritative: true_inside_envelope
+    binds:
+      - shift_hash
+      - output_kind
+      - output_hash
+  finding:
+    role: reconciliation_object
+    authoritative: true_inside_envelope
+  projection:
+    role: readable_view
+    authoritative: false
+    validity: source_prefix_or_declared_partial
+  projection_pin:
+    role: dynamic_projection_reproducibility
+    authoritative: false
+
+laws:
+  - id: cognition_not_consequence
+    text: Envelope owns cognition and observability; it does not own sovereign consequence.
+  - id: proposal_not_truth
+    text: A Proposal is structured possibility, not registered truth.
+  - id: board_act_not_logline_act
+    text: A BoardAct is Envelope canon only; it is not logline_act.
+  - id: board_commit_not_logline_registration
+    text: BoardCommit seals Envelope state; it does not register LogLine consequence.
+  - id: shift_result_identity
+    text: ShiftResult binds a Shift to produced output after output hash exists.
+  - id: projection_prefix
+    text: A Projection must cite the full BoardAct prefix unless declared partial.
+  - id: l5_describe_only
+    text: Envelope may perceive and narrate L5 but may not authorize it.
+
+owns:
+  cognition:
+    includes:
+      - event_window
+      - condensation
+      - proposal_lifecycle
+      - board_commit
+      - finding_detection
+      - projection_building
+      - narrative_blocks
+  observability:
+    includes:
+      - source_digest
+      - shift
+      - shift_result
+      - verification
+      - tamper_detection
+      - open_findings
+  dynamic_projection_workspace:
+    includes:
+      - model_call_reference
+      - projection_pin
+      - ladder_level
+      - source_prefix
+      - partial_selection_reason
+
+does_not_own:
+  - sovereign_consequence
+  - logline_receipt_registration
+  - logline_grant
+  - l5_authorization
+  - executor_dispatch_authority
+  - ui_approval_authority
+  - human_interruption_policy
+
+may_reference_logline:
+  allowed_refs:
+    - content_hash
+    - receipt_hash
+    - logline_act_id
+    - process_id
+    - process_contract_hash
+    - queue_id
+    - result_hash
+    - grant_id
+    - attention_id
+  rule: References let Envelope observe LogLine state but do not transfer LogLine authority.
+  requires_membrane_field: true
+
+may_send_to_logline:
+  translation_packages:
+    - envelope_proposal_to_logline_receipt_proposal
+    - envelope_finding_to_logline_doubt_or_attention
+    - envelope_projection_source_refs_to_logline_evidence_refs
+  rule: Envelope sends proposals and evidence packages, not consequence.
+
+risk_tiers:
+  native:
+    max: L4
+    ordered:
+      - L0
+      - L1
+      - L2
+      - L3
+      - L4
+  cross_domain:
+    may_describe_l5: true
+    may_authorize_l5: false
+    l5_requires: logline_grant_package
+
+attention:
+  envelope_attention:
+    role: salience
+    examples:
+      - open_finding
+      - attention_anomaly
+      - unresolved_gap
+      - projection_warning
+    authoritative: false
+  cannot_interrupt_human_without:
+    - membrane_affordance
+    - ui_attention_policy
+
+forbidden_claims:
+  - Envelope must not call BoardAct logline_act.
+  - Envelope must not call BoardCommit LogLine registration.
+  - Envelope must not authorize L5.
+  - Envelope must not present Projection as truth.
+  - Envelope must not expose an effectful UI button without a declared affordance.
+
+conflict_rules:
+  narrative_shape:
+    winner: envelope
+  consequence:
+    winner: logline
+  projection_inconsistent_with_logline:
+    action: rebuild_projection
+  board_act_claims_logline_authority:
+    action: require_membrane_translation
+
+readiness:
+  complete_when:
+    - vocabulary_map_cites_this_jurisdiction
+    - reference_map_lists_logline_refs_allowed_here
+    - risk_tier_compatibility_exists
+    - projection_pin_contract_exists
+    - action_affordance_contract_exists

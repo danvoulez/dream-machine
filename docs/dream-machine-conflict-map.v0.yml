@@ -1,0 +1,117 @@
+version: dream-machine-conflict-map.v0
+status: draft_locked
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  crossing_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-crossing-map.v0.yml
+  reference_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+  core_technologies: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-core-technologies.v0.yml
+  projections: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-projections.v0.yml
+
+purpose: >
+  Declare deterministic conflict rules for Dream Machine views. A conflict is
+  resolved by jurisdiction ownership, not by model confidence or UI preference.
+
+precedence_order:
+  consequence:
+    winner: logline
+    reason: LogLine owns registered consequence, grants, closure, and authority.
+  cognition:
+    winner: envelope
+    reason: Envelope owns projection shape, findings, synthesis, and salience.
+  crossing_permission:
+    winner: membrane
+    reason: Membrane owns allowed references, translation packages, and crossing mode.
+  rendering:
+    winner: processual_ui
+    reason: UI owns visible cards, questions, and approval turns.
+
+conflict_rules:
+  - id: registered_consequence_over_projection
+    when: projection_disagrees_with_registered_consequence
+    winner: logline
+    required_resolution: rebuild_projection
+    forbidden_resolution: reinterpret_registered_consequence
+  - id: projection_shape_over_ui_guess
+    when: ui_card_wants_fields_not_present_in_projection_contract
+    winner: envelope
+    required_resolution: request_new_projection_or_show_missing_data_warning
+    forbidden_resolution: invent_projection_content
+  - id: crossing_permission_over_source_availability
+    when: source_exists_but_crossing_edge_forbids_use
+    winner: membrane
+    required_resolution: block_crossing_and_report_warning
+    forbidden_resolution: cite_source_as_authority
+  - id: affordance_rule_over_button_design
+    when: ui_wants_button_without_declared_affordance
+    winner: membrane
+    required_resolution: hide_button_or_request_affordance_package
+    forbidden_resolution: render_effectful_button
+  - id: logline_l5_over_envelope_salience
+    when: envelope_describes_l5_need_without_logline_grant_route
+    winner: logline
+    required_resolution: describe_only_and_request_grant_route
+    forbidden_resolution: authorize_l5_from_projection
+  - id: stale_projection_over_current_source
+    when: projection_is_stale_against_source_refs
+    winner: source_owner
+    required_resolution: mark_stale_and_rebuild_or_refresh
+    forbidden_resolution: present_stale_projection_as_current
+  - id: partial_source_over_full_claim
+    when: projection_has_partial_source
+    winner: envelope
+    required_resolution: show_partial_source_warning
+    forbidden_resolution: omit_loss_or_evaporation_notice
+
+rebuild_rules:
+  projection_rebuild_required_when:
+    - registered_consequence_changes_relevant_source
+    - source_prefix_mismatch
+    - open_finding_resolved_or_missing
+    - source_digest_changed
+    - projection_ttl_expired
+    - model_pin_or_prompt_pin_changed
+  rebuild_must_preserve:
+    - previous_projection_hash
+    - parent_projection_hashes
+    - source_refs
+    - rebuild_reason
+    - generated_at
+  rebuild_must_not:
+    - mutate_registered_consequence
+    - hide_previous_warning
+    - drop_open_finding_without_resolution_ref
+
+warning_rules:
+  stale_projection:
+    severity: warning
+    ui_may_render: true
+    effect_allowed: false
+  partial_source:
+    severity: warning
+    ui_may_render: true
+    effect_allowed: false
+  mixed_jurisdiction:
+    severity: info
+    ui_may_render: true
+    effect_allowed: false
+  requires_logline_registration:
+    severity: warning
+    ui_may_render: true
+    effect_allowed: only_through_logline_route
+  l5_describe_only:
+    severity: high
+    ui_may_render: true
+    effect_allowed: false
+
+validation_rules:
+  - id: conflict_owner_required
+    text: Every conflict rule must name the winning jurisdiction.
+  - id: conflict_resolution_required
+    text: Every conflict rule must name required and forbidden resolution.
+  - id: projection_conflict_rebuilds
+    text: A projection conflict with registered consequence must rebuild the projection.
+  - id: l5_never_from_projection
+    text: L5 may be described by projection but never authorized by projection.
+

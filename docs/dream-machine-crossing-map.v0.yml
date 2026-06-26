@@ -1,0 +1,180 @@
+version: dream-machine-crossing-map.v0
+status: draft_locked
+date: "2026-06-26"
+
+depends_on:
+  ownership: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-ownership.v0.yml
+  vocabulary: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-vocabulary.v0.yml
+  reference_map: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-reference-map.v0.yml
+  core_technologies: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-core-technologies.v0.yml
+  projections: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-projections.v0.yml
+  affordances: /Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/docs/dream-machine-actions.v0.yml
+
+purpose: >
+  Declare what may cross between LogLine, Envelope, Membrane, and Processual UI.
+  Crossing gives traceability and permission. It does not transfer ownership.
+
+global_rules:
+  - id: owner_keeps_identity
+    text: The owner domain validates identity, lifecycle, and hash body.
+  - id: crossing_is_declared
+    text: A cross-domain reference must use a declared edge and declared ref kind.
+  - id: read_before_route
+    text: Portal projection is read-only before any effectful route is prepared.
+  - id: projection_is_perception
+    text: Envelope Dynamic Projections may guide attention but cannot create consequence.
+  - id: hash_is_authority_anchor
+    text: LogLine content hashes anchor registered consequence and authority routes.
+  - id: affordance_before_button
+    text: Processual UI may render a button only from a declared affordance.
+
+crossing_edges:
+  envelope_to_logline:
+    direction: envelope_to_logline
+    default_mode: proposal_only
+    may_carry:
+      - proposal_id
+      - proposal_version_hash
+      - source_digest
+      - shift_hash
+      - shift_result_hash
+      - projection_hash
+      - finding_id
+      - board_act_hash
+    may_request:
+      - receipt_proposal_preparation
+      - source_evidence_review
+      - attention_obligation_review
+      - grant_route_review
+    must_not_claim:
+      - receipt_registration
+      - sovereign_consequence
+      - executor_dispatch_authority
+      - l5_authorization
+    required_validation:
+      - source_refs_exist
+      - owner_is_envelope
+      - projection_authoritative_false
+      - package_cites_translation_contract
+
+  logline_to_envelope:
+    direction: logline_to_envelope
+    default_mode: read_only_context
+    may_carry:
+      - content_hash
+      - receipt_hash
+      - logline_act_id
+      - process_id
+      - process_contract_hash
+      - grant_id
+      - queue_id
+      - result_hash
+      - attention_id
+    may_request:
+      - projection_rebuild
+      - source_context_lookup
+      - finding_reconciliation
+      - narrative_refresh
+    must_not_claim:
+      - ownership_of_shift_identity
+      - ownership_of_projection_shape
+      - ownership_of_proposal_lifecycle
+    required_validation:
+      - logline_ref_verifies
+      - source_refs_grouped_by_owner
+      - consequence_ref_remains_logline_owned
+
+  runtime_to_ui:
+    direction: runtime_to_processual_ui
+    default_mode: render_only
+    may_carry:
+      - projection_response
+      - source_ref
+      - warning
+      - affordance
+      - cannot_do
+      - freshness
+    may_request:
+      - human_answer
+      - human_approval_turn
+      - follow_up_projection
+      - source_inspection
+    must_not_claim:
+      - runtime_truth
+      - receipt_registration
+      - executor_dispatch_authority
+      - grant_authority
+    required_validation:
+      - projection_authoritative_false
+      - cannot_do_present
+      - every_button_has_affordance
+      - every_non_divider_block_has_source_ref
+
+  ui_to_runtime:
+    direction: processual_ui_to_runtime
+    default_mode: request_only
+    may_carry:
+      - projection_request
+      - selected_source_ref
+      - input_response
+      - approval_turn
+    may_request:
+      - runtime_projection
+      - runtime_action_intent
+      - source_inspection
+    must_not_claim:
+      - logline_grant
+      - envelope_commit
+      - ledger_mutation
+      - l5_authorization
+    required_validation:
+      - authenticated_user_context
+      - requested_tool_declared
+      - side_effect_boundary_known
+
+crossing_modes:
+  read_only_context:
+    side_effects: false
+    mutation_allowed: false
+  proposal_only:
+    side_effects: false
+    mutation_allowed: false
+    may_prepare_package: true
+  render_only:
+    side_effects: false
+    mutation_allowed: false
+  request_only:
+    side_effects: false
+    mutation_allowed: false
+  authority_bearing:
+    side_effects: possible
+    allowed_only_when:
+      - logline_process_declared
+      - grant_route_present
+      - explicit_human_approval_present
+      - evidence_refs_present
+
+forbidden_crossings:
+  - id: projection_to_consequence
+    text: A projection cannot cross directly into registered consequence.
+  - id: ui_to_dispatch
+    text: Processual UI cannot cross directly into executor dispatch.
+  - id: envelope_to_l5_authority
+    text: Envelope may describe L5 but cannot authorize L5.
+  - id: hidden_context_crossing
+    text: Chat memory or hidden model state cannot substitute for source refs.
+  - id: unowned_primitive
+    text: A crossing package cannot introduce a primitive without an owner.
+
+validation_rules:
+  - id: edge_required
+    text: Every cross-domain package must name a crossing edge.
+  - id: ref_kind_required
+    text: Every cross-domain source must use a ref kind from the reference map.
+  - id: owner_match_required
+    text: Source ref owner must match the declared owner in the reference map.
+  - id: cannot_do_required_for_ui
+    text: Runtime-to-UI projection responses must include cannot_do.
+  - id: effect_requires_authority_bearing_mode
+    text: Any side-effecting route must use authority_bearing mode and LogLine authority.
+

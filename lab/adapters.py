@@ -11,6 +11,7 @@ from typing import Any
 
 from .errors import AdapterError
 from .inference import run_inference_adapter
+from .oauth import run_oauth_client_adapter
 
 AdapterFn = Callable[[Mapping[str, Any], Mapping[str, Any]], dict[str, Any]]
 
@@ -46,6 +47,7 @@ REGISTRY: dict[str, AdapterFn] = {
     "receipt": receipt_adapter,
     "projection": projection_adapter,
     "inference": run_inference_adapter,
+    "oauth-client": run_oauth_client_adapter,
 }
 
 

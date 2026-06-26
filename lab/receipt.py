@@ -17,6 +17,11 @@ from .errors import ReceiptError
 SLOTS = ("who", "did", "this", "when", "confirmed_by", "if_ok", "if_doubt", "if_not", "status")
 SYSTEM_FIELDS = {"id", "receipt_version", "json_canonicalization", "hashes"}
 FORBIDDEN = {"result", "evidence", "transport"}
+# The hashes object is closed (LIP-0007 additionalProperties:false): exactly these
+# three keys, no more. envelope_hash in particular lives on the Envelope wrapper, never
+# inside a receipt's hashes — admitting it here would let transport metadata masquerade
+# as receipt identity. The authority side must enforce this, not just the JSON schema.
+HASH_FIELDS = {"tuple_hash", "content_hash", "algorithm"}
 RECEIPT_VERSION = "logline.receipt.v0"
 CANONICALIZATION = "jcs-rfc8785"
 HASH_ALGORITHM = "sha256"
@@ -93,6 +98,9 @@ def verify_or_raise(receipt: Mapping[str, Any]) -> None:
     hashes = receipt["hashes"]
     if not isinstance(hashes, Mapping) or hashes.get("algorithm") != HASH_ALGORITHM:
         raise ReceiptError("hashes.algorithm must be sha256")
+    extra_hash_fields = set(hashes) - HASH_FIELDS
+    if extra_hash_fields:
+        raise ReceiptError(f"hashes object has forbidden field(s): {', '.join(sorted(extra_hash_fields))}")
     expected = mint({key: value for key, value in receipt.items() if key not in {"id", "hashes"}})
     if receipt["id"] != expected["id"]:
         raise ReceiptError("id/content_hash mismatch")

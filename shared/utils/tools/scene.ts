@@ -4,6 +4,7 @@ import type { ProjectionResponse } from "~~/shared/tools/runtime-projection";
 
 export type PortalIdentityOutput = {
   app_user_id: string;
+  passport_hash: string | null;
   lab_id: string | null;
   supabase_user_id: string | null;
   grants: string[];

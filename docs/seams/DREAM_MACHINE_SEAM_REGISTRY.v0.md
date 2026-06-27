@@ -97,11 +97,11 @@ OAuth / external account → passport hash (`receipt.id == content_hash`).
 | | |
 |--|--|
 | **Failure mode** | Display nickname (`lab:dan`, email, Vercel ID) becomes authority |
-| **Level** | **PARTIAL** |
+| **Level** | **HARD** for passport hash normalization and mapped session authority · **PARTIAL** for future grant/role policy expansion |
 | **Contract** | `docs/dream-machine-passport.v0.yml` |
-| **Code anchor** | `agent/lib/passport-hash.ts` (HARD hex reject); `scripts/bootstrap-passport.mjs` (mint); `agent/lib/identity-bridge.ts` (`read_only: true`) |
-| **Verify** | `pnpm test` (identity-bridge); `pnpm bootstrap:passport` → 64-char `DREAM_MACHINE_DEFAULT_PASSPORT_HASH` |
-| **Gap** | `DREAM_MACHINE_PASSPORT_MAP` pushed by bootstrap but **not consumed** in auth/Scene runtime; `identity-bridge` still maps `lab:*` gloss as `lab_id` |
+| **Code anchor** | `agent/lib/passport-hash.ts` — `normalizePassportHash` (rejects `lab:*`). `agent/lib/identity-bridge.ts` — `resolvePassportHash`, `DREAM_MACHINE_PASSPORT_MAP` lookup (principalId, email, sub), `DREAM_MACHINE_DEFAULT_PASSPORT_HASH` fallback; `lab_id` display gloss only. **Scene:** `agent/tools/scene.ts` → `operator.passport_hash` |
+| **Verify** | `pnpm test -- --test-name-pattern 'identity'`; `pnpm bootstrap:passport` |
+| **Gap** | Grant/role policy beyond read-only operator context not expanded (**future**) |
 
 **Carries:** OAuth subject metadata, passport map env, registration hash.  
 **Must not carry:** nickname authority, implicit user trust.
@@ -328,9 +328,8 @@ Runtime result / observation → ledger closure.
 ## Known weak seams (integration, not conceptual)
 
 ```text
-1. identity.seam     — passport hash minted; map not consumed in runtime auth/Scene
-2. proposal.seam     — Scene proposals exist; no LAB HTTP admission queue
-3. canyon.seam       — scripts exist; LAB + tunnel not proven live here
+1. proposal.seam     — Scene proposals exist; no LAB HTTP admission queue
+2. canyon.seam       — scripts exist; LAB + tunnel not proven live here
 ```
 
 ---
@@ -340,7 +339,7 @@ Runtime result / observation → ledger closure.
 | ID | Seam | Task |
 |----|------|------|
 | **C0.1** | runtime | ~~Require production `/projection` auth unconditionally~~ **done** — `503 config_error` when token unset in production |
-| **C0.2** | identity | Consume `DREAM_MACHINE_PASSPORT_MAP` in `identity-bridge` / auth / Scene |
+| **C0.2** | identity | ~~Consume `DREAM_MACHINE_PASSPORT_MAP`~~ **done** — `passport_hash` authority; `lab_id` gloss only |
 | **C0.3** | preview | Assert preview env cannot contain write/propose/commit tokens |
 | **C0.4** | proposal | Add `POST /proposal` or `/admission/intake` — proposal-only, no commit |
 | **C0.5** | canyon | Deploy tunnel; prove `api.lab.minilab.work/projection` with Bearer/Access |
@@ -351,7 +350,7 @@ Runtime result / observation → ledger closure.
 ```json
 {
   "seams": {
-    "identity.seam": "PARTIAL",
+    "identity.seam": "HARD:passport-map;PARTIAL:grant-policy",
     "runtime.seam": "HARD:/projection;PARTIAL:other-routes",
     "projection.seam": "HARD",
     "proposal.seam": "PARTIAL",

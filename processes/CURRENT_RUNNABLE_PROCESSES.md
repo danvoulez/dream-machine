@@ -10,6 +10,7 @@ Generated from `processes/*.v1.yml`, adapter registry, service/policy readiness,
 | inference.v1 | runnable | contract active and adapter configured |
 | memory-register.v1 | runnable | contract active and adapter configured |
 | notification.v1 | blocked | requires grant/budget/sandbox |
+| oauth-client.v1 | runnable | contract active and adapter configured |
 | projection-build.v1 | runnable | contract active and adapter configured |
 | route-to-devin.v1 | blocked | requires grant/budget/sandbox |
 | worker-run.v1 | blocked | requires grant/budget/sandbox |

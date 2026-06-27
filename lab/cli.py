@@ -15,6 +15,7 @@ from .evaluator import evaluate
 from .fleet import audit_fleet
 from .foundation import FOUNDATION_ROOT_DEFAULT, verify_foundation_suite, verify_receipt_file
 from .inference import build_inference_request
+from .inspect import inspect_hash
 from .process_catalog import write_generated_process_files
 from .receipt import mint, verify
 from .harness import VECTORS_DEFAULT, run_harness
@@ -119,9 +120,10 @@ def build_parser() -> argparse.ArgumentParser:
     dream_candidate.add_argument("json_file")
     dream_candidate.add_argument("--schema", required=True)
     dream_candidate.add_argument("--source", default=DREAM_ROOT_DEFAULT)
-    for name in ("cite", "inspect"):
-        p = sub.add_parser(name)
-        p.add_argument("hash")
+    cite_parser = sub.add_parser("cite")
+    cite_parser.add_argument("hash")
+    inspect_parser = sub.add_parser("inspect")
+    inspect_parser.add_argument("hash")
     h = sub.add_parser("hash")
     h.add_argument("json_file")
     read = sub.add_parser("read")
@@ -314,8 +316,12 @@ def run(args: argparse.Namespace) -> Any:
         if not isinstance(payload, dict):
             raise LabError("Dream candidate payload must be a JSON object")
         return register_candidate(db, args.schema, payload, schemas=load_schemas(args.source))
-    if args.cmd in {"cite", "inspect"}:
+    if args.cmd == "cite":
         return require(db, args.hash)
+    if args.cmd == "inspect":
+        # Read-only portal surface: metadata + slots + validation + safe source refs,
+        # with no verb that can advance the ledger.
+        return inspect_hash(db, args.hash)
     if args.cmd == "read":
         return list_acts(db, args.limit, if_ok=args.if_ok, status=args.status)
     if args.cmd == "hash":

@@ -19,6 +19,7 @@ EXPECTED_TIERS = {
     'memory-register.v1': 'L0',
     'projection-build.v1': 'L1',
     'inference.v1': 'L3',
+    'oauth-client.v1': 'L3',      # kernel builds the request (dry-run); the edge POST needs the secret key
     'route-to-devin.v1': 'L4',    # §21 — dangerous external delegation
     'worker-run.v1': 'L4',
     'workflow-run.v1': 'L5',

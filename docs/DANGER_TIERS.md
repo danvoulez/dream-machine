@@ -33,6 +33,7 @@ whether dangerous-work controls (grant, signoff, budget, sandbox) apply.
 | notification.v1 | **L5** | §20 — first irreversible outbound effect; grant-gated, no local adapter |
 | projection-build.v1 | L1 | rebuildable local projection |
 | inference.v1 | L3 | external model call, no irreversible effect |
+| oauth-client.v1 | L3 | builds the Supabase OAuth client request (dry-run); irreversible POST is an edge effect needing the secret key |
 | route-to-devin.v1 | **L4** | §21 — dangerous external delegation to Devin; grant-gated, adapter unregistered until Day 6 |
 | worker-run.v1 | L4 | external compensable work |
 | workflow-run.v1 | L5 | external irreversible orchestration |

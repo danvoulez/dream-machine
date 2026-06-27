@@ -6,9 +6,9 @@ branches that integration doesn't reach.
 """
 import pytest
 
-from lab.errors import AuthorityError
+from lab.errors import AuthorityError, NotFound
 from lab.store import append, connect
-from lab.authority import authority_recognized, register_genesis_authority
+from lab.authority import authority_recognized, register_authority, register_genesis_authority
 from lab.grants import (
     is_revoked,
     register_grant,
@@ -119,6 +119,22 @@ def test_revoke_grant_requires_recognized_authority():
     g = _grant(db)
     with pytest.raises(AuthorityError):
         revoke_grant(db, g["id"], revoked_by="stranger")
+
+
+def test_revoke_grant_requires_granted_by_not_any_authority():
+    db = connect(":memory:")
+    register_genesis_authority(db, "dan@minilab.work")
+    register_authority(db, "other@minilab.work", registered_by="dan@minilab.work")
+    g = _grant(db, granted_by="dan@minilab.work")
+    with pytest.raises(AuthorityError, match="only granted_by"):
+        revoke_grant(db, g["id"], revoked_by="other@minilab.work")
+
+
+def test_revoke_grant_rejects_unknown_grant_id():
+    db = connect(":memory:")
+    register_genesis_authority(db, "dan@minilab.work")
+    with pytest.raises(NotFound):
+        revoke_grant(db, "f" * 64, revoked_by="dan@minilab.work")
 
 
 def test_is_revoked_ignores_unauthorized_revoke_receipts():

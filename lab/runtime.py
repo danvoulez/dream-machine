@@ -16,6 +16,22 @@ from .store import append, get, require, transaction
 QUEUE_STATUSES = {"queued", "claimed", "closed", "failed", "released"}
 DANGEROUS_TIERS = {"L4", "L5"}
 DOUBT_DID = "doubt"
+EXECUTOR_CLOSE_WHO = "runtime.executor"
+EXECUTOR_CLOSE_DIDS = frozenset({
+    "fechado",
+    "llm.receipt",
+    "not_dispatched",
+    "evidence_incomplete",
+    "adapter_failed",
+})
+EXECUTOR_CLOSE_STATUSES = frozenset({"fechado", "doubted", "failed"})
+EXECUTOR_CLOSE_STATUS_BY_DID = {
+    "fechado": "fechado",
+    "llm.receipt": "fechado",
+    "not_dispatched": "doubted",
+    "evidence_incomplete": "doubted",
+    "adapter_failed": "failed",
+}
 
 # Canonical, closed vocabulary of *why* an Act does not become a clean dispatch. A doubt
 # is never a generic error: it names the exact procedural barrier so a future LLM can
@@ -356,10 +372,25 @@ def release(db: sqlite3.Connection, queue_id: str, *, reason: str = "released") 
 def _validate_close_result(item: dict[str, Any], result: dict[str, Any]) -> None:
     if item["status"] != "claimed":
         raise Conflict(f"only claimed queue items can be closed; current={item['status']}")
+    if result.get("who") != EXECUTOR_CLOSE_WHO:
+        raise Conflict("close result must be an executor receipt (who=runtime.executor)")
+    did = result.get("did")
+    if did not in EXECUTOR_CLOSE_DIDS:
+        raise Conflict(f"close result did must be an executor outcome; got={did!r}")
+    status = result.get("status")
+    if status not in EXECUTOR_CLOSE_STATUSES:
+        raise Conflict(f"close result status must be fechado, doubted, or failed; got={status!r}")
+    expected_status = EXECUTOR_CLOSE_STATUS_BY_DID.get(did)
+    if expected_status is not None and status != expected_status:
+        raise Conflict(f"close result did/status pairing is invalid for {did!r}")
     if result.get("queue_id") != item["queue_id"]:
         raise Conflict("result receipt queue_id does not match queue item")
     if result.get("this") != item["source_hash"]:
         raise Conflict("result receipt this does not match queue source_hash")
+    if result.get("process_id") != item["process_id"]:
+        raise Conflict("result receipt process_id does not match queue item")
+    if result.get("adapter") != item["adapter"]:
+        raise Conflict("result receipt adapter does not match queue item")
 
 
 def close(db: sqlite3.Connection, queue_id: str, result_hash: str) -> dict[str, Any]:

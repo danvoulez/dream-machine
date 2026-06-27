@@ -54,6 +54,17 @@ def test_close_requires_claimed_queue_item():
         close(db, q['queue_id'], other['id'])
 
 
+def test_close_rejects_non_executor_result_receipt():
+    db = connect(':memory:')
+    act = append(db, full())
+    queue_add(db, act['id'], 'memory-register.v1')
+    claimed = claim(db)
+    assert claimed is not None
+    random_result = append(db, full(this=act['id'], status='registered'))
+    with pytest.raises(Conflict, match='executor receipt'):
+        close(db, claimed['queue_id'], random_result['id'])
+
+
 def test_close_rejects_result_not_bound_to_queue():
     db = connect(':memory:')
     act_a = append(db, full(this='source-a'))

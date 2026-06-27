@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .authority import authority_recognized, verify_signature
-from .errors import AuthorityError
+from .errors import AuthorityError, NotFound
 from .store import append, get
 
 GRANT_DID = "grant"
@@ -90,9 +90,17 @@ def register_grant(
 
 def revoke_grant(db: sqlite3.Connection, grant_id: str, *, revoked_by: str, reason: str = "revoked") -> dict[str, Any]:
     """Append a revocation Act citing ``grant_id``. Append-only, never a delete."""
+    grant = resolve_grant(db, grant_id)
+    if grant is None:
+        raise NotFound(f"grant not found: {grant_id}")
     ok, why = authority_recognized(db, revoked_by)
     if not ok:
         raise AuthorityError(f"revoker {revoked_by!r} is not a recognized authority ({why})")
+    granted_by = grant.get("granted_by", "")
+    if revoked_by != granted_by:
+        raise AuthorityError(
+            f"only granted_by {granted_by!r} may revoke grant {grant_id}; got {revoked_by!r}",
+        )
     return append(
         db,
         {
@@ -123,6 +131,10 @@ def resolve_grant(db: sqlite3.Connection, grant_id: str | None) -> dict[str, Any
 def is_revoked(db: sqlite3.Connection, grant_id: str) -> bool:
     import json
 
+    grant = resolve_grant(db, grant_id)
+    if grant is None:
+        return False
+    granted_by = grant.get("granted_by", "")
     rows = db.execute(
         "SELECT act FROM logline_acts WHERE did = ? AND this = ? ORDER BY inserted_at, content_hash",
         (REVOKE_DID, grant_id),
@@ -130,6 +142,8 @@ def is_revoked(db: sqlite3.Connection, grant_id: str) -> bool:
     for row in rows:
         act = json.loads(row["act"])
         revoker = act.get("who") or act.get("confirmed_by") or ""
+        if revoker != granted_by:
+            continue
         ok, _ = authority_recognized(db, revoker)
         if ok:
             return True

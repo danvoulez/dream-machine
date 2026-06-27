@@ -574,11 +574,22 @@ async function fetchRuntimeProjection(input: RuntimeProjectionInput): Promise<Ra
 }
 // -----------------------------------------------------------------------------
 
+const LEGACY_PROJECTION_ENABLED = process.env.DREAM_MACHINE_ENABLE_LEGACY_PROJECTION === "1";
+
 export default defineTool({
   description:
-    "Request a read-only Dream Machine runtime projection (overview, waiting_on_me, open_findings, danger_review, …) and return a non-authoritative, render-ready view with source refs, warnings, declared affordances, and explicit cannot_do limits. Never registers receipts, dispatches executors, mutates a ledger, or authorizes L5.",
+    "DEPRECATED — use the `scene` tool instead. Legacy read-only projection with fixed intents (overview, waiting_on_me, open_findings, …). Only active when DREAM_MACHINE_ENABLE_LEGACY_PROJECTION=1.",
   inputSchema,
   async execute(input: RuntimeProjectionInput): Promise<RuntimeProjectionResult> {
+    if (!LEGACY_PROJECTION_ENABLED) {
+      return {
+        ok: false,
+        reason: "projection_unavailable",
+        errors: [{ field: "tool", message: "runtime_projection is deprecated; use the scene tool with scene.open and a goal." }],
+        notes: [],
+        cannot_do: [...REQUIRED_CANNOT_DO],
+      };
+    }
     let raw: RawProjection;
     try {
       raw = await fetchRuntimeProjection(input);

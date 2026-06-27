@@ -321,13 +321,14 @@ The transcript's hard-won correction: trust commands, not docs.
 - Python bridge `rows` mode ✓ (ledgers seeded) · SPINE 113 tests ✓
 - `derive-from-logline` idempotent ✓ · passport hash minted ✓
 
-**Docs say green, reality isn't (fix in C0 before treating any deploy as real):**
-- `pnpm test` → 70 pass / **7 skip** — scene/ledger tests resolve `LOGLINE_DB`
-  via `import.meta.url` in `.tmp/tests/` (wrong path), so they silently skip.
-  **False green.**
-- KERNEL → 1 failing test (`incompleto` vs `failed`, executor close semantics).
-- `pnpm typecheck` → 2 TS errors.
-- FACE → 46 uncommitted files; only feature branch on GitHub, `main` still template.
+**C0 fixed (2026-06-27 evening):**
+- `pnpm test` → **75 pass / 0 skip** (ledger paths via `resolveLoglineDbPath`, not bundled `import.meta.url`)
+- `pnpm typecheck` → green
+- KERNEL → **273 pass** (`incompleto` close status on `not_dispatched`)
+
+**Still before deploy:**
+- FACE feature branch not merged to `main`; GitHub `main` still Vercel template
+- Vercel project + Neon integration not created yet
 
 **Code gate (`pack:runtime`) passes on the local triple** — that's the packaged
 core the deploy cares about. `logline-acts-python` is irrelevant to this path.

@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import type { SceneReaders } from "./readers.ts";
-import { composeProcessViews } from "./compose.ts";
-import { resolveSalience, rankAndBound, legalMoves, proposals } from "./governor.ts";
-import { assertSceneOpImplemented } from "./errors.ts";
+import type { SceneReaders } from "./readers.js";
+import { composeProcessViews } from "./compose.js";
+import { resolveSalience, rankAndBound, legalMoves, proposals } from "./governor.js";
+import { assertSceneOpImplemented } from "./errors.js";
 import type {
   SceneRequest,
   SceneResponse,

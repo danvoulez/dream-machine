@@ -26,4 +26,10 @@ test("scene.open over the real ledgers returns ProcessViews for the seeded proce
   if (scene.view.items.some((v) => v.process_id.endsWith(".v1"))) {
     assert.notEqual(scene.view.items.every((v) => v.risk === "L1"), true, "expected contract risk tiers when process_id is known");
   }
+  const queueBacked = scene.view.items.filter((v) => v.state === "queued" || v.state === "claimed");
+  assert.ok(queueBacked.length >= 1, "expected runtime_queue rows to surface queue/claimed andamento");
+  assert.ok(
+    queueBacked.some((v) => v.waiting_on === "process" || v.waiting_on === "human"),
+    "expected queue-backed items to report waiting_on from lifecycle",
+  );
 });

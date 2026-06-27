@@ -1,6 +1,6 @@
 import type { SceneResponse } from "../../../shared/tools/scene.ts";
 import type { ProjectionIntent, SourceRefOwner } from "../../../shared/tools/runtime-projection.ts";
-import { normalizeProjection, type RawProjection } from "../projection-normalizer.ts";
+import { normalizeProjection, type RawProjection } from "../projection-normalizer.js";
 
 const OP_INTENT: Partial<Record<SceneResponse["op"], ProjectionIntent>> = {
   "scene.open": "overview",

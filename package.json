@@ -21,6 +21,7 @@
     "test:e2e:chat": "playwright test e2e/portal-chat-scene.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:eval": "node scripts/run-eval.mjs",
+    "seed:lab-queue": "node scripts/seed-lab-queue.mjs",
     "test:projection": "node scripts/test-runtime-projection.mjs",
     "contracts:validate": "node scripts/validate-dream-machine-contracts.mjs",
     "db:generate": "nuxt db generate",

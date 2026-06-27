@@ -426,7 +426,7 @@ function normalizeAffordances(
     }
 
     // l4_l5_requires_logline.
-    if (tierRank(tier) >= TIER_RANK.L4 && authorityRoute.owner !== "logline") {
+    if (tierRank(tier) >= tierRank("L4") && authorityRoute.owner !== "logline") {
       notes.push(`affordance ${id}: dropped (L4+/${tier} affordance must route through LogLine authority, owner was "${authorityRoute.owner}")`);
       continue;
     }

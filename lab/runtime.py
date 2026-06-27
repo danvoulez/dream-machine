@@ -24,11 +24,11 @@ EXECUTOR_CLOSE_DIDS = frozenset({
     "evidence_incomplete",
     "adapter_failed",
 })
-EXECUTOR_CLOSE_STATUSES = frozenset({"fechado", "doubted", "failed"})
+EXECUTOR_CLOSE_STATUSES = frozenset({"fechado", "doubted", "failed", "incompleto"})
+NOT_DISPATCHED_CLOSE_STATUSES = frozenset({"doubted", "incompleto"})
 EXECUTOR_CLOSE_STATUS_BY_DID = {
     "fechado": "fechado",
     "llm.receipt": "fechado",
-    "not_dispatched": "doubted",
     "evidence_incomplete": "doubted",
     "adapter_failed": "failed",
 }
@@ -379,10 +379,16 @@ def _validate_close_result(item: dict[str, Any], result: dict[str, Any]) -> None
         raise Conflict(f"close result did must be an executor outcome; got={did!r}")
     status = result.get("status")
     if status not in EXECUTOR_CLOSE_STATUSES:
-        raise Conflict(f"close result status must be fechado, doubted, or failed; got={status!r}")
-    expected_status = EXECUTOR_CLOSE_STATUS_BY_DID.get(did)
-    if expected_status is not None and status != expected_status:
-        raise Conflict(f"close result did/status pairing is invalid for {did!r}")
+        raise Conflict(
+            f"close result status must be fechado, doubted, failed, or incompleto; got={status!r}",
+        )
+    if did == "not_dispatched":
+        if status not in NOT_DISPATCHED_CLOSE_STATUSES:
+            raise Conflict(f"close result did/status pairing is invalid for {did!r}")
+    else:
+        expected_status = EXECUTOR_CLOSE_STATUS_BY_DID.get(did)
+        if expected_status is not None and status != expected_status:
+            raise Conflict(f"close result did/status pairing is invalid for {did!r}")
     if result.get("queue_id") != item["queue_id"]:
         raise Conflict("result receipt queue_id does not match queue item")
     if result.get("this") != item["source_hash"]:

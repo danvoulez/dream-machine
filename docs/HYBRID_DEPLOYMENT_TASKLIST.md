@@ -106,19 +106,19 @@ Run these before any deploy. This is “does the code we make here work,” not 
 |-------|--------------------------|----------------|---------------|
 | Membrane contracts | 17 contracts pass | `pnpm contracts:validate` | **✓ pass** |
 | Triple pack seal | `pack_runtime_before_prod` gate | `pnpm pack:runtime --skip-tar` | **✓ pass** (~50s; runs KERNEL oauth subset + SPINE 113 tests + FACE motor) |
-| FACE motor tests | T-P2 “system receipt” | `pnpm test` | **~ partial** — 70 pass, **7 skip**, 0 fail |
-| Ledger integration tests | scene-e2e, projection-routing, etc. | same | **✗ false green** — all 7 skips are **path bug**: bundled tests in `.tmp/tests/` resolve `LOGLINE_DB` wrong (`import.meta.url`), so `existsSync` fails even though `Dream-Machine-LogLine-Acts/.lab/lab.sqlite` exists (7 acts) |
+| FACE motor tests | T-P2 “system receipt” | `pnpm test` | **✓ pass** — 75 pass, 0 skip |
+| Ledger integration tests | scene-e2e, projection-routing, etc. | same | **✓ pass** — fixed via `resolveLoglineDbPath()` + `DREAM_MACHINE_UI_ROOT` in `run-tests.mjs` |
 | Python bridge `rows` | Scene reads both ledgers | `python3 scripts/runtime-projection-local.py rows <logline> <envelope> '{}'` | **✓ works** — 7 logline_acts, 2 queue rows, 36 shifts (absolute paths) |
 | SPINE full suite | 107+ tests | `cd ../Dream-Machine-Envelope-Ledger && pnpm test` | **✓ 113 pass** |
-| KERNEL full suite | 265 pass | `cd ../Dream-Machine-LogLine-Acts && .venv/bin/python -m pytest -q` | **✗ 1 fail** — `test_executor_re_evaluates_and_closes_incomplete_work_without_dispatch` expects `incompleto`, got `failed` (272 pass, 1 skip) |
+| KERNEL full suite | 265 pass | `cd ../Dream-Machine-LogLine-Acts && uv run pytest -q` | **✓ 273 pass**, 1 skip |
 | Derivation pipe | T-S1 / T-S2 | `node scripts/derive-from-logline.mjs` twice | **✓ idempotent** — stream `logline-derived-<fingerprint>`; re-run `derived: 0`, `verify_ok: true` |
-| FACE typecheck | CI job | `pnpm typecheck` | **✗ 2 errors** — `board-json-v0.ts`, `oauth-crossing.ts` |
+| FACE typecheck | CI job | `pnpm typecheck` | **✓ pass** |
 | Local ledgers seeded | task list snapshot | `ls …/.lab/lab.sqlite …/.board/board.sqlite` | **✓ present** |
 | `install:runtime` | T-P1 toolchain check | `pnpm install:runtime` | **✓ pass** (warns Node 20 vs `>=24` in package.json) |
-| Git hygiene | DoD “registered” | `git status` per repo | **✗ FACE 46 uncommitted files**; KERNEL/SPINE clean on feature branches |
+| Git hygiene | DoD “registered” | `git status` per repo | **~ partial** — FACE committed on `codex/…` (4 commits); KERNEL runtime fix on `pr2-docs`; not pushed |
 | Branch alignment | deploy on `main` | see §C1 | **✗ three repos, three branches, none merged to `main`** |
 
-**Bottom line (code):** Read-path seam (bridge → Scene → projections contract) **works when invoked with correct paths**. Automated test green is **misleading** until ledger test paths are fixed. KERNEL has **one red test**. FACE has **uncommitted deploy work** and **typecheck red**.
+**Bottom line (code):** C0 gates **pass** — tests, typecheck, KERNEL, `pack:runtime`. Next: push branch, merge to `main`, then cloud bootstrap (C1+).
 
 ---
 
@@ -128,10 +128,10 @@ Do these before treating any deploy as honest.
 
 | ID | Task | Verify | Status |
 |----|------|--------|--------|
-| C0.1 | Fix ledger test paths — use `resolveUiRoot()` / `resolveLoglineDbPath()` (like `oauth-crossing.test.ts`), not `dirname(import.meta.url)` in bundled tests | `pnpm test` → 0 skips on ledger tests; scene-e2e runs | **○ not done** |
-| C0.2 | Fix KERNEL `test_runtime.py` executor status (`incompleto` vs `failed`) | `.venv/bin/python -m pytest -q` → 0 failed | **○ not done** |
-| C0.3 | Fix FACE typecheck (2 TS errors) | `pnpm typecheck` → exit 0 | **○ not done** |
-| C0.4 | Commit + push FACE hybrid work (46 files) to `danvoulez/dream-machine` | `git status` clean; `gh api …/commits` shows hash | **○ not done** |
+| C0.1 | Fix ledger test paths — use `resolveUiRoot()` / `resolveLoglineDbPath()` (like `oauth-crossing.test.ts`), not `dirname(import.meta.url)` in bundled tests | `pnpm test` → 0 skips on ledger tests; scene-e2e runs | **✓ done** |
+| C0.2 | Fix KERNEL `test_runtime.py` executor status (`incompleto` vs `failed`) | `uv run pytest -q` → 0 failed | **✓ done** |
+| C0.3 | Fix FACE typecheck (2 TS errors) | `pnpm typecheck` → exit 0 | **✓ done** |
+| C0.4 | Commit + push FACE hybrid work to `danvoulez/dream-machine` | `git status` clean; `gh api …/commits` shows hash | **~ committed locally** — push pending |
 | C0.5 | Merge feature branches → `main` on all three repos (or document single integration branch) | `git branch -a` shows `main` at deploy commits | **○ not done** |
 | C0.6 | Upgrade local Node to **≥24** (package.json + CI use 24) | `node -v` → v24+ | **~ dev on v20.20.2** |
 

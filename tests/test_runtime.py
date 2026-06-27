@@ -370,6 +370,27 @@ def test_executor_refuses_contract_adapter_without_registered_implementation(mon
     assert queue_list(db, 'failed') == []
 
 
+def test_executor_adapter_failure_writes_durable_ledger_receipt(monkeypatch):
+    import lab.adapters as adapters_mod
+    db = connect(':memory:')
+    act = append(db, full(if_ok='memory-register.v1'))
+    queue_add(db, act['id'], 'memory-register.v1', adapter='receipt')
+
+    def boom(_source, _item):
+        raise AdapterError('adapter exploded')
+
+    monkeypatch.setitem(adapters_mod.REGISTRY, 'receipt', boom)
+    closed = executor_run_once(db)
+    result = get(db, closed['result_hash'])
+
+    assert result['did'] == 'adapter_failed'
+    assert result['status'] == 'failed'
+    assert result['this'] == act['id']
+    assert result['reason'] == 'adapter exploded'
+    assert closed['status'] == 'closed'
+    assert queue_list(db, 'failed') == []
+
+
 def test_run_adapter_rejects_unknown_adapter_name():
     # Defensive layer: even though the selector/executor gate unregistered adapters before
     # dispatch, run_adapter itself still refuses an unknown name rather than no-op.

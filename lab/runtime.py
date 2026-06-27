@@ -473,6 +473,37 @@ def missing_evidence(evidence_must_include, result_aux: dict[str, Any]) -> list[
     return [field for field in evidence_must_include if not _evidence_present(result_aux.get(field))]
 
 
+def close_adapter_failed(
+    db: sqlite3.Connection,
+    item: dict[str, Any],
+    worker: str,
+    error: Exception,
+) -> dict[str, Any]:
+    """Adapter raised during dispatch — write a durable failure receipt, not queue-only state.
+
+    Queue rows alone are not authoritative; the ledger must record that dispatch failed so
+    Scene/projections can observe adapter failures without scraping ``last_error``.
+    """
+    fields: dict[str, Any] = {
+        "who": "runtime.executor",
+        "did": "adapter_failed",
+        "this": item["source_hash"],
+        "when": now(),
+        "confirmed_by": worker,
+        "if_ok": "attention-raise.v1",
+        "if_doubt": "attention-raise.v1",
+        "if_not": "executor.failed",
+        "status": "failed",
+        "process_id": item["process_id"],
+        "queue_id": item["queue_id"],
+        "adapter": item["adapter"],
+        "reason": str(error),
+        "error_class": type(error).__name__,
+    }
+    result = append(db, fields)
+    return close(db, item["queue_id"], result["id"])
+
+
 def close_evidence_incomplete(
     db: sqlite3.Connection,
     item: dict[str, Any],
@@ -642,5 +673,4 @@ def executor_run_once(db: sqlite3.Connection, worker: str = "executor") -> dict[
         )
         return close(db, item["queue_id"], result["id"])
     except Exception as exc:
-        fail(db, item["queue_id"], str(exc))
-        raise
+        return close_adapter_failed(db, item, worker, exc)

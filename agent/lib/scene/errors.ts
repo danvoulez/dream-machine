@@ -6,6 +6,7 @@ export const UNIMPLEMENTED_SCENE_OPS = [
   "scene.compare",
   "scene.ascend",
   "scene.descend",
+  "scene.back",
 ] as const satisfies readonly SceneOp[];
 
 const UNIMPLEMENTED_SET = new Set<string>(UNIMPLEMENTED_SCENE_OPS);

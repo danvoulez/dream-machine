@@ -67,7 +67,7 @@ test("scene.explain_loss returns omitted items from a bounded open view", async 
 });
 
 test("unimplemented Scene ops throw SceneOpNotImplementedError", async () => {
-  for (const op of ["scene.group", "scene.filter", "scene.compare", "scene.ascend", "scene.descend"] as const) {
+  for (const op of ["scene.group", "scene.filter", "scene.compare", "scene.ascend", "scene.descend", "scene.back"] as const) {
     await assert.rejects(
       () => assembleScene({ op, scope: { ledger: "lab" }, limit: 10 }, fakeReaders, { now: NOW }),
       (err: unknown) => err instanceof SceneOpNotImplementedError && err.op === op,

@@ -4,7 +4,7 @@ import { SCENE_OPS } from "../../shared/tools/scene.js";
 import { assembleScene } from "../lib/scene/scene.js";
 import { SceneOpNotImplementedError } from "../lib/scene/errors.js";
 import { normalizeSceneProjection } from "../lib/scene/normalize.js";
-import { bridgeReaders } from "../lib/scene/readers.js";
+import { createSceneReaders } from "../lib/scene/readers.js";
 
 const REQUIRED_CANNOT_DO = [
   "register_receipt",
@@ -29,7 +29,7 @@ export default defineTool({
   inputSchema,
   async execute(input) {
     try {
-      const scene = await assembleScene(input as never, bridgeReaders, { now: Date.now() });
+      const scene = await assembleScene(input as never, createSceneReaders(), { now: Date.now() });
       const normalized = normalizeSceneProjection(scene);
       return {
         ok: true as const,

@@ -1,49 +1,80 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { SceneRawRows, SceneScope } from "../../../shared/tools/scene.ts";
-
-const execFileAsync = promisify(execFile);
-
-function resolveUiRoot(): string {
-  if (process.env.DREAM_MACHINE_UI_ROOT) return process.env.DREAM_MACHINE_UI_ROOT;
-  let dir = process.cwd();
-  for (let i = 0; i < 6; i++) {
-    if (existsSync(join(dir, "scripts/runtime-projection-local.py"))) return dir;
-    dir = dirname(dir);
-  }
-  return resolve(fileURLToPath(new URL("../../../", import.meta.url)));
-}
-
-const UI_ROOT = resolveUiRoot();
-const WS_ROOT = dirname(UI_ROOT);
-const SCRIPT = join(UI_ROOT, "scripts/runtime-projection-local.py");
+import {
+  PROJECTION_BRIDGE_TIMEOUT_MS,
+  bridgeReadSceneRows,
+  resolveUiRoot,
+} from "../projection-bridge.js";
 
 export interface SceneReaders {
   readRows(scope: SceneScope): Promise<SceneRawRows>;
 }
 
-function loglineDb(): string | undefined {
-  const p = process.env.DREAM_MACHINE_LOGLINE_DB ?? join(WS_ROOT, "Dream-Machine-LogLine-Acts/.lab/lab.sqlite");
-  return existsSync(p) ? p : undefined;
-}
-function envelopeDb(): string | undefined {
-  const p = process.env.DREAM_MACHINE_ENVELOPE_DB ?? join(WS_ROOT, "Dream-Machine-Envelope-Ledger/.board/board.sqlite");
-  return existsSync(p) ? p : undefined;
+export function resolveRuntimeUrl(): string | undefined {
+  const explicit = process.env.DREAM_MACHINE_RUNTIME_URL?.trim();
+  if (explicit) return explicit;
+  if (process.env.DREAM_MACHINE_RUNTIME_SHELL_ONLY === "1") return undefined;
+  return process.env.BETTER_AUTH_URL?.trim();
 }
 
+function httpReaders(baseUrl: string): SceneReaders {
+  return {
+    async readRows(scope) {
+      const token = process.env.DREAM_MACHINE_RUNTIME_TOKEN?.trim();
+      const url = `${baseUrl.replace(/\/+$/, "")}/projection`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), PROJECTION_BRIDGE_TIMEOUT_MS);
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(token ? { authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ mode: "rows", scope: scope ?? {} }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error(`runtime responded ${res.status} ${res.statusText}`);
+        }
+        const parsed = (await res.json()) as SceneRawRows & { error?: string };
+        if (typeof parsed.error === "string" && parsed.error) {
+          throw new Error(parsed.error);
+        }
+        const { error: _ignored, ...rows } = parsed;
+        return rows as SceneRawRows;
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+  };
+}
+
+function readersWithShellFallback(primary: SceneReaders, fallback: SceneReaders): SceneReaders {
+  return {
+    async readRows(scope) {
+      try {
+        return await primary.readRows(scope);
+      } catch {
+        return fallback.readRows(scope);
+      }
+    },
+  };
+}
+
+/** Direct python bridge — shell fallback when HTTP runtime is unavailable. */
 export const bridgeReaders: SceneReaders = {
-  async readRows(scope) {
-    const { stdout } = await execFileAsync("python3", [
-      SCRIPT, "rows", loglineDb() ?? "", envelopeDb() ?? "", JSON.stringify(scope ?? {}),
-    ], { timeout: 8000, cwd: UI_ROOT });
-    const parsed = JSON.parse(stdout) as SceneRawRows & { error?: string };
-    if (typeof parsed.error === "string" && parsed.error) {
-      throw new Error(parsed.error);
-    }
-    const { error: _ignored, ...rows } = parsed;
-    return rows as SceneRawRows;
-  },
+  readRows: bridgeReadSceneRows,
 };
+
+/** HTTP-first when `DREAM_MACHINE_RUNTIME_URL` (or `BETTER_AUTH_URL`) is set; shell on failure. */
+export function createSceneReaders(): SceneReaders {
+  if (process.env.DREAM_MACHINE_RUNTIME_SHELL_ONLY === "1") {
+    return bridgeReaders;
+  }
+  const url = resolveRuntimeUrl();
+  if (!url) return bridgeReaders;
+  return readersWithShellFallback(httpReaders(url), bridgeReaders);
+}
+
+// Re-export for tests and path diagnostics.
+export { resolveUiRoot };

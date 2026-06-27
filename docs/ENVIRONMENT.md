@@ -92,6 +92,21 @@ On Vercel, Eve handles provider configuration through the platform. For local de
 
 **Acceptance harness (local only):** `DREAM_MACHINE_ACCEPTANCE=1` enables `/acceptance/*` routes without login. It is **ignored in production** (`NODE_ENV=production`) even if set. Never enable on Vercel.
 
+## Projection runtime (T-R1, optional)
+
+The portal serves `POST /projection` — the single HTTP seam for read-only ledger access. When configured, the Scene motor and `runtime_projection` use HTTP instead of shelling `python3` directly.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DREAM_MACHINE_RUNTIME_URL` | No | Base URL of the runtime (e.g. `http://localhost:3000`). Defaults to `BETTER_AUTH_URL` when unset. |
+| `DREAM_MACHINE_RUNTIME_TOKEN` | No | Bearer token required on `/projection` when set (client and server must match). |
+| `DREAM_MACHINE_RUNTIME_TIMEOUT_MS` | No | Request timeout in ms (default `8000`). |
+| `DREAM_MACHINE_RUNTIME_SHELL_ONLY` | No | Set to `1` to skip HTTP and always use the local python bridge. |
+
+Local dev: with `BETTER_AUTH_URL=http://localhost:3000` and `pnpm dev` running, Scene reads go through `/projection` automatically (shell fallback on failure). Unit tests use the shell bridge unless you export a runtime URL.
+
+## T-P2 acceptance (optional)
+
 For T-P2 agent/chat acceptance (requires Node ≥24), set `AI_GATEWAY_API_KEY` in `.env` (or export `VERCEL_OIDC_TOKEN` when linked to Vercel):
 
 - `pnpm test:eval` — eve eval (`evals/scene-andamento.eval.ts`)

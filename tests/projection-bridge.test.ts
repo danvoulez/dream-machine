@@ -5,7 +5,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   bridgeReadSceneRows,
+  fetchProjectionRuntime,
   handleProjectionPost,
+  hasLocalLedger,
   preferredJurisdiction,
 } from "../agent/lib/projection-bridge.ts";
 
@@ -37,4 +39,23 @@ test("bridgeReadSceneRows matches handleProjectionPost rows mode", async (t) => 
   const direct = await bridgeReadSceneRows({ ledger: "lab" });
   const viaHandler = await handleProjectionPost({ mode: "rows", scope: { ledger: "lab" } });
   assert.equal(direct.logline_acts.length, viaHandler.logline_acts.length);
+});
+
+test("fetchProjectionRuntime legacy overview uses the shell bridge when no HTTP URL", async (t) => {
+  if (!hasLocalLedger()) {
+    t.skip("ledgers not seeded");
+    return;
+  }
+  const prevUrl = process.env.DREAM_MACHINE_RUNTIME_URL;
+  const prevAuth = process.env.BETTER_AUTH_URL;
+  delete process.env.DREAM_MACHINE_RUNTIME_URL;
+  delete process.env.BETTER_AUTH_URL;
+  try {
+    const data = await fetchProjectionRuntime({ intent: "overview", scope: "all" });
+    assert.equal(data.intent, "overview");
+    assert.ok(Array.isArray(data.blocks));
+  } finally {
+    if (prevUrl !== undefined) process.env.DREAM_MACHINE_RUNTIME_URL = prevUrl;
+    if (prevAuth !== undefined) process.env.BETTER_AUTH_URL = prevAuth;
+  }
 });

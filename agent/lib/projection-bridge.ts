@@ -196,6 +196,49 @@ export function isRowsProjectionBody(body: unknown): body is { mode: "rows"; sco
   return Boolean(body && typeof body === "object" && (body as { mode?: string }).mode === "rows");
 }
 
+export function resolveRuntimeUrl(): string | undefined {
+  const explicit = process.env.DREAM_MACHINE_RUNTIME_URL?.trim();
+  if (explicit) return explicit;
+  if (process.env.DREAM_MACHINE_RUNTIME_SHELL_ONLY === "1") return undefined;
+  return process.env.BETTER_AUTH_URL?.trim();
+}
+
+export function hasLocalLedger(): boolean {
+  return Boolean(resolveLoglineDbPath() || resolveEnvelopeDbPath());
+}
+
+async function postProjectionHttp(
+  baseUrl: string,
+  body: ProjectionPostBody,
+): Promise<Record<string, unknown>> {
+  const token = process.env.DREAM_MACHINE_RUNTIME_TOKEN?.trim();
+  const url = `${baseUrl.replace(/\/+$/, "")}/projection`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROJECTION_BRIDGE_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`runtime responded ${res.status} ${res.statusText}`);
+    }
+    const parsed = (await res.json()) as Record<string, unknown>;
+    if (typeof parsed.error === "string" && parsed.error) {
+      throw new Error(parsed.error);
+    }
+    return parsed;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Shell-backed handler — used by POST /projection and as HTTP fallback. */
 export async function handleProjectionPost(body: ProjectionPostBody): Promise<Record<string, unknown>> {
   if (isRowsProjectionBody(body)) {
     const rows = await bridgeReadSceneRows(body.scope ?? {});
@@ -205,4 +248,17 @@ export async function handleProjectionPost(body: ProjectionPostBody): Promise<Re
     throw new Error("projection request requires intent and scope (or mode: rows)");
   }
   return bridgeReadLegacyProjection(body);
+}
+
+/** HTTP-first client for all projection modes; shell fallback on failure or when no URL. */
+export async function fetchProjectionRuntime(body: ProjectionPostBody): Promise<Record<string, unknown>> {
+  const url = resolveRuntimeUrl();
+  if (url) {
+    try {
+      return await postProjectionHttp(url, body);
+    } catch {
+      // fall through to shell bridge
+    }
+  }
+  return handleProjectionPost(body);
 }

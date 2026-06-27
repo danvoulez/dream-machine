@@ -92,7 +92,13 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 - **FACE**: ~10.4k+ LOC ts/vue. Eve template + `scene` tool (Dynamic Projection Motor) + deprecated `runtime_projection` + shell bridge. 40 `.yml` membrane contracts (15 enforced by `pnpm contracts:validate`). `pnpm test` = 30 tests (29 pass, 1 skip if ledgers absent).
 - **Docs:** 113 `.md` → target ~12 (T-H5). **Packaging: none** — no umbrella package / Makefile / Docker / install across the three repos; the installable topology exists only as a contract (→ T-T1).
 
-**Session close — 2026-06-27 (Scene motor + T-P2 harness on FACE `codex/dream-machine-membrane-contracts`, not merged):**
+**Session close — 2026-06-27 (T-R1 projection HTTP + T-P1 bridge consolidation on FACE `codex/dream-machine-membrane-contracts`, not merged):**
+- **T-R1:** `POST /projection` + `projection-bridge.ts` + `fetchProjectionRuntime()`; optional bearer; documented in `docs/ENVIRONMENT.md`.
+- **T-P1 partial:** Scene `createSceneReaders()` + legacy `runtime_projection` deduped through one bridge; shell is fallback not default when URL set.
+- **Queue seed:** `pnpm seed:lab-queue` + scene-e2e queue/claimed assertions.
+- **Typecheck green;** `scene.back` explicitly unimplemented.
+
+**Prior session — 2026-06-27 (Scene motor + T-P2 harness on FACE `codex/dream-machine-membrane-contracts`, not merged):**
 - **Scene motor (PR-6/7 partial):** `agent/lib/scene/*`, `agent/tools/scene.ts`, `Scene.vue`, `shared/tools/scene.ts`, python bridge `rows` mode + scope filter + `risk_by_process`. Fixed intents retired (deprecated). 30 unit/integration tests committed.
 - **T-P2 harness:** `tests/scene-e2e.test.ts` (motor) + `e2e/portal-scene-acceptance.spec.ts` (Scene card) + `e2e/portal-chat-scene.spec.ts` (Eve chat → Scene card; `pnpm test:e2e:chat`) + `evals/scene-andamento.eval.ts` (`pnpm test:eval`). All need seeded ledgers; agent/chat paths need `AI_GATEWAY_API_KEY` + Node ≥24.
 - **Not merged/pushed:** motor branch; merge/push is Dan's call.
@@ -145,9 +151,9 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 
 ### The one plugin — live data path (cross-cutting seam)
 
-- [~] **T-P1 Consolidate the seam into ONE packaged plugin** (the "1 plugin do conjunto"). `scene` tool unifies the agent surface; implementation still spreads across `agent/lib/scene/*` + `scripts/runtime-projection-local.py` + 2 sqlite-by-path, glued by shell + filesystem paths. *Exit:* ONE coherent packaged entry point (no loose shell/path glue), one install step. Absorbs T-R1 (the interface) and T-F1 (symmetric normalization).
+- [~] **T-P1 Consolidate the seam into ONE packaged plugin** (the "1 plugin do conjunto"). `agent/lib/projection-bridge.ts` + `POST /projection` + `fetchProjectionRuntime()` unify Scene rows + legacy intents; python bridge is shell fallback behind the HTTP seam. Ghost: no umbrella install step / runtime daemon package yet (→ T-T1). Absorbs T-R1 (interface) partially; T-F1 symmetric normalization still `[~]`.
 - [x] **T-P2 UI acceptance e2e — the system receipt.** Motor (`pnpm test`) + portal Scene card + portal chat Scene card (`AI_GATEWAY_API_KEY=… pnpm test:e2e:chat` → `/acceptance/chat` → Scene card with andamento) + agent eval (`pnpm test:eval`). Acceptance harness uses `DREAM_MACHINE_ACCEPTANCE=1`; production chat path still requires login. *Exit met:* e2e runs green against real seeded ledgers through the scene plugin (2026-06-27).
-- [ ] **T-R1 Build the `/projection` HTTP runtime endpoint** (`DREAM_MACHINE_RUNTIME_URL`) — the single interface T-P1 packages around. Today the agent reaches the ledgers by shelling `python3` + `sqlite3` CLIs — fragile (PATH-dependent). *Exit:* a runtime serves `/projection`; the bridge's shell paths become the fallback, not the default. Unblocks any non-UI agent consuming projections too.
+- [x] **T-R1 Build the `/projection` HTTP runtime endpoint** (`DREAM_MACHINE_RUNTIME_URL`) — `server/routes/projection.post.ts` serves rows + legacy intents; `fetchProjectionRuntime()` is HTTP-first (defaults to `BETTER_AUTH_URL`), shell fallback. Scene + deprecated `runtime_projection` share the bridge. *Exit met:* 2026-06-27 on `codex/dream-machine-membrane-contracts`.
 - [ ] **T-R2 OAuth client registration crossing** (§ first external-effect additive client). Acts-side dry-run committed; the real Supabase POST must become a TS edge crosser recording an Envelope `Shift`(kind `effect`)/`ShiftResult` — `input_hash`=act `content_hash`, transport+custody, act intact, `client_secret` never enters a receipt/projection. *Exit:* test proves additive (content_hash unchanged) + dry-run/real share one builder; **and** resolve the governance question (oauth-client.v1 is L3, below the L4/L5 grant gate — keep L3 or raise to L4).
 
 ### The real motor — Dynamic Projection (the gap behind "agent knows the processes")

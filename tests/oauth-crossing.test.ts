@@ -6,11 +6,13 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { canonicalJson, sha256Text } from "../agent/lib/board-json-v0.ts";
 import {
+  assertOAuthActAnchor,
   buildOAuthAdapterAux,
   buildOAuthCrossingRequest,
   crossOAuthClientRegistration,
   redactSupabaseOAuthResponse,
 } from "../agent/lib/oauth-crossing.ts";
+import { buildStreamConfigRow } from "../agent/lib/envelope-effect-store.ts";
 import { clientMetadata, OAUTH_CLIENT_DANGER_TIER } from "../agent/lib/oauth-client-metadata.ts";
 
 const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -107,4 +109,46 @@ test("crossing records transport custody to supabase without client_id on dry_ru
   if (!result.ok) return;
   assert.ok(result.envelope.custody[0]?.to === "supabase");
   assert.equal(result.envelope.client_id, null);
+});
+
+test("assertOAuthActAnchor rejects id/content_hash mismatch", () => {
+  const anchor = "b".repeat(64);
+  assert.equal(
+    assertOAuthActAnchor({ ...passportAct, id: anchor }, passportAct.id),
+    "act.id does not match requested content_hash anchor",
+  );
+  assert.equal(assertOAuthActAnchor(passportAct, passportAct.id), null);
+});
+
+test("execute rejects inline act without ledger anchor", async () => {
+  const result = await crossOAuthClientRegistration({
+    act: passportAct,
+    execute: true,
+    record_envelope: false,
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.equal(result.reason, "invalid_act");
+});
+
+test("default crossing requires envelope db for durable evidence", async () => {
+  const prior = process.env.DREAM_MACHINE_ENVELOPE_DB;
+  process.env.DREAM_MACHINE_ENVELOPE_DB = join(UI_ROOT, ".tmp/missing-envelope.sqlite");
+  try {
+    const result = await crossOAuthClientRegistration({ act: passportAct });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.reason, "envelope_unavailable");
+  } finally {
+    if (prior) process.env.DREAM_MACHINE_ENVELOPE_DB = prior;
+    else delete process.env.DREAM_MACHINE_ENVELOPE_DB;
+  }
+});
+
+test("buildStreamConfigRow includes SPINE-compatible config_hash", () => {
+  const row = buildStreamConfigRow("membrane.oauth", 1_700_000_000_000);
+  assert.equal(row.canonicalization, "board-json-v0");
+  assert.equal(row.hash_algorithm, "sha256");
+  assert.match(row.config_hash, /^[0-9a-f]{64}$/);
+  assert.ok(row.identity_body_json.includes("membrane.oauth"));
 });

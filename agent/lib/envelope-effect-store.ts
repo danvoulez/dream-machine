@@ -34,6 +34,9 @@ export type BuiltShiftResult = {
   recorded_at: number;
 };
 
+const STREAM_CANONICALIZATION = "board-json-v0";
+const STREAM_HASH_ALGORITHM = "sha256";
+
 function buildShiftIdentityBody(shift: Omit<BuiltShift, "shift_hash">) {
   return {
     stream_id: shift.stream_id,
@@ -70,11 +73,35 @@ export function buildShiftResultRecord(input: Omit<BuiltShiftResult, "result_has
   return { ...input, result_hash };
 }
 
-async function ensureStream(client: Client, streamId: string, now: number): Promise<void> {
+/** SPINE-compatible stream identity — matches Envelope buildStreamConfigHash. */
+export function buildStreamConfigRow(streamId: string, createdAt: number) {
+  const identityBody = {
+    stream_id: streamId,
+    canonicalization: STREAM_CANONICALIZATION,
+    hash_algorithm: STREAM_HASH_ALGORITHM,
+    created_at: createdAt,
+  };
+  return {
+    ...identityBody,
+    config_hash: hashValue(identityBody as unknown as JsonValue),
+    identity_body_json: canonicalJson(identityBody as unknown as JsonValue),
+  };
+}
+
+async function ensureStream(client: Client, streamId: string, createdAt: number): Promise<void> {
+  const row = buildStreamConfigRow(streamId, createdAt);
   await client.execute({
-    sql: `INSERT OR IGNORE INTO streams (stream_id, canonicalization, hash_algorithm, created_at)
-          VALUES (?, 'board-json-v0', 'sha256', ?)`,
-    args: [streamId, now],
+    sql: `INSERT OR IGNORE INTO streams (
+      stream_id, canonicalization, hash_algorithm, created_at, config_hash, identity_body_json
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [
+      row.stream_id,
+      row.canonicalization,
+      row.hash_algorithm,
+      row.created_at,
+      row.config_hash,
+      row.identity_body_json,
+    ],
   });
 }
 

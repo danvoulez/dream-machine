@@ -1,5 +1,6 @@
 // T-R2: OAuth client registration crossing — membrane edge effect with Envelope Shift record.
 
+import { existsSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { canonicalJson, hashValue, sha256Text, type Hash, type JsonValue } from "./board-json-v0.js";
 import {
@@ -68,12 +69,19 @@ export type OAuthCrossingOk = {
 
 export type OAuthCrossingError = {
   ok: false;
-  reason: "act_not_found" | "invalid_act" | "crossing_failed" | "supabase_error";
+  reason: "act_not_found" | "invalid_act" | "crossing_failed" | "supabase_error" | "envelope_unavailable";
   message: string;
   cannot_do: string[];
 };
 
 export type OAuthCrossingResult = OAuthCrossingOk | OAuthCrossingError;
+
+/** Envelope path for crossings: explicit env must exist; otherwise use bridge defaults. */
+export function resolveEnvelopeDbForCrossing(): string | undefined {
+  const explicit = process.env.DREAM_MACHINE_ENVELOPE_DB?.trim();
+  if (explicit) return existsSync(explicit) ? explicit : undefined;
+  return resolveEnvelopeDbPath();
+}
 
 const REQUIRED_CANNOT_DO = [
   "register_receipt",
@@ -151,19 +159,46 @@ export async function postSupabaseOAuthClient(
   return redactSupabaseOAuthResponse(body);
 }
 
+const HEX64 = /^[0-9a-f]{64}$/;
+
+export function assertOAuthActAnchor(
+  act: Record<string, unknown>,
+  anchor: string,
+): string | null {
+  if (!HEX64.test(anchor)) return "content_hash anchor must be 64 lowercase hex chars";
+  if (typeof act.id === "string" && act.id !== anchor) {
+    return "act.id does not match requested content_hash anchor";
+  }
+  if (act.hashes && typeof act.hashes === "object") {
+    const stored = (act.hashes as { content_hash?: string }).content_hash;
+    if (typeof stored === "string" && stored !== anchor) {
+      return "hashes.content_hash does not match requested content_hash anchor";
+    }
+  }
+  if (act.if_ok !== OAUTH_CLIENT_PROCESS_ID) {
+    return `act if_ok must be ${OAUTH_CLIENT_PROCESS_ID}`;
+  }
+  return null;
+}
+
 export async function loadOAuthAct(contentHash: string): Promise<Record<string, unknown> | null> {
+  if (!HEX64.test(contentHash)) return null;
   const dbPath = resolveLoglineDbPath();
   if (!dbPath) return null;
   const client = createClient({ url: `file:${dbPath}` });
   try {
     const row = await client.execute({
-      sql: "SELECT act FROM logline_acts WHERE content_hash = ?",
+      sql: "SELECT content_hash, act FROM logline_acts WHERE content_hash = ?",
       args: [contentHash],
     });
+    const storedHash = row.rows[0]?.content_hash;
     const actJson = row.rows[0]?.act;
+    if (typeof storedHash !== "string" || storedHash !== contentHash) return null;
     if (typeof actJson !== "string") return null;
     const parsed = JSON.parse(actJson) as Record<string, unknown>;
-    if (typeof parsed.id !== "string") parsed.id = contentHash;
+    const anchorError = assertOAuthActAnchor(parsed, contentHash);
+    if (anchorError) return null;
+    parsed.id = contentHash;
     return parsed;
   } finally {
     client.close();
@@ -174,7 +209,8 @@ function actContentHash(act: Record<string, unknown>): string {
   const fromHashes = act.hashes && typeof act.hashes === "object"
     ? (act.hashes as { content_hash?: string }).content_hash
     : undefined;
-  return (typeof act.id === "string" && act.id) || fromHashes || "";
+  const id = typeof act.id === "string" ? act.id : "";
+  return id || fromHashes || "";
 }
 
 function buildEnvelopeRecords(
@@ -238,23 +274,58 @@ export async function crossOAuthClientRegistration(
   req: OAuthCrossingRequest,
 ): Promise<OAuthCrossingResult> {
   const cannot_do = [...REQUIRED_CANNOT_DO];
+  const execute = req.execute === true;
+  const recordEnvelope = req.record_envelope !== false;
+
+  if (execute && req.act) {
+    return {
+      ok: false,
+      reason: "invalid_act",
+      message: "execute requires content_hash ledger anchor; inline act is not allowed",
+      cannot_do,
+    };
+  }
+
   let actBody: Record<string, unknown>;
+  let anchorSource: "ledger" | "inline";
   const actSnapshot = req.act ? structuredClone(req.act) as Record<string, unknown> : undefined;
-  if (req.act) {
-    actBody = structuredClone(req.act) as Record<string, unknown>;
-  } else if (req.content_hash) {
+
+  if (req.content_hash) {
     const loaded = await loadOAuthAct(req.content_hash);
     if (!loaded) {
-      return { ok: false, reason: "act_not_found", message: `no act for ${req.content_hash}`, cannot_do };
+      return {
+        ok: false,
+        reason: "act_not_found",
+        message: `no verified oauth act for ${req.content_hash}`,
+        cannot_do,
+      };
     }
     actBody = loaded;
+    anchorSource = "ledger";
+  } else if (req.act) {
+    actBody = structuredClone(req.act) as Record<string, unknown>;
+    anchorSource = "inline";
   } else {
     return { ok: false, reason: "invalid_act", message: "act or content_hash required", cannot_do };
   }
 
   const contentHashBefore = actContentHash(actBody);
-  if (!contentHashBefore || contentHashBefore.length !== 64) {
+  if (!HEX64.test(contentHashBefore)) {
     return { ok: false, reason: "invalid_act", message: "act missing content_hash anchor", cannot_do };
+  }
+
+  const anchorError = assertOAuthActAnchor(actBody, contentHashBefore);
+  if (anchorError) {
+    return { ok: false, reason: "invalid_act", message: anchorError, cannot_do };
+  }
+
+  if (execute && anchorSource !== "ledger") {
+    return {
+      ok: false,
+      reason: "invalid_act",
+      message: "execute requires a LogLine ledger anchor",
+      cannot_do,
+    };
   }
 
   const source: OAuthActFields = {
@@ -262,8 +333,21 @@ export async function crossOAuthClientRegistration(
     id: contentHashBefore,
   } as OAuthActFields;
 
+  if (recordEnvelope) {
+    const envelopeDb = resolveEnvelopeDbForCrossing();
+    if (!envelopeDb) {
+      return {
+        ok: false,
+        reason: "envelope_unavailable",
+        message: execute
+          ? "DREAM_MACHINE_ENVELOPE_DB required to record execute crossing evidence"
+          : "DREAM_MACHINE_ENVELOPE_DB required to record crossing evidence",
+        cannot_do,
+      };
+    }
+  }
+
   try {
-    const execute = req.execute === true;
     const adapter = buildOAuthAdapterAux(source, { source_hash: contentHashBefore }, execute);
     let clientId: string | null = null;
 
@@ -289,11 +373,17 @@ export async function crossOAuthClientRegistration(
       sentBy: actor,
     });
 
-    if (req.record_envelope !== false) {
-      const envelopeDb = resolveEnvelopeDbPath();
-      if (envelopeDb) {
-        await recordEffectCrossing(envelopeDb, shift, result);
+    if (recordEnvelope) {
+      const envelopeDb = resolveEnvelopeDbForCrossing();
+      if (!envelopeDb) {
+        return {
+          ok: false,
+          reason: "envelope_unavailable",
+          message: "DREAM_MACHINE_ENVELOPE_DB required to record crossing evidence",
+          cannot_do,
+        };
       }
+      await recordEffectCrossing(envelopeDb, shift, result);
     }
 
     const contentHashAfter = actContentHash(actBody);

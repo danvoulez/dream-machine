@@ -115,10 +115,10 @@ A later same-day session moved from contract-writing into implementation. Deltas
   with an extra `envelope_hash` smuggled into the `hashes` object; `lab/receipt.py`
   now enforces a closed `hashes` set (`HASH_FIELDS`). Python suite 242 passing;
   JS gate 21/21.
-  **Caveat: this work is currently UNCOMMITTED in the LogLine-Acts dirty tree
-  (two files: `lab/receipt.py`, `tests/test_receipt_hardening.py`).**
-  Still pending in §2: the citation composition profile (which hash a receipt
-  cites another by) and the portal read-only hash inspection API.
+  **Superseded by the 2026-06-27 audit:** the receipt hardening is now committed
+  locally in LogLine-Acts. Citation composition and read-only inspection also
+  exist in the working copy with tests; their remaining work is commit/merge
+  discipline plus membrane/portal integration.
 
 - **NEW workstream — Envelope Additive Spine (foundation): DONE and merged.**
   The Envelope definition was reframed (see
@@ -142,6 +142,56 @@ A later same-day session moved from contract-writing into implementation. Deltas
   monorepo without its root tsconfig (dangling `extends: ../../tsconfig.json`),
   so it did not `tsc` or `vitest` at all. Replaced with a self-contained tsconfig;
   the repo is now git-initialized with a green baseline plus the foundation merged.
+
+### Session Update — 2026-06-27 (audit correction pass)
+
+This pass re-scanned the three active repos and corrects stale claims in this
+task list. Verified facts:
+
+- **Processual UI:** the membrane docs are committed on branch
+  `codex/dream-machine-membrane-contracts`. Current untracked implementation
+  foundation is only:
+  `shared/tools/runtime-projection.ts` and
+  `agent/lib/projection-normalizer.ts`. These define the read-only projection
+  response types and a pure normalizer. They are not yet wired into Eve as an
+  agent tool and not yet rendered as a custom chat card.
+- **Processual UI validation:** `pnpm contracts:validate` passes:
+  `Dream Machine contract validation passed (15 contracts)`. `pnpm typecheck`
+  also passes with the new untracked normalizer/types.
+- **LogLine Acts:** receipt hardening and OAuth dry-run are no longer just dirty
+  work. They are present as local commits on `main`:
+  `c4e2d59 harden(receipt): golden vectors, JS-gate parity, closed hashes object`
+  and
+  `5b32f8a feat(oauth): commit OAuth 2.1 client registration crossing (acts-side dry-run)`.
+  The current dirty LogLine tree is instead:
+  `docs/DANGER_TIERS.md`, `lab/cli.py`,
+  `processes/CURRENT_RUNNABLE_PROCESSES.md`,
+  `processes/PROCESS_CATALOG.md`, and
+  `tests/test_grants_danger_tiers.py`, plus untracked docs/PDFs and read-only
+  inspection/citation files if not yet added in this working copy.
+- **LogLine validation:** relevant local tests pass when run through the moved
+  venv's Python directly:
+  `.venv/bin/python -m pytest tests/test_receipt.py tests/test_receipt_hardening.py tests/test_citation.py tests/test_inspect.py tests/test_oauth_client.py tests/test_grants_danger_tiers.py`
+  => 94 passed. The wrapper `.venv/bin/pytest` itself is broken because its
+  shebang still points at `/Users/ubl-ops/dream-machine-main/.venv/...` from
+  before the folder rename; use `python -m pytest` or rebuild the venv.
+- **Envelope Ledger:** additive spine foundation is committed on `main`.
+  Vocabulary migration has started in TypeScript type names and aliases, while
+  stored identity keys/table names/legacy function names remain deliberately
+  stable to avoid re-keying existing hashes. A typecheck break in `src/board.ts`
+  from the partial migration was found and fixed in this audit pass.
+- **Envelope validation:** `pnpm lint` now passes and `pnpm test` passes:
+  18 test files, 103 tests.
+
+Corrected conclusion:
+
+```text
+The two crown technologies exist and are test-backed.
+The missing work is no longer "invent the runtime".
+The missing work is harden the exact membrane surface, finish the vocabulary
+migration safely, wire the portal tool/card, and define the installable runtime
+operations around Canyon / Golden Bridge / Manhattan.
+```
 
 ### Done
 
@@ -192,6 +242,10 @@ A later same-day session moved from contract-writing into implementation. Deltas
 - Projection-runtime decision made:
   Envelope Dynamic Projections prevail as the portal-facing projection runtime;
   LogLine projections remain internal read models and proof-adjacent views.
+- Processual UI projection foundation started:
+  `shared/tools/runtime-projection.ts` and
+  `agent/lib/projection-normalizer.ts` define and normalize read-only projection
+  responses; they typecheck but are not wired as an Eve tool/card yet.
 - Contract validator added:
   `scripts/validate-dream-machine-contracts.mjs`.
 - Package script added:
@@ -201,19 +255,23 @@ A later same-day session moved from contract-writing into implementation. Deltas
 
 ### Partially Done
 
-- Envelope vocabulary is clean in the canonical Board docs, but not yet migrated
-  in `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src` and
-  `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/tests`.
-- LogLine content-addressing hardening is now largely done (see Session Update
-  2026-06-26): golden vectors, Python↔JS canonicalization parity over the shared
-  conformance corpus, the LIP-0007 composition profile, and tamper coverage, plus
-  a real `verify()` closed-`hashes` fix. Remaining: the portal hash inspection API
-  and the citation composition profile (which hash cites which). NOTE: the
-  hardening files are still UNCOMMITTED in the LogLine-Acts tree.
-- Envelope Dynamic Projections already exist in implementation, but still need
-  the "best in class" hardening tasks:
+- Envelope vocabulary is clean in the canonical Board docs. Code migration has
+  started through sanitized TS type names and deprecated aliases, but stored
+  identity keys/table names/test vocabulary still use Candidate/Admission/Act
+  where changing them would re-key hashes or break storage compatibility.
+- LogLine content-addressing hardening is now largely done and committed locally
+  in LogLine-Acts: golden vectors, Python↔JS canonicalization parity over the
+  shared conformance corpus, the LIP-0007 composition profile, tamper coverage,
+  and the closed `hashes` fix. Citation composition and read-only hash inspection
+  also exist in the working copy (`lab/citation.py`, `lab/inspect.py`) with
+  tests. Remaining: decide their commit/merge state, expose the inspection
+  surface through the portal, and encode the citation profile into the membrane
+  contracts.
+- Envelope Dynamic Projections already exist in implementation and are verified
+  for prefix/source integrity, open finding references, ShiftResult receipts, and
+  hash recomputation. They still need the "best in class" hardening tasks:
   projection pin fields, parent projection hashes, ladder levels, freshness,
-  loss accounting, and projection diff.
+  loss accounting, projection diff, and portal-contract normalization tests.
 - Envelope validation already exists and is the right kind of validator for
   Envelope:
   `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/validate.ts`
@@ -226,7 +284,8 @@ A later same-day session moved from contract-writing into implementation. Deltas
   conflict map, portal chief doctrine, and first projection schema now exist.
   Full JSON Schema validation against sample payloads is still pending.
 - Processual UI has the right Eve/Vercel integration pattern through
-  `save_memory`, but no Dream Machine runtime tools yet.
+  `save_memory`, and now has an untracked pure normalizer/type foundation. It
+  still has no Dream Machine runtime Eve tool and no projection card renderer.
 
 ### Pending
 
@@ -245,9 +304,11 @@ A later same-day session moved from contract-writing into implementation. Deltas
 - Migrate Envelope implementation vocabulary from the older
   Candidate / Admission / Act naming to Proposal / Confirmation / BoardCommit /
   BoardAct naming.
-- Implement `agent/tools/runtime_projection.ts` in Processual UI.
-- Implement the runtime projection normalizer from Envelope/LogLine outputs to
-  `dream-machine-projections.v0.yml`.
+- Implement `agent/tools/runtime_projection.ts` in Processual UI and wire it into
+  the agent/runtime.
+- Finish and test the runtime projection normalizer from Envelope/LogLine outputs
+  to `dream-machine-projections.v0.yml`; a pure first pass exists but has no unit
+  tests and no live runtime adapter.
 - Add projection cards, source-reference cards, warning cards, open-finding
   cards, and declared-affordance buttons to the UI.
 - Add integration tests proving the portal can request/render projections but
@@ -334,17 +395,18 @@ Done when:
 - All four files exist. Complete.
 - `scripts/validate-dream-machine-contracts.mjs` requires them. Complete.
 - `pnpm contracts:validate` passes with the expanded contract count. Complete:
-  14 contracts.
+  15 contracts.
 - Each file depends on the ownership, vocabulary, reference, core technology,
   projection, and action contracts where relevant. Complete where relevant.
 
 ### 2. LogLine Hash Excellence
 
-Status: hardening substantially done (golden vectors + Python↔JS parity +
-LIP-0007 composition profile + tamper, plus a real `verify()` closed-`hashes`
-bug fixed); citation-composition profile and portal hash-inspection API still
-pending. NOTE: the hardening files (`lab/receipt.py`, `tests/test_receipt_hardening.py`)
-are UNCOMMITTED in the LogLine-Acts tree — see Session Update 2026-06-26.
+Status: hardening substantially done and locally committed for the receipt core
+(golden vectors + Python↔JS parity + LIP-0007 composition profile + tamper, plus
+a real `verify()` closed-`hashes` bug fixed). Citation-composition profile and
+portal read-only hash inspection now exist in the working copy with tests; they
+still need commit/merge discipline and membrane/portal integration. See Session
+Update 2026-06-27.
 
 Primary repo:
 
@@ -353,8 +415,13 @@ Primary repo:
 Existing anchors:
 
 - `lab/receipt.py`
+- `lab/citation.py`
+- `lab/inspect.py`
 - `lab/store.py`
 - `tests/test_receipt.py`
+- `tests/test_receipt_hardening.py`
+- `tests/test_citation.py`
+- `tests/test_inspect.py`
 - `tests/test_signing.py`
 
 Details:
@@ -366,13 +433,12 @@ Details:
   supported languages.
 - Add test vectors for Unicode, numeric edge cases, key ordering, forbidden
   fields, AUX fields, and every nine-slot mutation.
-- Define the hash composition profile:
-  when a LogLine receipt cites another receipt, whether it cites
-  `content_hash`, `tuple_hash`, `process_contract_hash`, `result_hash`, or a
-  DAG/Merkle bundle.
-- Expose a read-only hash inspection surface for the portal:
-  given a hash, return receipt metadata, canonical slots, validation status,
-  and safe source refs without granting mutation.
+- Fold the existing hash composition profile into the membrane docs:
+  `lab/citation.py` defines `content_hash`, `tuple_hash`,
+  `process_contract_hash`, `result_hash`, and ordered bundle citations.
+- Fold the existing read-only hash inspection surface into the portal path:
+  `lab/inspect.py` returns receipt metadata, canonical slots, validation status,
+  citation status, and safe source refs without granting mutation.
 - Keep the invariant nine slots as the only runtime anatomy:
   `who`, `did`, `this`, `when`, `confirmed_by`, `if_ok`, `if_doubt`,
   `if_not`, `status`.
@@ -384,11 +450,13 @@ Done when:
 - Any mutation to one of the nine slots changes `tuple_hash`.
 - Any mutation to canonical content changes `content_hash`.
 - Portal-facing hash inspection is read-only and cannot register, dispatch, or
-  close anything.
+  close anything. Implemented at LogLine module level; still pending in the
+  Processual UI runtime tool.
 
 ### 3. Envelope Dynamic Projection Excellence
 
-Status: runtime exists, hardening pending.
+Status: runtime exists and verifier/tests are green; projection-excellence
+hardening pending.
 
 Primary repo:
 
@@ -405,6 +473,8 @@ Existing anchors:
 - `tests/verify.test.ts`
 - `tests/board-fuzz.test.ts`
 - `tests/identity.test.ts`
+- `pnpm lint`
+- `pnpm test`
 
 Validator status:
 
@@ -419,7 +489,8 @@ Validator status:
   finding references.
 - `tests/verify.test.ts`, `tests/board-fuzz.test.ts`, and `tests/identity.test.ts`
   already prove clean-ledger success and tamper detection.
-- This is sufficient for the current Envelope implementation.
+- This is sufficient for the current Envelope implementation; verified on
+  2026-06-27 with `pnpm lint` and `pnpm test` (103 tests).
 - It is not yet sufficient for the future Dynamic Projection bar because those
   fields do not exist yet in the Envelope model.
 
@@ -466,7 +537,7 @@ Done when:
 
 ### 4. Envelope Implementation Vocabulary Migration
 
-Status: docs sanitized, code not yet migrated.
+Status: docs sanitized; code migration started but intentionally not complete.
 
 Primary repo:
 
@@ -480,10 +551,14 @@ Affected areas:
 
 Details:
 
-- Rename implementation vocabulary from old terms to sanitized terms:
-  Candidate to Proposal, Admission to Confirmation / Sealing / BoardCommit,
-  admitted to board_committed, Act to BoardAct or EnvelopeAct where the owner is
-  Envelope.
+- Continue implementation vocabulary migration from old terms to sanitized
+  terms: Candidate to Proposal, Admission to Confirmation / Sealing /
+  BoardCommit, admitted to board_committed, Act to BoardAct or EnvelopeAct where
+  the owner is Envelope.
+- Preserve identity keys and stored values when renaming would re-key hashes.
+  Current code explicitly keeps on-wire keys such as `candidate_version_hash`,
+  `admitted_by`, `admitted_risk`, table names such as `candidate_versions`, and
+  output kinds such as `act`/`candidate` until a deliberate migration exists.
 - Preserve storage compatibility intentionally:
   if database table or column names cannot change immediately, create a
   migration plan or compatibility aliases rather than silently breaking data.
@@ -495,15 +570,16 @@ Details:
 
 Done when:
 
-- Source and tests no longer use the old unqualified vocabulary except in
-  explicit compatibility/deprecation notices.
+- Source and tests no longer expose old unqualified vocabulary in new public API
+  surfaces except compatibility/deprecation notices; stored identity keys remain
+  old by design until a migration plan is written.
 - Tests pass in the Envelope repo.
 - The sanitizer manifest is updated to distinguish docs-clean from code-clean.
 - Public API names match the membrane vocabulary.
 
 ### 5. Runtime Projection Tool
 
-Status: pending.
+Status: foundation started; agent tool pending.
 
 Primary repo:
 
@@ -512,6 +588,8 @@ Primary repo:
 Files likely involved:
 
 - `agent/tools/runtime_projection.ts`
+- `shared/tools/runtime-projection.ts` (exists, untracked)
+- `agent/lib/projection-normalizer.ts` (exists, untracked)
 - `agent/agent.ts`
 - `app/components/chat/message/MessageContentEve.vue`
 - `app/components/chat/tool/*`
@@ -519,7 +597,9 @@ Files likely involved:
 
 Details:
 
-- Implement `runtime_projection` as the first Dream Machine runtime tool.
+- Implement `runtime_projection` as the first Dream Machine runtime tool. The
+  shared response types and pure normalizer exist; the Eve `defineTool` wrapper,
+  live/mock source adapter, and agent registration do not.
 - Inputs should include:
   `intent`, `scope`, optional filters, `as_of`, `audience`, `max_blocks`, and
   `include_affordances`.
@@ -546,7 +626,7 @@ Done when:
 
 ### 6. Projection Normalizer
 
-Status: pending.
+Status: first pure pass exists; tests and live adapters pending.
 
 Primary repo:
 
@@ -573,6 +653,9 @@ Details:
 
 Done when:
 
+- Unit tests cover the normalizer's rejection paths, source-ref requirements,
+  mixed-jurisdiction warnings, stale warnings, affordance filtering, and
+  `cannot_do` guarantees.
 - A sample Envelope projection normalizes into a valid portal response.
 - A sample LogLine projection normalizes into a valid portal response.
 - A mixed response groups source refs by owner.
@@ -702,25 +785,27 @@ Done when:
 
 ### 11. OAuth Client Registration Crossing — first Envelope additive-spine client
 
-Status: design done; acts-side dry-run implemented but UNCOMMITTED; the
-membrane/Envelope crossing not yet built. This is the first concrete client of
-the Envelope Additive Spine (see Session Update 2026-06-26) and validates it
+Status: design done; acts-side dry-run committed locally in LogLine-Acts; edge
+POST script exists; the Envelope additive crossing record is not yet built. This
+is the first concrete client of the Envelope Additive Spine and validates it
 end-to-end: a process recognizes an act and moves it across an external boundary,
-and that movement is recorded additively as a `Shift` while the act stays intact.
+and that movement must be recorded additively as a `Shift` while the act stays
+intact.
 
 Primary repos:
 
 - `/Users/ubl-ops/Projetos/Dream-Machine-LogLine-Acts` (acts-side dry-run, consequence)
 - `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger` (the crossing record, observability)
 
-Existing (LogLine-Acts, UNCOMMITTED in the dirty tree — do not lose):
+Existing (LogLine-Acts):
 
 - `lab/oauth.py` — dry-run adapter. `external_effect: false`, `api_called: false`;
   builds the canonical RFC 7591 client-metadata request deterministically and
   emits `request_hash` / `client_metadata_hash` as evidence + a candidate act.
 - `tools/register_oauth_client.py` — the edge effect: the ONE place the real
-  Supabase Auth admin POST happens, outside the kernel. Currently a bare `urllib`
-  POST with no envelope/membrane discipline.
+  Supabase Auth admin POST happens, outside the kernel. It defaults to dry-run
+  and requires `--execute` plus `SUPABASE_SECRET_KEY` to send. It still does not
+  record the POST as an Envelope `Shift`/`ShiftResult`.
 - `processes/oauth-client.v1.yml` — process contract, `danger_tier: L3`,
   `evidence_must_include: [request_hash, client_metadata_hash]`.
 - `tests/test_oauth_client.py`, plus the `oauth-client` entry in `lab/adapters.py`.
@@ -728,8 +813,8 @@ Existing (LogLine-Acts, UNCOMMITTED in the dirty tree — do not lose):
 The split (decided this session):
 
 - The **acts-side dry-run adapter is legitimate LogLine consequence work** —
-  recording the intent and evidence of a crossing. It is committable as-is on the
-  LogLine side.
+  recording the intent and evidence of a crossing. It is committed locally on
+  the LogLine side.
 - The **real POST is the membrane crossing** and currently bypasses the membrane.
   It should become a TypeScript edge program that performs the POST and records the
   crossing as an Envelope `Shift` (kind `effect`): `input_hash` references the
@@ -754,7 +839,8 @@ Depends on:
 
 Done when:
 
-- The acts-side dry-run adapter is committed in LogLine-Acts.
+- The acts-side dry-run adapter is committed in LogLine-Acts. Complete locally;
+  still check push/merge status against origin before treating it as shared.
 - A TypeScript edge crosser performs the Supabase POST and records an Envelope
   `Shift`/`ShiftResult` for the crossing, with transport + custody, leaving the
   wrapped act byte-for-byte intact.

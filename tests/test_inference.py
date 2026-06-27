@@ -116,6 +116,11 @@ def test_infer_cli_registers_request_and_executor_handles_it(tmp_path):
     )
 
     result = json.loads(inspect_proc.stdout)
-    assert result["did"] == "llm.receipt"
-    assert result["status"] == "fechado"
-    assert result["external_effect"] is False
+    # `lab inspect` returns the read-only portal projection: canonical nine slots
+    # under "slots", plus validation and read-only status. It deliberately does not
+    # surface non-canonical fields like external_effect (covered by the in-process
+    # test above via store.get). See lab/inspect.py docstring.
+    assert result["slots"]["did"] == "llm.receipt"
+    assert result["slots"]["status"] == "fechado"
+    assert result["validation"]["ok"] is True
+    assert result["read_only"] is True

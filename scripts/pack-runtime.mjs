@@ -5,7 +5,14 @@
  * Usage: node scripts/pack-runtime.mjs [--skip-test] [--skip-spine-test]
  */
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -18,6 +25,7 @@ const PACK_RECEIPT = join(PACK_DIR, "dream-machine.json");
 const PACK_RECEIPT_LEGACY = join(PACK_DIR, "dream-machine-runtime.json");
 const skipTest = process.argv.includes("--skip-test");
 const skipSpineTest = process.argv.includes("--skip-spine-test");
+const skipTar = process.argv.includes("--skip-tar");
 
 function sha256File(path) {
   const data = readFileSync(path);
@@ -84,6 +92,24 @@ function hashOrganelle(organelleKey, spec) {
   };
 }
 
+function stagePackedFiles(stagingRoot, spec) {
+  const repoRoot = join(WS_ROOT, spec.repo);
+  const destRoot = join(stagingRoot, spec.repo);
+  const copyPaths = [...spec.required_files, ...(spec.ledger_artifacts ?? [])];
+  for (const rel of copyPaths) {
+    const src = join(repoRoot, rel);
+    if (!existsSync(src)) continue;
+    const dest = join(destRoot, rel);
+    mkdirSync(dirname(dest), { recursive: true });
+    copyFileSync(src, dest);
+  }
+}
+
+function writeTarball(stagingDir, bundleName, tarballPath) {
+  run("archive tarball", "tar", ["-czf", tarballPath, "-C", dirname(stagingDir), bundleName]);
+  return sha256File(tarballPath);
+}
+
 const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
 process.stdout.write(`Packing ${manifest.name} v${manifest.version} (${manifest.task})\n`);
 
@@ -131,10 +157,41 @@ const receipt = {
 };
 
 mkdirSync(PACK_DIR, { recursive: true });
+
+let archive = null;
+if (!skipTar) {
+  const bundleName = `${manifest.name}-${manifest.version}`;
+  const stagingParent = join(PACK_DIR, "staging");
+  const stagingRoot = join(stagingParent, bundleName);
+  rmSync(stagingParent, { recursive: true, force: true });
+  mkdirSync(stagingRoot, { recursive: true });
+
+  for (const spec of Object.values(manifest.organelles)) {
+    stagePackedFiles(stagingRoot, spec);
+  }
+
+  const tarballName = `${bundleName}.tar.gz`;
+  const tarballPath = join(PACK_DIR, tarballName);
+  writeFileSync(join(stagingRoot, "dream-machine.json"), `${JSON.stringify(receipt, null, 2)}\n`);
+  const tarballSha = writeTarball(stagingRoot, bundleName, tarballPath);
+  archive = {
+    path: tarballPath,
+    name: tarballName,
+    sha256: tarballSha,
+    bundle: bundleName,
+  };
+  receipt.archive = archive;
+  process.stdout.write(`  ✓ tarball staged (${Object.keys(manifest.organelles).length} organelles)\n`);
+}
+
 const json = `${JSON.stringify(receipt, null, 2)}\n`;
 writeFileSync(PACK_RECEIPT, json);
 writeFileSync(PACK_RECEIPT_LEGACY, json);
 
 process.stdout.write(`\nPack receipt: ${PACK_RECEIPT}\n`);
 process.stdout.write(`Legacy alias:   ${PACK_RECEIPT_LEGACY}\n`);
+if (archive) {
+  process.stdout.write(`Tarball:        ${archive.path}\n`);
+  process.stdout.write(`Tarball sha256: ${archive.sha256}\n`);
+}
 process.stdout.write("Dream Machine triple pack OK.\n");

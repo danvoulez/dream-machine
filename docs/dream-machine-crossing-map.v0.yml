@@ -22,7 +22,7 @@ global_rules:
   - id: read_before_route
     text: Portal projection is read-only before any effectful route is prepared.
   - id: projection_is_perception
-    text: Envelope Dynamic Projections may guide attention but cannot create consequence.
+    text: LogLine and Envelope projections may guide attention but cannot create consequence.
   - id: hash_is_authority_anchor
     text: LogLine content hashes anchor registered consequence and authority routes.
   - id: affordance_before_button
@@ -177,4 +177,3 @@ validation_rules:
     text: Runtime-to-UI projection responses must include cannot_do.
   - id: effect_requires_authority_bearing_mode
     text: Any side-effecting route must use authority_bearing mode and LogLine authority.
-

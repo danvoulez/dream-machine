@@ -15,7 +15,8 @@ decision:
   both_stay: true
   no_single_winner: true
   authority_winner: logline_content_addressing
-  perception_winner: envelope_dynamic_projection
+  observability_winner: envelope_dynamic_projection
+  portal_projection_policy: route_by_jurisdiction
   membrane_rule: >
     Content-addressed receipts and dynamic projections must interoperate through
     references, not by redefining each other's primitives.
@@ -93,6 +94,12 @@ technologies:
       - narrative_blocks
       - audience_specific_views
       - verification_of_projection_prefix
+      - projection_pin_fields_in_identity_when_present
+      - parent_projection_hashes_in_identity_when_present
+      - ladder_level_in_identity_when_present
+      - ttl_stale_rebuild_reason_fields_when_present
+      - loss_accounting_field_when_present
+      - projection_diff_changes_since_operation
     excellence_bar:
       required:
         - every_projection_cites_source_refs
@@ -104,12 +111,8 @@ technologies:
         - projection_blocks_map_to_portal_blocks
         - projection_output_cannot_register_or_dispatch
       future_hardening:
-        - add_projection_pin_shape_model_prompt_params_seed
-        - add_parent_projection_hashes
-        - add_ladder_level_l0_to_l5
-        - add_freshness_and_ttl_policy
-        - add_loss_accounting_for_evaporated_events
-        - add_projection_diff_and_changes_since
+        - enrich_freshness_and_ttl_policy
+        - formalize_loss_accounting_for_evaporated_events
         - add_contract_tests_against_portal_response_shape
     must_not:
       - claim_sovereign_consequence
@@ -122,6 +125,7 @@ comparison:
   not_competitors: true
   better_for_authority: logline_content_addressing
   better_for_cognition: envelope_dynamic_projection
+  portal_projection_winner: none
   conflict_rule: >
     If a dynamic projection disagrees with registered consequence, rebuild the
     projection. Do not reinterpret registered consequence to satisfy a projection.
@@ -131,6 +135,11 @@ comparison:
 
 portal_runtime_policy:
   first_tool: runtime_projection
+  routing_policy: >
+    The portal-facing tool is a router/composer, not an Envelope-only runtime.
+    It routes to LogLine for consequence, proof, hashes, grants, and process law;
+    routes to Envelope for scene, movement, observability, findings, and
+    salience; and returns mixed views only by grouping source refs by owner.
   request_questions:
     - what_registered_consequence_exists
     - what_current_projection_sees
@@ -151,11 +160,11 @@ readiness_tasks:
     - define_receipt_reference_bundle_for_projection_cards
     - document_hash_composition_profile
   envelope_projection_excellence:
-    - add_projection_pin_fields
-    - add_projection_lineage_fields
-    - add_freshness_fields
-    - add_partial_source_loss_fields
-    - add_projection_diff_operation
+    - enrich_projection_pin_usage
+    - enrich_projection_lineage_usage
+    - enrich_freshness_policy
+    - formalize_partial_source_loss_policy
+    - enrich_projection_diff_operation
     - add_portal_projection_normalizer
   membrane_excellence:
     - enforce_hash_refs_for_consequence

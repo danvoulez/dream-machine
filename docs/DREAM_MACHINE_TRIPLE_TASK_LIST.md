@@ -193,6 +193,39 @@ migration safely, wire the portal tool/card, and define the installable runtime
 operations around Canyon / Golden Bridge / Manhattan.
 ```
 
+### Session Update — 2026-06-27 (projection membrane implementation pass)
+
+This pass corrected the projection-runtime decision and implemented the first
+hardening slice.
+
+- **Projection runtime decision corrected.** No single projection runtime wins
+  for the portal as a whole. `runtime_projection` is the membrane-facing
+  router/composer. It routes LogLine questions to LogLine projections/read-only
+  proof surfaces, Envelope questions to Envelope projections, and mixed
+  questions to side-by-side grouped source refs.
+- **Processual UI portal tool/card now exists and is tested.**
+  `agent/tools/runtime_projection.ts` now has jurisdiction routing, live/stub
+  adapter handling, native LogLine projection mapping, Envelope projection
+  mapping, and compatibility with both `source.board_act_hashes` and the current
+  implementation field `source.act_hashes`.
+- **Projection normalizer hardened.** Bare block refs now resolve against
+  declared top-level refs instead of inventing ownerless refs, and affordance
+  `result_mode` is validated before a button-eligible affordance survives.
+- **Envelope projection hardening started in code.** Envelope `Projection`
+  identity can now carry `pin`, `parent_projection_hashes`, `ladder_level`,
+  `ttl_ms`, `stale`, `rebuild_reason`, and `loss_accounting`. These fields are
+  persisted through `identity_body_json` without a table migration. The verifier
+  now catches invalid ladder levels, missing parent projections, stale views
+  without rebuild reason, and incomplete loss accounting.
+- **Projection diff / `changes_since` implemented.** Envelope now exposes
+  `diffProjections(...)` and `Board.diffProjections(...)`, comparing source refs,
+  open findings, narrative block additions/removals/changes, stale changes, and
+  generation delta between two projections. The Processual UI mapper recognizes
+  this diff payload for the `changes_since` intent.
+- **Tests added.** Processual UI has `pnpm test:projection`; Envelope verifier
+  and identity tests cover projection hardening metadata; Board tests cover
+  projection diff.
+
 ### Done
 
 - Folder cut completed:
@@ -238,14 +271,18 @@ operations around Canyon / Golden Bridge / Manhattan.
   `docs/DREAM_MACHINE_PORTAL_UNDERSTANDING.md`.
 - Runtime reality scan completed:
   LogLine already has projection runtime surfaces; Envelope already has
-  projection runtime surfaces; Processual UI does not yet have the portal tool.
+  projection runtime surfaces; Processual UI now has the first portal tool/card
+  surface for `runtime_projection`.
 - Projection-runtime decision made:
-  Envelope Dynamic Projections prevail as the portal-facing projection runtime;
-  LogLine projections remain internal read models and proof-adjacent views.
+  no single projection runtime prevails for the whole portal. `runtime_projection`
+  is the membrane-facing router/composer over LogLine, Envelope, and mixed
+  projection views.
 - Processual UI projection foundation started:
   `shared/tools/runtime-projection.ts` and
   `agent/lib/projection-normalizer.ts` define and normalize read-only projection
-  responses; they typecheck but are not wired as an Eve tool/card yet.
+  responses; `agent/tools/runtime_projection.ts` and
+  `app/components/chat/tool/RuntimeProjection.vue` now provide the first Eve
+  tool/card surface. Live runtime adapters and tests remain pending.
 - Contract validator added:
   `scripts/validate-dream-machine-contracts.mjs`.
 - Package script added:
@@ -269,9 +306,12 @@ operations around Canyon / Golden Bridge / Manhattan.
   contracts.
 - Envelope Dynamic Projections already exist in implementation and are verified
   for prefix/source integrity, open finding references, ShiftResult receipts, and
-  hash recomputation. They still need the "best in class" hardening tasks:
-  projection pin fields, parent projection hashes, ladder levels, freshness,
-  loss accounting, projection diff, and portal-contract normalization tests.
+  hash recomputation. Projection pin fields, parent projection hashes, ladder
+  levels, TTL/stale/rebuild reason, and loss accounting now exist in code and
+  participate in projection identity when present. Projection diff /
+  `changes_since` now exists. Remaining "best in class" hardening: richer
+  freshness policy, portal-contract normalization fixtures, live adapter tests,
+  and formal evaporated-source loss policy.
 - Envelope validation already exists and is the right kind of validator for
   Envelope:
   `/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/src/validate.ts`
@@ -304,11 +344,12 @@ operations around Canyon / Golden Bridge / Manhattan.
 - Migrate Envelope implementation vocabulary from the older
   Candidate / Admission / Act naming to Proposal / Confirmation / BoardCommit /
   BoardAct naming.
-- Implement `agent/tools/runtime_projection.ts` in Processual UI and wire it into
-  the agent/runtime.
+- Harden `agent/tools/runtime_projection.ts` in Processual UI: keep the existing
+  read-only Eve tool, route by jurisdiction, preserve LogLine/Envelope source
+  refs, and continue live adapter coverage beyond the current pure tests.
 - Finish and test the runtime projection normalizer from Envelope/LogLine outputs
-  to `dream-machine-projections.v0.yml`; a pure first pass exists but has no unit
-  tests and no live runtime adapter.
+  to `dream-machine-projections.v0.yml`; a pure first pass exists, the tool/card
+  now exist, but live-source tests and card tests are still pending.
 - Add projection cards, source-reference cards, warning cards, open-finding
   cards, and declared-affordance buttons to the UI.
 - Add integration tests proving the portal can request/render projections but
@@ -351,9 +392,12 @@ Details:
 - Keep the Board docs sanitized. Do not reintroduce unqualified Candidate,
   Admission, admitted, or Act vocabulary outside explicit ban notices.
 - Keep LogLine as authority/consequence and Envelope as cognition/projection.
-- Keep the decision that Envelope Dynamic Projections are the portal-facing
-  projection runtime.
-- Keep LogLine projections as internal read models and proof-adjacent views.
+- Keep the decision that `runtime_projection` is the portal-facing
+  projection membrane: it routes to LogLine projections for consequence/proof,
+  Envelope projections for scene/movement/observability, and mixed projections
+  only as side-by-side composition.
+- Keep LogLine projections non-authoritative but first-class for registered
+  consequence/proof questions.
 - Keep `pnpm contracts:validate` passing before and after every doc change.
 
 Done when:
@@ -455,8 +499,9 @@ Done when:
 
 ### 3. Envelope Dynamic Projection Excellence
 
-Status: runtime exists and verifier/tests are green; projection-excellence
-hardening pending.
+Status: runtime exists, verifier/tests are green, and the first projection
+excellence fields are implemented. Diff/changes-since and richer freshness
+policy remain pending.
 
 Primary repo:
 
@@ -499,18 +544,19 @@ Details:
 - Do not introduce LogLine/JCS as Envelope authority. Envelope uses its own
   `board-json-v0` identity and verifier. The task is to harden the existing
   Envelope verifier as Envelope grows.
-- Add an explicit projection pin shape:
+- Add an explicit projection pin shape. Implemented in code:
   `model`, `prompt`, `params`, `seed`, and model-call reference.
-- Add projection lineage:
+- Add projection lineage. Implemented in code:
   `parent_projection_hashes`, `ladder_level`, and optional reason for descent
   or refinement.
-- Add freshness:
+- Add freshness. Basic code fields implemented; richer policy pending:
   `generated_at`, `as_of_seq`, `ttl_ms`, `stale`, `rebuild_reason`, and
   source watermark.
-- Add partial-source and evaporation accounting:
+- Add partial-source and evaporation accounting. Basic loss-accounting field
+  implemented; evaporation policy still pending:
   when events evaporate, projections must still cite durable `source_digest`
   and must reveal what source detail is no longer available.
-- Add `changes_since` or projection diff:
+- Add `changes_since` or projection diff. Implemented in code:
   compare projection hashes, source refs, findings, narrative blocks, risk
   notes, and affordances.
 - Add contract tests against `docs/dream-machine-projections.v0.yml`:
@@ -533,6 +579,8 @@ Done when:
 - New Envelope verifier tests cover pin, lineage, freshness, partial source
   accounting, diff, and portal-contract normalization.
 - Projection diff can answer "what changed since the previous projection?"
+  Implemented for source refs, open findings, narrative block add/remove/change,
+  stale status changes, and generated-at delta.
 - A sample Envelope projection normalizes cleanly into the portal contract.
 
 ### 4. Envelope Implementation Vocabulary Migration
@@ -597,16 +645,19 @@ Files likely involved:
 
 Details:
 
-- Implement `runtime_projection` as the first Dream Machine runtime tool. The
-  shared response types and pure normalizer exist; the Eve `defineTool` wrapper,
-  live/mock source adapter, and agent registration do not.
+- `runtime_projection` exists as the first Dream Machine runtime tool. The
+  shared response types, pure normalizer, Eve `defineTool` wrapper, stub/live
+  adapter seam, and first card renderer exist. The remaining work is live
+  adapter hardening, LogLine/Envelope routing coverage, and tests.
 - Inputs should include:
   `intent`, `scope`, optional filters, `as_of`, `audience`, `max_blocks`, and
   `include_affordances`.
 - Source selection should support:
   Envelope-only, LogLine-only, and mixed projections.
-- Default portal-facing projection should prefer Envelope Dynamic Projections
-  for cognition and use LogLine only for consequence/source verification.
+- Default portal-facing projection should route by question:
+  LogLine for consequence/proof/hash/process/grant questions, Envelope for
+  scene/movement/observability/finding questions, and mixed only when the
+  operator explicitly needs both views side by side.
 - The tool must normalize outputs into `dream-machine-projections.v0.yml`.
 - Every response must include:
   `projection_id`, `intent`, `jurisdiction`, `authoritative: false`,
@@ -725,13 +776,13 @@ Order:
 
 1. Write the missing membrane contract artifacts. Complete.
 2. Add JSON schema validation for projections and contracts.
-3. Harden Envelope Dynamic Projections because they will be the portal-facing
-   runtime.
+3. Harden Envelope Dynamic Projections because they are the observability-side
+   projection runtime.
 4. Harden LogLine hash references and inspection because they anchor authority.
 5. Migrate Envelope code vocabulary.
-6. Implement `runtime_projection`.
-7. Implement the projection normalizer.
-8. Implement projection UI cards.
+6. Harden the existing `runtime_projection` live adapter and jurisdiction routing.
+7. Harden the existing projection normalizer.
+8. Harden the existing projection UI card.
 9. Add integration and safety tests.
 
 Reason:
@@ -886,17 +937,18 @@ Existing projection surfaces:
   projection prefixes, open findings, projection receipts, and hash
   recomputation.
 - Processual UI:
-  `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/agent/agent.ts` is still
-  only the agent definition, while
-  `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/agent/tools/save_memory.ts`
-  shows the existing Eve tool-card and approval pattern. No
-  `runtime_projection` tool exists yet.
+  `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/agent/tools/runtime_projection.ts`
+  implements the first read-only portal tool with a stub/live adapter seam, and
+  `/Users/ubl-ops/Projetos/Dream-Machine-Processual-UI/app/components/chat/tool/RuntimeProjection.vue`
+  renders the first projection card. The remaining gap is not tool existence;
+  it is live adapter correctness, LogLine/Envelope routing, and tests.
 
 Reality conclusion:
 
 ```text
-Projection runtime exists.
-Portal projection membrane does not yet exist.
+Projection runtimes exist.
+The first portal projection membrane exists.
+It still needs live-source adapters, routing tests, and projection-card tests.
 ```
 
 Therefore the next implementation task is not "create projections." It is:
@@ -1103,6 +1155,11 @@ the explicit ban notice.
 - Define which Envelope objects can evaporate and which must remain durable.
 - Decide how Envelope projection blocks map to portal response blocks without
   losing `source.act_hashes`, open findings, and shift provenance.
+- Preserve wire compatibility during vocabulary migration:
+  sanitized docs call the source field `board_act_hashes`, while the current
+  Envelope implementation emits `source.act_hashes`. Portal adapters must accept
+  both and normalize the semantic ref as `board_act_hash` until a deliberate
+  hash-preserving storage/API migration exists.
 
 ### Deliverables
 
@@ -1157,8 +1214,9 @@ does not own runtime truth.
 - UI rendering schema:
   projection cards, attention cards, proposal cards, action buttons.
 - Eve tool integration:
-  implement `agent/tools/runtime_projection.ts` using the existing custom tool
-  pattern, then add a chat renderer beside the current `save_memory` tool card.
+  keep `agent/tools/runtime_projection.ts` on the existing custom tool pattern,
+  keep the chat renderer beside the current `save_memory` tool card, and add
+  tests around both.
 - Auth identity bridge:
   app user, Supabase user, LAB ID, grants, and Vercel Connect/MCP boundaries.
 - Validation schema so future agents can inspect the membrane before acting.
@@ -1307,9 +1365,10 @@ approval path are present.
 12. Add validators for the YAML contracts. Complete:
     `scripts/validate-dream-machine-contracts.mjs` and
     `pnpm contracts:validate`.
-13. Wire `runtime_projection` into the Processual UI as a non-authoritative
+13. Harden `runtime_projection` in the Processual UI as a non-authoritative
     portal tool over the existing LogLine and Envelope projection runtimes.
-14. Add a projection card renderer that uses declared affordances only.
+    First tool/card surface exists; live-source correctness remains.
+14. Harden the projection card renderer so it uses declared affordances only.
 15. Add integration tests proving that the portal can request a projection but
     cannot register, dispatch, mutate either ledger, or authorize L5.
 

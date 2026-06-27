@@ -60,11 +60,13 @@ The first runtime tool is `runtime_projection`. It is read-only. It asks the
 existing runtime surfaces for a view and returns a normalized projection
 response.
 
-3. Prefer Envelope for perception.
+3. Route projection requests by jurisdiction.
 
-Envelope Dynamic Projections are the portal-facing projection runtime. They
-produce narrative blocks, source refs, findings, warnings, salience, and
-freshness. They are non-authoritative.
+`runtime_projection` is the portal-facing projection membrane. It asks LogLine
+when the operator needs consequence, proof, hashes, process law, grants, or
+receipt inspection. It asks Envelope when the operator needs scene, movement,
+observability, proposals, findings, salience, or freshness. It may compose a
+mixed view only by keeping source refs grouped by owner.
 
 4. Use LogLine for consequence.
 
@@ -94,8 +96,9 @@ runtime_projection
 Allowed:
 
 - read source refs;
-- request Envelope Dynamic Projections;
-- inspect LogLine proof context;
+- request Envelope projections;
+- request LogLine projections or proof context;
+- compose mixed read-only projection views;
 - normalize into `dream-machine-projections.v0.yml`;
 - return `cannot_do`.
 
@@ -160,4 +163,3 @@ The portal chief doctrine is implemented when:
 - every card cites source refs;
 - every effectful route uses declared affordances;
 - tests prove the portal cannot register, dispatch, mutate, or authorize L5.
-

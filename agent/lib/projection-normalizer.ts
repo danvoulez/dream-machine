@@ -20,6 +20,7 @@
 
 import {
   AFFORDANCE_KINDS,
+  AFFORDANCE_RESULT_MODES,
   type AffordanceKind,
   type DeclaredAffordance,
   PROJECTION_BLOCK_KINDS,
@@ -27,6 +28,7 @@ import {
   PROJECTION_WARNING_KINDS,
   type ProjectionBlock,
   type ProjectionBlockKind,
+  type ProjectionDiffSummary,
   type ProjectionIntent,
   type ProjectionJurisdiction,
   type ProjectionResponse,
@@ -38,7 +40,7 @@ import {
   type SourceRefOwner,
   SOURCE_REF_OWNERS,
   STANDARD_CANNOT_DO,
-} from "#shared/tools/runtime-projection.js";
+} from "../../shared/tools/runtime-projection.js";
 
 // ---------------------------------------------------------------------------
 // Raw runtime input shapes (loose: these come from the runtime over a wire).
@@ -105,6 +107,7 @@ export interface RawProjection {
   source_refs?: RawSourceRef[];
   blocks?: RawBlock[];
   open_findings?: string[];
+  projection_diff?: ProjectionDiffSummary;
   warnings?: RawWarning[];
   affordances?: RawAffordance[];
 }
@@ -112,6 +115,7 @@ export interface RawProjection {
 const BLOCK_KIND_SET = new Set<string>(PROJECTION_BLOCK_KINDS);
 const WARNING_KIND_SET = new Set<string>(PROJECTION_WARNING_KINDS);
 const AFFORDANCE_KIND_SET = new Set<string>(AFFORDANCE_KINDS);
+const AFFORDANCE_RESULT_MODE_SET = new Set<string>(AFFORDANCE_RESULT_MODES);
 const OWNER_SET = new Set<string>(SOURCE_REF_OWNERS);
 const INTENT_SET = new Set<string>(PROJECTION_INTENTS);
 
@@ -174,9 +178,13 @@ function collectSourceRefs(
 
   function add(candidate: RawSourceRef | string | undefined) {
     if (candidate === undefined) return;
-    const parsed: RawSourceRef = typeof candidate === "string"
-      ? { ref: candidate }
-      : candidate;
+    if (typeof candidate === "string") {
+      const refValue = candidate.trim();
+      if (!refValue) return;
+      if (refs.some(ref => ref.ref === refValue)) return;
+      candidate = { ref: refValue };
+    }
+    const parsed: RawSourceRef = candidate;
     const refValue = parsed.ref?.trim();
     if (!refValue) return;
     const normalized: SourceRef = {
@@ -424,6 +432,10 @@ function normalizeAffordances(
     }
 
     const resultMode = rawAff.result_mode ?? "read_only";
+    if (!AFFORDANCE_RESULT_MODE_SET.has(resultMode)) {
+      notes.push(`affordance ${id}: dropped (result_mode "${resultMode}" is not allowed)`);
+      continue;
+    }
 
     result.push({
       affordance_id: id,
@@ -594,6 +606,9 @@ export function normalizeProjection(
   };
   if (openFindings.length > 0) {
     response.open_findings = openFindings;
+  }
+  if (raw.projection_diff) {
+    response.projection_diff = raw.projection_diff;
   }
 
   return { ok: true, response, errors, notes };

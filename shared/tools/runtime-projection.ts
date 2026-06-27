@@ -165,6 +165,27 @@ export interface ProjectionWarning {
   source_refs: string[];
 }
 
+export interface ProjectionDiffDelta {
+  added: string[];
+  removed: string[];
+}
+
+export interface ProjectionBlockDiffDelta extends ProjectionDiffDelta {
+  changed: string[];
+}
+
+export interface ProjectionDiffSummary {
+  from_projection_hash: string;
+  to_projection_hash: string;
+  from_as_of_seq?: number;
+  to_as_of_seq?: number;
+  source_refs: ProjectionDiffDelta;
+  open_findings: ProjectionDiffDelta;
+  narrative_blocks: ProjectionBlockDiffDelta;
+  stale_changed?: boolean;
+  generated_at_delta_ms?: number;
+}
+
 export interface DeclaredAffordance {
   affordance_id: string;
   label: string;
@@ -186,6 +207,7 @@ export interface ProjectionResponse {
   source_refs: SourceRef[];
   blocks: ProjectionBlock[];
   open_findings?: string[];
+  projection_diff?: ProjectionDiffSummary;
   warnings: ProjectionWarning[];
   affordances: DeclaredAffordance[];
   cannot_do: string[];

@@ -15,6 +15,7 @@ import { getMergedParts } from "~/utils/chat/ai";
 import { hasVisibleParts, normalizeEveParts } from "~/utils/chat/eve";
 import { buildDisplayParts } from "~/utils/chat/save-memory";
 import type { WeatherUIToolInvocation } from "~~/shared/utils/tools/weather";
+import type { RuntimeProjectionUIToolInvocation } from "~~/shared/utils/tools/runtime-projection";
 
 const props = defineProps<{
   message: UIMessage;
@@ -76,6 +77,11 @@ const showThinking = computed(
         <ChatToolWeather
           v-if="getToolName(entry.part) === 'weather'"
           :invocation="{ ...(entry.part as WeatherUIToolInvocation) }"
+          :streaming="isToolStreaming(entry.part)"
+        />
+        <ChatToolRuntimeProjection
+          v-else-if="getToolName(entry.part) === 'runtime_projection'"
+          :invocation="{ ...(entry.part as RuntimeProjectionUIToolInvocation) }"
           :streaming="isToolStreaming(entry.part)"
         />
         <UChatTool

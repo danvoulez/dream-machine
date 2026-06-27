@@ -22,6 +22,16 @@ export type ProcessFlow = { current: string; next: string | null; doubt: string 
 export type LastShift = { actor: string; duration_ms: number; kind: string } | null;
 export type OpenFinding = { kind: string; severity: string };
 
+export type OAuthProcessMetadata = {
+  client_name?: string;
+  client_type?: string;
+  lab_id?: string;
+  client_metadata_hash?: string;
+  request_hash?: string;
+  redirect_uris?: string[];
+  adapter_class?: string;
+};
+
 export type ProcessView = {
   id: string;            // logline content_hash — proof anchor
   instance: string;      // runtime_queue.queue_id / source_hash
@@ -37,6 +47,7 @@ export type ProcessView = {
   attempts: number;
   stuck: boolean;
   risk: RiskTier;
+  oauth?: OAuthProcessMetadata;
   open_findings: OpenFinding[];
   last_shift: LastShift;
   event_zones: { live: number; buffered: number; evaporated: number };
@@ -138,6 +149,7 @@ export type LoglineActRow = {
   content_hash: string; who: string; did: string; this: string;
   if_ok: string; if_doubt: string; if_not: string; status: string;
   confirmed_by: string; inserted_at: string;
+  oauth?: OAuthProcessMetadata;
 };
 export type QueueRow = {
   queue_id: string; source_hash: string; process_id: string; status: string;

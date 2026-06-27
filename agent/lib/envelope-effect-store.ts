@@ -1,6 +1,10 @@
 // T-R2: append-only Envelope Shift + ShiftResult for external effect crossings.
 
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { createClient, type Client } from "@libsql/client";
+import { resolveUiRoot } from "./projection-bridge.js";
 import { canonicalJson, hashValue, type Hash, type JsonValue } from "./board-json-v0.js";
 
 export type EffectEvidence = {
@@ -105,11 +109,23 @@ async function ensureStream(client: Client, streamId: string, createdAt: number)
   });
 }
 
+function ensureEnvelopeSchema(dbPath: string): void {
+  const spineRoot = join(dirname(resolveUiRoot()), "Dream-Machine-Envelope-Ledger");
+  const script = join(spineRoot, "scripts/migrate-db.mjs");
+  const distIndex = join(spineRoot, "dist/index.js");
+  if (!existsSync(script) || !existsSync(distIndex)) {
+    throw new Error("SPINE migrate runtime unavailable");
+  }
+  execFileSync("node", [script, dbPath], { cwd: spineRoot, timeout: 15_000 });
+}
+
 export async function recordEffectCrossing(
   dbPath: string,
   shift: BuiltShift,
   result: BuiltShiftResult,
 ): Promise<void> {
+  mkdirSync(dirname(dbPath), { recursive: true });
+  ensureEnvelopeSchema(dbPath);
   const client = createClient({ url: `file:${dbPath}` });
   try {
     await ensureStream(client, shift.stream_id, shift.opened_at);

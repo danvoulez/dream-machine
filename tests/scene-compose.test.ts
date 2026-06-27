@@ -53,3 +53,28 @@ test("waiting_on derives human when status open and confirmed_by present", () =>
   const views = composeProcessViews(rows, { now: NOW, riskByProcess: {} });
   assert.equal(views[0].waiting_on, "human");
 });
+
+test("composeProcessViews carries oauth metadata on oauth-client acts", () => {
+  const oauthRows: SceneRawRows = {
+    ...rows,
+    logline_acts: [{
+      ...rows.logline_acts[0],
+      if_ok: "oauth-client.v1",
+      did: "requested_oauth_client",
+      oauth: {
+        client_name: "LAB Passport",
+        client_type: "confidential",
+        lab_id: "lab:abc",
+        client_metadata_hash: "a".repeat(64),
+        request_hash: "b".repeat(64),
+        redirect_uris: ["https://example.com/callback"],
+      },
+    }],
+    queue: [{ ...rows.queue[0], process_id: "oauth-client.v1" }],
+    risk_by_process: { "oauth-client.v1": "L3" },
+  };
+  const views = composeProcessViews(oauthRows, { now: NOW, riskByProcess: {} });
+  assert.equal(views[0].risk, "L3");
+  assert.equal(views[0].oauth?.client_name, "LAB Passport");
+  assert.equal(views[0].oauth?.client_metadata_hash, "a".repeat(64));
+});

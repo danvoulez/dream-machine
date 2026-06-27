@@ -303,10 +303,38 @@ def envelope_projection(db: sqlite3.Connection, request: dict[str, Any]) -> dict
     return envelope_row_to_projection(row)
 
 
+def oauth_metadata_from_act(act_json: str | None, if_ok: str, did: str) -> dict[str, Any] | None:
+    if if_ok != "oauth-client.v1" and did != "requested_oauth_client":
+        return None
+    if not act_json:
+        return None
+    try:
+        body = json.loads(act_json)
+    except json.JSONDecodeError:
+        return None
+    out: dict[str, Any] = {}
+    for key in (
+        "client_name",
+        "client_type",
+        "lab_id",
+        "client_metadata_hash",
+        "request_hash",
+        "adapter_class",
+        "redirect_uris",
+    ):
+        value = body.get(key)
+        if value not in (None, "", []):
+            out[key] = value
+    return out or None
+
+
 def load_risk_by_process(logline_db: str) -> dict[str, str]:
     if not logline_db:
         return {}
     processes_dir = os.path.join(os.path.dirname(os.path.abspath(logline_db)), "..", "processes")
+    if not os.path.isdir(processes_dir):
+        repo_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Dream-Machine-LogLine-Acts", "processes")
+        processes_dir = repo_root if os.path.isdir(repo_root) else processes_dir
     if not os.path.isdir(processes_dir):
         return {}
     risk: dict[str, str] = {}
@@ -372,13 +400,18 @@ def scene_rows(logline_db: str, envelope_db: str, request: dict[str, Any]) -> di
     if logline_db and os.path.exists(logline_db):
         out["meta"]["logline_db_present"] = True
         db = read_only_connect(logline_db)
-        out["logline_acts"] = [
-            dict(r)
-            for r in db.execute(
-                "SELECT content_hash, who, did, this, if_ok, if_doubt, if_not, status, confirmed_by, inserted_at "
-                "FROM logline_acts ORDER BY inserted_at"
-            )
-        ]
+        logline_rows = []
+        for r in db.execute(
+            "SELECT content_hash, who, did, this, if_ok, if_doubt, if_not, status, confirmed_by, inserted_at, act "
+            "FROM logline_acts ORDER BY inserted_at"
+        ):
+            row = dict(r)
+            act_json = row.pop("act", None)
+            oauth = oauth_metadata_from_act(act_json, row.get("if_ok", ""), row.get("did", ""))
+            if oauth:
+                row["oauth"] = oauth
+            logline_rows.append(row)
+        out["logline_acts"] = logline_rows
         try:
             out["queue"] = [
                 dict(r)

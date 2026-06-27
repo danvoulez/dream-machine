@@ -49,6 +49,7 @@ export function composeProcessViews(rows: SceneRawRows, opts: ComposeOpts): Proc
       process_id: q?.process_id ?? act.if_ok ?? "unknown",
       title: act.this ? `${act.did}: ${act.this}` : act.did,
       state: queueState,
+      ...(act.oauth ? { oauth: act.oauth } : {}),
       flow: {
         current: `${act.did}/${act.status}`,
         next: act.if_ok || null,

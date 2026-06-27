@@ -230,6 +230,28 @@ print(content_hash)
   }
 });
 
+test("crossing verifies envelope receipts after recording", async (t) => {
+  const spineRoot = join(dirname(UI_ROOT), "Dream-Machine-Envelope-Ledger");
+  if (!existsSync(join(spineRoot, "dist/index.js"))) {
+    t.skip("SPINE dist missing");
+    return;
+  }
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "oauth-env-"));
+  const dbPath = join(dir, "envelope.sqlite");
+  writeFileSync(dbPath, "");
+  const prior = process.env.DREAM_MACHINE_ENVELOPE_DB;
+  process.env.DREAM_MACHINE_ENVELOPE_DB = dbPath;
+  try {
+    const result = await crossOAuthClientRegistration({ act: passportAct, record_envelope: true });
+    assert.equal(result.ok, true, !result.ok ? result.message : "");
+  } finally {
+    if (prior) process.env.DREAM_MACHINE_ENVELOPE_DB = prior;
+    else delete process.env.DREAM_MACHINE_ENVELOPE_DB;
+  }
+});
+
 test("buildStreamConfigRow includes SPINE-compatible config_hash", () => {
   const row = buildStreamConfigRow("membrane.oauth", 1_700_000_000_000);
   assert.equal(row.canonicalization, "board-json-v0");

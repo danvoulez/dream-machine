@@ -17,6 +17,7 @@ import {
   type BuiltShift,
   type BuiltShiftResult,
 } from "./envelope-effect-store.js";
+import { verifyEnvelopeStream } from "./envelope-verify.js";
 import { verifyLoglineReceipt } from "./logline-receipt-verify.js";
 import { resolveEnvelopeDbPath, resolveLoglineDbPath } from "./projection-bridge.js";
 
@@ -387,6 +388,16 @@ export async function crossOAuthClientRegistration(
         };
       }
       await recordEffectCrossing(envelopeDb, shift, result);
+      const envelopeVerify = await verifyEnvelopeStream(envelopeDb, streamId, "receipts");
+      if (!envelopeVerify.ok) {
+        const detail = envelopeVerify.issues[0]?.message ?? "envelope receipt verify failed";
+        return {
+          ok: false,
+          reason: "envelope_unavailable",
+          message: detail,
+          cannot_do,
+        };
+      }
     }
 
     const contentHashAfter = actContentHash(actBody);

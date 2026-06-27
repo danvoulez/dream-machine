@@ -353,11 +353,21 @@ def release(db: sqlite3.Connection, queue_id: str, *, reason: str = "released") 
     return inspect_queue(db, queue_id) or item
 
 
+def _validate_close_result(item: dict[str, Any], result: dict[str, Any]) -> None:
+    if item["status"] != "claimed":
+        raise Conflict(f"only claimed queue items can be closed; current={item['status']}")
+    if result.get("queue_id") != item["queue_id"]:
+        raise Conflict("result receipt queue_id does not match queue item")
+    if result.get("this") != item["source_hash"]:
+        raise Conflict("result receipt this does not match queue source_hash")
+
+
 def close(db: sqlite3.Connection, queue_id: str, result_hash: str) -> dict[str, Any]:
-    require(db, result_hash)
+    result = require(db, result_hash)
     item = inspect_queue(db, queue_id)
     if item is None:
         raise NotFound(f"queue item not found: {queue_id}")
+    _validate_close_result(item, result)
     db.execute(
         "UPDATE runtime_queue SET status = 'closed', result_hash = ?, updated_at = ? WHERE queue_id = ?",
         (result_hash, now(), queue_id),

@@ -3,7 +3,7 @@ import pytest
 from lab.errors import AdapterError, Conflict
 from lab.store import connect, append, get
 from lab.evaluator import evaluate
-from lab.runtime import queue_add, queue_list, executor_run_once, receiver_select, set_service_paused
+from lab.runtime import claim, close, queue_add, queue_list, executor_run_once, receiver_select, set_service_paused
 from lab.grants import register_grant, revoke_grant
 from lab.authority import register_genesis_authority
 
@@ -43,6 +43,44 @@ def test_evaluator_blocks_dangerous_worker_without_grant():
     assert out['activation_state'] == 'doubted'
     assert out['reason'] == 'missing_required_grant'
     assert out['queueable'] is False
+
+
+def test_close_requires_claimed_queue_item():
+    db = connect(':memory:')
+    act = append(db, full())
+    q = queue_add(db, act['id'], 'memory-register.v1')
+    other = append(db, full(this='other-result'))
+    with pytest.raises(Conflict):
+        close(db, q['queue_id'], other['id'])
+
+
+def test_close_rejects_result_not_bound_to_queue():
+    db = connect(':memory:')
+    act_a = append(db, full(this='source-a'))
+    act_b = append(db, full(this='source-b'))
+    qa = queue_add(db, act_a['id'], 'memory-register.v1')
+    queue_add(db, act_b['id'], 'memory-register.v1')
+    claimed = claim(db)
+    assert claimed is not None
+    wrong_result = append(
+        db,
+        {
+            'who': 'runtime.executor',
+            'did': 'fechado',
+            'this': act_b['id'],
+            'when': '2026-06-27T00:00:00Z',
+            'confirmed_by': 'executor',
+            'if_ok': 'evidence-closure.v1',
+            'if_doubt': 'attention-raise.v1',
+            'if_not': 'executor.failed',
+            'status': 'fechado',
+            'process_id': 'memory-register.v1',
+            'queue_id': claimed['queue_id'],
+            'adapter': 'memory_register',
+        },
+    )
+    with pytest.raises(Conflict):
+        close(db, claimed['queue_id'], wrong_result['id'])
 
 
 def test_queue_is_idempotent_per_source_process_adapter():

@@ -6,7 +6,8 @@ branches that integration doesn't reach.
 """
 import pytest
 
-from lab.store import connect
+from lab.errors import AuthorityError
+from lab.store import append, connect
 from lab.authority import authority_recognized, register_genesis_authority
 from lab.grants import (
     is_revoked,
@@ -111,6 +112,34 @@ def test_revocation_is_append_only_and_observable():
     assert is_revoked(db, g["id"]) is False
     revoke_grant(db, g["id"], revoked_by="dan@minilab.work")
     assert is_revoked(db, g["id"]) is True
+
+
+def test_revoke_grant_requires_recognized_authority():
+    db = connect(":memory:")
+    g = _grant(db)
+    with pytest.raises(AuthorityError):
+        revoke_grant(db, g["id"], revoked_by="stranger")
+
+
+def test_is_revoked_ignores_unauthorized_revoke_receipts():
+    db = connect(":memory:")
+    g = _grant(db)
+    append(
+        db,
+        {
+            "who": "stranger",
+            "did": "grant-revoke",
+            "this": g["id"],
+            "when": "2026-06-27T00:00:00Z",
+            "confirmed_by": "stranger",
+            "if_ok": "attention-raise.v1",
+            "if_doubt": "attention-raise.v1",
+            "if_not": "stop",
+            "status": "revoked",
+            "reason": "forged",
+        },
+    )
+    assert is_revoked(db, g["id"]) is False
 
 
 def test_verify_grant_happy_path():

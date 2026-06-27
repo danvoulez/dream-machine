@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .authority import authority_recognized, verify_signature
+from .errors import AuthorityError
 from .store import append, get
 
 GRANT_DID = "grant"
@@ -89,6 +90,9 @@ def register_grant(
 
 def revoke_grant(db: sqlite3.Connection, grant_id: str, *, revoked_by: str, reason: str = "revoked") -> dict[str, Any]:
     """Append a revocation Act citing ``grant_id``. Append-only, never a delete."""
+    ok, why = authority_recognized(db, revoked_by)
+    if not ok:
+        raise AuthorityError(f"revoker {revoked_by!r} is not a recognized authority ({why})")
     return append(
         db,
         {
@@ -117,11 +121,19 @@ def resolve_grant(db: sqlite3.Connection, grant_id: str | None) -> dict[str, Any
 
 
 def is_revoked(db: sqlite3.Connection, grant_id: str) -> bool:
-    row = db.execute(
-        "SELECT 1 FROM logline_acts WHERE did = ? AND this = ? LIMIT 1",
+    import json
+
+    rows = db.execute(
+        "SELECT act FROM logline_acts WHERE did = ? AND this = ? ORDER BY inserted_at, content_hash",
         (REVOKE_DID, grant_id),
-    ).fetchone()
-    return row is not None
+    ).fetchall()
+    for row in rows:
+        act = json.loads(row["act"])
+        revoker = act.get("who") or act.get("confirmed_by") or ""
+        ok, _ = authority_recognized(db, revoker)
+        if ok:
+            return True
+    return False
 
 
 def verify_grant(

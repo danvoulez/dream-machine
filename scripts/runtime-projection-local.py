@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -301,11 +302,88 @@ def envelope_projection(db: sqlite3.Connection, request: dict[str, Any]) -> dict
     return envelope_row_to_projection(row)
 
 
+def scene_rows(logline_db: str, envelope_db: str, request: dict[str, Any]) -> dict[str, Any]:
+    del request  # scope reserved for future filtering
+    out: dict[str, Any] = {
+        "logline_acts": [],
+        "queue": [],
+        "findings": [],
+        "shifts": [],
+        "watermark": {"logline_seq": 0, "envelope_seq": 0},
+    }
+    if logline_db and os.path.exists(logline_db):
+        db = read_only_connect(logline_db)
+        out["logline_acts"] = [
+            dict(r)
+            for r in db.execute(
+                "SELECT content_hash, who, did, this, if_ok, if_doubt, if_not, status, confirmed_by, inserted_at "
+                "FROM logline_acts ORDER BY inserted_at"
+            )
+        ]
+        try:
+            out["queue"] = [
+                dict(r)
+                for r in db.execute(
+                    "SELECT queue_id, source_hash, process_id, status, attempts, claimed_by, created_at, updated_at, result_hash, last_error "
+                    "FROM runtime_queue"
+                )
+            ]
+        except sqlite3.OperationalError:
+            out["queue"] = []
+        out["watermark"]["logline_seq"] = len(out["logline_acts"])
+        db.close()
+    if envelope_db and os.path.exists(envelope_db):
+        db = read_only_connect(envelope_db)
+        try:
+            out["findings"] = [
+                {
+                    "finding_id": r["finding_id"],
+                    "kind": r["kind"],
+                    "severity": r["severity"],
+                    "refs": json.loads(r["refs_json"]) if r["refs_json"] else [],
+                    "resolved_at": r["resolved_at"],
+                }
+                for r in db.execute(
+                    "SELECT finding_id, kind, severity, refs_json, resolved_at FROM findings"
+                )
+            ]
+        except sqlite3.OperationalError:
+            out["findings"] = []
+        try:
+            out["shifts"] = [
+                dict(r)
+                for r in db.execute(
+                    "SELECT input_hash, actor, duration_ms, kind, closed_at FROM shifts"
+                )
+            ]
+            out["watermark"]["envelope_seq"] = len(out["shifts"])
+        except sqlite3.OperationalError:
+            out["shifts"] = []
+        db.close()
+    return out
+
+
 def main(argv: list[str]) -> int:
+    if len(argv) < 4:
+        print(json.dumps({"error": "usage: runtime-projection-local.py <mode> <db-path> <request-json> | rows <logline-db> <envelope-db> <request-json>"}))
+        return 2
+    mode = argv[1]
+    if mode == "rows":
+        if len(argv) != 5:
+            print(json.dumps({"error": "usage: runtime-projection-local.py rows <logline-db> <envelope-db> <request-json>"}))
+            return 2
+        try:
+            result = scene_rows(argv[2], argv[3], json.loads(argv[4]))
+            print(json.dumps(result))
+            return 0
+        except Exception as error:
+            print(json.dumps({"error": str(error)}))
+            return 2
+
     if len(argv) != 4:
         print(json.dumps({"error": "usage: runtime-projection-local.py <mode> <db-path> <request-json>"}))
         return 2
-    mode, db_path, raw_request = argv[1], argv[2], argv[3]
+    db_path, raw_request = argv[2], argv[3]
     request = json.loads(raw_request)
     try:
         db = read_only_connect(db_path)

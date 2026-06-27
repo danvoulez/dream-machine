@@ -93,8 +93,12 @@ agent's need to guess to near zero.
 Every Scene return includes the operations legal **from that exact state**, derived from the
 projection type, the visible objects, the process contract, and current permissions. The agent
 never guesses a command or hallucinates an action. Read-only moves only (effectful ones live in
-`proposals`, §8). Examples: `drill_down`, `open_evidence`, `compare_projection`, `ascend`,
-`descend`, `explain_loss`, `back_to_parent`, `refresh_with_goal`.
+`proposals`, §8).
+
+**One vocabulary: a move IS an op.** Each `legal_next_moves[].move` is exactly one of the `op`
+values in §4.1 — there is no separate move-name namespace to map. The read-only op/move set:
+`scene.open`, `scene.drill`, `scene.group`, `scene.filter`, `scene.ascend`, `scene.descend`,
+`scene.compare`, `scene.refresh`, `scene.back`, `scene.explain_loss`, `scene.open_evidence`.
 
 This list is part of the operational contract, not UI decoration. Without it the LLM regresses to
 trial-and-error.
@@ -105,7 +109,17 @@ Salience has **no fixed global order**. What is salient depends on why the agent
 Scene op accepts a natural-language `goal`; the governor uses it to rank, filter, and explain the
 view. Natural language in; reproducible spec underneath.
 
-When no `goal` is given, the fallback order applies — and it is *only* a safety default, not
+**How `goal` resolves (deterministic, not an LLM ranker).** The user of this motor is already an
+LLM — the intelligence lives in the agent that wrote the `goal`. So the governor does **not** call
+a second model to rank. A deterministic resolver maps `goal` → a weighted **ranking profile** drawn
+from a fixed criteria vocabulary (`stuck`, `waiting_on_human`, `risk`, `recency`, `age`,
+`severity`, `blast_radius`, …) via keyword/intent matching. The *resolved profile* — not the raw
+language — is what enters `transform_spec_hash`, so reproduction never depends on re-interpreting
+text. This keeps salience cheap, deterministic, and pinnable. An LLM-assisted ranker is an explicit
+**non-default extension point**: if ever plugged in, it must pin `model`/`prompt_hash`/`params_hash`
+in `transform`, and the default rule-based path leaves those `null`.
+
+When no `goal` is given, the fallback profile applies — and it is *only* a safety default, not
 permanent semantics:
 
 ```
@@ -159,11 +173,12 @@ Request:
 
 ```json
 {
-  "op": "scene.open | scene.drill | scene.refresh | scene.back | scene.compare | scene.ascend | scene.descend",
+  "op": "scene.open | scene.drill | scene.group | scene.filter | scene.ascend | scene.descend | scene.compare | scene.refresh | scene.back | scene.explain_loss | scene.open_evidence",
   "goal": "natural language objective (optional)",
   "scope": { "ledger": "lab", "process": "inbox" },
   "parent_projection_hash": "sha256:... (optional)",
-  "selection": { "filter": "status=stuck (optional)" },
+  "selection": { "filter": "status=stuck", "group_by": "process_id (optional)" },
+  "as_of": "head | <seq|iso8601> (optional; default head)",
   "limit": 10
 }
 ```
@@ -179,6 +194,13 @@ Response (counts live ONLY in `loss_accounting`; `view.items.length` MUST equal
   "op": "scene.open",
   "goal": "...",
   "created_at": "2026-06-27T00:00:00Z",
+  "freshness": {
+    "generated_at": "2026-06-27T00:00:00Z",
+    "as_of": "head",
+    "stale": false,
+    "ttl_ms": null,
+    "source_watermark": { "logline_seq": 0, "envelope_seq": 0 }
+  },
   "view": {
     "items": [],
     "order": "intent_directed | fallback:stuck>waiting>risk>recency",
@@ -199,10 +221,39 @@ Response (counts live ONLY in `loss_accounting`; `view.items.length` MUST equal
     "model": null,
     "prompt_hash": null,
     "params_hash": null,
+    "resolved_salience": [],
     "transform_spec_hash": "sha256:..."
   }
 }
 ```
+
+### 4.2 Jurisdiction routing
+
+The composer decides which readers to run from the op + goal, reusing the existing
+`preferredJurisdiction` logic in `agent/tools/runtime_projection.ts`:
+- **mixed** (both readers, joined into ProcessViews): overview, process_detail, "andamento",
+  anything that needs queue state + observability together. This is the default for the rollup.
+- **logline only**: receipt/proof/hash/grant/queue questions (consequence side).
+- **envelope only**: findings/shifts/scene-movement/observability questions.
+A degraded reader does not abort a mixed Scene; see §4.3.
+
+### 4.3 Empty, not-found, and degraded states
+
+The Scene never throws a bare error at the agent — it returns a contract-valid, possibly-degraded
+Scene so the agent can always reason about what it got:
+- **Empty** (zero candidates in scope): valid Scene, `view.items: []`, `loss_accounting` with
+  `total_candidates: 0`, and `legal_next_moves` limited to `scene.refresh`/`scene.back`.
+- **Not-found scope** (e.g. unknown `process_id`): empty Scene plus a `warnings` entry
+  `{ kind: "scope_not_found" }`; no exception.
+- **Degraded reader** (one half unavailable — the stub case): the Scene is built from the readers
+  that responded, marked `freshness.stale: true` with a `warnings` entry `{ kind: "partial_source",
+  source: "envelope|logline" }`, and `loss_accounting.omitted_reasons` records the missing half.
+- **Hard failure** (both readers down / malformed request): return the same shape as the existing
+  tool — `{ ok: false, reason: "projection_unavailable" | "projection_unrenderable", errors[],
+  cannot_do[] }` — never a raw throw.
+
+`warnings[]` is added to the response alongside the triad (kinds: `partial_source`,
+`scope_not_found`, `stale`, `mixed_jurisdiction`).
 
 ## 5. Eve integration
 
@@ -218,6 +269,11 @@ The motor reaches the agent through Eve, using the template's richest primitive:
 - **Contract**: Scene responses normalize into `dream-machine-projections.v0` (jurisdiction,
   blocks, source_refs, freshness, warnings, affordances, cannot_do) so the existing portal pipe
   and validators still hold.
+- **Supersedes the 10 fixed intents**: the motor replaces `runtime_projection`'s fixed
+  `PROJECTION_INTENTS` (overview, waiting_on_me, …). Those become preset `goal`s / saved Scenes
+  over the same composer — not a parallel tool. The existing mappers, normalizer, jurisdiction
+  routing, card, and `cannot_do` are reused; only the fixed-intent entry point is retired (T-P1
+  consolidation). One projection surface, not two.
 
 ## 6. Reproducibility
 
@@ -242,6 +298,8 @@ existing `pin` (model/prompt/params/seed) + `input_hashes` + `parent_projection_
    the ledger is rebuilt, not argued with.
 10. No Scene executes an external/irreversible effect. Effectful intents go to `proposals` for the airlock.
 11. Drill moves focus; it does not accumulate context.
+12. Every Scene declares `freshness` (generated_at, as_of, stale); a degraded/partial source sets `stale: true` and a `warnings` entry — never silent.
+13. `legal_next_moves[].move` is always one of the §4.1 read-only `op` values; salience resolution is deterministic (rule-based) unless an LLM ranker is explicitly pinned in `transform`.
 
 ## 8. Non-authority & the airlock boundary
 
@@ -278,6 +336,8 @@ Goal: "o que travou e o que precisa de mim", scope `lab.inbox`. 12 candidates, 3
   "op": "scene.open",
   "goal": "o que travou e o que precisa de mim",
   "created_at": "2026-06-27T12:00:00Z",
+  "freshness": { "generated_at": "2026-06-27T12:00:00Z", "as_of": "head", "stale": false, "ttl_ms": null, "source_watermark": { "logline_seq": 4, "envelope_seq": 4 } },
+  "warnings": [],
   "view": {
     "items": [
       { "id": "sha256:act_001", "instance": "q_88", "process_id": "inbox-route.v1",
@@ -328,11 +388,11 @@ Goal: "o que travou e o que precisa de mim", scope `lab.inbox`. 12 candidates, 3
     "confidence_limits": ["Supports claims about these 3 goal-ranked items only, not all 12 in lab.inbox."]
   },
   "legal_next_moves": [
-    { "move": "drill_down", "label": "Abrir o item travado q_88", "reason": "1 item stuck na view.",
+    { "move": "scene.drill", "label": "Abrir o item travado q_88", "reason": "1 item stuck na view.",
       "args": { "focus": "sha256:act_001" }, "effect_class": "none", "requires_confirmation": false },
-    { "move": "explain_loss", "label": "Explicar os 9 omitidos", "reason": "Vendo 3 de 12.",
+    { "move": "scene.explain_loss", "label": "Explicar os 9 omitidos", "reason": "Vendo 3 de 12.",
       "args": { "projection_hash": "sha256:scene_abc" }, "effect_class": "none", "requires_confirmation": false },
-    { "move": "back_to_parent", "label": "Voltar", "reason": "Subir um nível.",
+    { "move": "scene.back", "label": "Voltar", "reason": "Subir um nível.",
       "args": { "projection_hash": "sha256:scene_root" }, "effect_class": "none", "requires_confirmation": false }
   ],
   "proposals": [
@@ -342,9 +402,10 @@ Goal: "o que travou e o que precisa de mim", scope `lab.inbox`. 12 candidates, 3
   ],
   "transform": {
     "source_hashes": ["sha256:logline_slice_inbox", "sha256:queue_slice_inbox", "sha256:envelope_findings_inbox"],
-    "model": "local-ranker",
-    "prompt_hash": "sha256:scene_ranker_prompt",
-    "params_hash": "sha256:params",
+    "model": null,
+    "prompt_hash": null,
+    "params_hash": null,
+    "resolved_salience": ["stuck", "waiting_on_human:oldest_first"],
     "transform_spec_hash": "sha256:scene_transform_v0"
   }
 }
@@ -353,9 +414,11 @@ Goal: "o que travou e o que precisa de mim", scope `lab.inbox`. 12 candidates, 3
 ## 10. Acceptance criteria
 
 A Scene response is valid when it: contains `view`, `loss_accounting`, `legal_next_moves`,
-`projection_hash`, `parent_projection_hashes` (possibly empty), and `transform.transform_spec_hash`;
-states the order applied; reports `total_candidates`, `visible_count`, `omitted_count` with
-`visible_count == view.items.length` and `total_candidates == visible_count + omitted_count`;
+`freshness`, `projection_hash`, `parent_projection_hashes` (possibly empty), and
+`transform.transform_spec_hash`; states the order applied; reports `total_candidates`,
+`visible_count`, `omitted_count` with `visible_count == view.items.length` and
+`total_candidates == visible_count + omitted_count`; every `legal_next_moves[].move` is one of the
+§4.1 read-only ops; a partial/degraded source sets `freshness.stale: true` with a `warnings` entry;
 never claims about the whole universe without declaring scope; never lists a move the current state
 disallows; never executes an external effect (effectful intents only in `proposals`).
 
@@ -384,9 +447,22 @@ disallows; never executes an external effect (effectful intents only in `proposa
 - Persisting Scenes to a store — v0 Scenes are in-memory derived projections, pinned by hash;
   durable Scene storage is a later concern if needed.
 
-## 13. Open questions
+## 13. Open questions (decide in the plan)
 
+- **#1 resolved:** salience is deterministic (rule-based goal→profile); LLM ranker is a pinned
+  extension point only. (§3.2)
 - The exact default SLA / `stuck` thresholds (age, attempts) per danger tier — propose per-tier
   defaults in the plan, confirm with Dan.
-- Whether `ascend`/`descend` ladder steps reuse the Envelope `diffProjections` for `compare`, or
-  the composer computes deltas over ProcessViews directly.
+- Whether `scene.compare` / ascend / descend reuse the Envelope `diffProjections` or the composer
+  computes deltas over ProcessViews directly.
+- **#8 Scope vocabulary**: the legal `scope` keys (stream_id, content_hash, process_id, "all",
+  time window) — enumerate in the plan.
+- **#9 Pagination of the omitted**: how the agent reaches the +N (a `scene.more` cursor vs
+  re-filter/narrow). v0 leans on narrow+`scene.explain_loss`; confirm if a cursor is wanted.
+- **#10 `as_of` / time-travel**: the request carries `as_of` (default `head`); full point-in-time
+  replay against historical seqs is allowed by the model but its depth is a plan decision.
+- **#11 Expressiveness tradeoff (named, deliberate)**: the verb set + `goal` + `selection.filter`
+  is the "ask anything" surface. Compositional queries that don't fit a verb ("which process
+  touched engine:A then failed") are expressed via `selection.filter`; a richer query language (or
+  optional LLM-composed selection) is a future extension, NOT v0. The spec promises "ask anything
+  *within* verbs+goal+filter", and says so honestly.

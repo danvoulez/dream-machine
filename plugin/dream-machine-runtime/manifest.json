@@ -1,8 +1,8 @@
 {
-  "name": "dream-machine-runtime",
+  "name": "dream-machine",
   "version": "0.2.0",
   "task": "T-P1+T-R2",
-  "description": "Packaged runtime seam: POST /projection (read-only) + POST /oauth-crossing (first external-effect crossing). Scene + legacy runtime_projection share fetchProjectionRuntime().",
+  "description": "Triple organelle pack: KERNEL (LogLine) + SPINE (Envelope) + FACE (membrane runtime). One plugin seam: POST /projection (read-only) + POST /oauth-crossing (first external-effect crossing).",
   "topology_role": "manhattan",
   "entrypoints": {
     "http": {
@@ -38,6 +38,52 @@
     "portal": "agent/lib/projection-portal.ts",
     "scene": "agent/lib/scene/normalize.ts"
   },
+  "organelles": {
+    "face": {
+      "repo": "Dream-Machine-Processual-UI",
+      "role": "membrane",
+      "required_files": [
+        "agent/lib/projection-bridge.ts",
+        "agent/lib/projection-portal.ts",
+        "agent/lib/runtime-plugin.ts",
+        "agent/lib/scene/readers.ts",
+        "agent/tools/scene.ts",
+        "server/routes/projection.post.ts",
+        "server/utils/projection-auth.ts",
+        "scripts/runtime-projection-local.py",
+        "scripts/install-runtime.mjs",
+        "plugin/dream-machine-runtime/manifest.json",
+        "agent/lib/oauth-crossing.ts",
+        "agent/lib/oauth-client-metadata.ts",
+        "agent/lib/envelope-effect-store.ts",
+        "agent/lib/board-json-v0.ts",
+        "server/routes/oauth-crossing.post.ts"
+      ]
+    },
+    "kernel": {
+      "repo": "Dream-Machine-LogLine-Acts",
+      "role": "logline",
+      "required_files": [
+        "lab/oauth.py",
+        "lab/receipt.py",
+        "processes/oauth-client.v1.yml",
+        "tests/test_oauth_client.py"
+      ],
+      "ledger_artifacts": [".lab/lab.sqlite"]
+    },
+    "spine": {
+      "repo": "Dream-Machine-Envelope-Ledger",
+      "role": "envelope",
+      "required_files": [
+        "scripts/derive-from-logline.mjs",
+        "src/canonical.ts",
+        "src/index.ts",
+        "src/board.ts",
+        "dist/index.js"
+      ],
+      "ledger_artifacts": [".board/board.sqlite"]
+    }
+  },
   "required_files": [
     "agent/lib/projection-bridge.ts",
     "agent/lib/projection-portal.ts",
@@ -68,8 +114,26 @@
     "SUPABASE_SECRET_KEY"
   ],
   "verify": {
-    "install": "pnpm install:runtime",
-    "motor": "pnpm test",
-    "contracts": "pnpm contracts:validate"
+    "face": {
+      "install": "pnpm install:runtime",
+      "motor": "pnpm test",
+      "contracts": "pnpm contracts:validate"
+    },
+    "kernel": {
+      "test": {
+        "python": ".venv/bin/python",
+        "module": "pytest",
+        "args": [
+          "tests/test_oauth_client.py",
+          "-q",
+          "-k",
+          "not (runnable or evaluator_resolves or enqueues)"
+        ]
+      }
+    },
+    "spine": {
+      "build": "pnpm build",
+      "test": "pnpm test"
+    }
   }
 }

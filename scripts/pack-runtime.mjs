@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * T-P1 pack — verify and seal the one runtime plugin bundle.
+ * Triple organelle pack — verify and seal KERNEL + SPINE + FACE as one Dream Machine copy.
  *
- * Usage: node scripts/pack-runtime.mjs [--skip-test]
+ * Usage: node scripts/pack-runtime.mjs [--skip-test] [--skip-spine-test]
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -11,64 +11,130 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const WS_ROOT = dirname(UI_ROOT);
 const MANIFEST_PATH = join(UI_ROOT, "plugin/dream-machine-runtime/manifest.json");
 const PACK_DIR = join(UI_ROOT, ".pack");
-const PACK_RECEIPT = join(PACK_DIR, "dream-machine-runtime.json");
+const PACK_RECEIPT = join(PACK_DIR, "dream-machine.json");
+const PACK_RECEIPT_LEGACY = join(PACK_DIR, "dream-machine-runtime.json");
 const skipTest = process.argv.includes("--skip-test");
+const skipSpineTest = process.argv.includes("--skip-spine-test");
 
 function sha256File(path) {
   const data = readFileSync(path);
   return createHash("sha256").update(data).digest("hex");
 }
 
-function run(label, cmd, args) {
+function gitCommit(repoRoot) {
+  const git = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" });
+  return git.status === 0 ? git.stdout.trim() : null;
+}
+
+function run(label, cmd, args, cwd = UI_ROOT) {
   process.stdout.write(`\n→ ${label}\n`);
-  const result = spawnSync(cmd, args, { cwd: UI_ROOT, encoding: "utf8", stdio: "inherit" });
+  const result = spawnSync(cmd, args, { cwd, encoding: "utf8", stdio: "inherit", shell: false });
   if (result.status !== 0) {
     process.stderr.write(`pack failed at: ${label}\n`);
     process.exit(result.status ?? 1);
   }
 }
 
-const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
-process.stdout.write(`Packing ${manifest.name} v${manifest.version} (T-P1)\n`);
-
-const missing = [];
-const files = {};
-for (const rel of manifest.required_files) {
-  const abs = join(UI_ROOT, rel);
-  if (!existsSync(abs)) {
-    missing.push(rel);
-  } else {
-    files[rel] = sha256File(abs);
+function hashOrganelle(organelleKey, spec) {
+  const repoRoot = join(WS_ROOT, spec.repo);
+  if (!existsSync(repoRoot)) {
+    process.stderr.write(`Missing organelle repo: ${spec.repo}\n`);
+    process.exit(1);
   }
+
+  const files = {};
+  const missing = [];
+  for (const rel of spec.required_files) {
+    const abs = join(repoRoot, rel);
+    if (!existsSync(abs)) missing.push(`${spec.repo}/${rel}`);
+    else files[rel] = sha256File(abs);
+  }
+
+  const artifacts = {};
+  const missingArtifacts = [];
+  for (const rel of spec.ledger_artifacts ?? []) {
+    const abs = join(repoRoot, rel);
+    if (!existsSync(abs)) missingArtifacts.push(`${spec.repo}/${rel}`);
+    else artifacts[rel] = sha256File(abs);
+  }
+
+  if (missing.length) {
+    process.stderr.write(`Missing required files:\n${missing.map((f) => `  - ${f}`).join("\n")}\n`);
+    process.exit(1);
+  }
+
+  process.stdout.write(
+    `  ✓ ${organelleKey} (${spec.repo}): ${Object.keys(files).length} files`
+    + (Object.keys(artifacts).length ? `, ${Object.keys(artifacts).length} ledger artifact(s)` : "")
+    + (missingArtifacts.length ? `, ${missingArtifacts.length} ledger artifact(s) absent` : "")
+    + "\n",
+  );
+
+  return {
+    repo: spec.repo,
+    role: spec.role,
+    path: repoRoot,
+    git_commit: gitCommit(repoRoot),
+    files,
+    ledger_artifacts: artifacts,
+    ledger_artifacts_missing: missingArtifacts,
+  };
 }
-if (missing.length) {
-  process.stderr.write(`Missing required files:\n${missing.map((f) => `  - ${f}`).join("\n")}\n`);
-  process.exit(1);
+
+const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
+process.stdout.write(`Packing ${manifest.name} v${manifest.version} (${manifest.task})\n`);
+
+const organelles = {};
+for (const [key, spec] of Object.entries(manifest.organelles)) {
+  organelles[key] = hashOrganelle(key, spec);
 }
-process.stdout.write(`  ✓ ${Object.keys(files).length} required files present\n`);
 
 run("install:runtime", "node", ["scripts/install-runtime.mjs"]);
 run("contracts:validate", "node", ["scripts/validate-dream-machine-contracts.mjs"]);
+
 if (!skipTest) {
-  run("motor tests", "node", ["scripts/run-tests.mjs"]);
+  run("FACE motor tests", "node", ["scripts/run-tests.mjs"]);
+
+  const kernelVerify = manifest.verify?.kernel?.test;
+  if (kernelVerify) {
+    const kernelRoot = join(WS_ROOT, manifest.organelles.kernel.repo);
+    const relPython = kernelVerify.python ?? "python3";
+    const kernelPython = join(kernelRoot, relPython);
+    const python = existsSync(kernelPython) ? kernelPython : relPython;
+    const pytestArgs = ["-m", kernelVerify.module, ...(kernelVerify.args ?? [])];
+    run("KERNEL oauth seam tests", python, pytestArgs, kernelRoot);
+  }
+
+  const spineRoot = join(WS_ROOT, manifest.organelles.spine.repo);
+  if (manifest.verify?.spine?.build) {
+    run("SPINE build", "pnpm", ["build"], spineRoot);
+  }
+  if (!skipSpineTest && manifest.verify?.spine?.test) {
+    run("SPINE tests", "pnpm", ["test"], spineRoot);
+  }
 }
 
-const git = spawnSync("git", ["rev-parse", "HEAD"], { cwd: UI_ROOT, encoding: "utf8" });
 const receipt = {
   name: manifest.name,
   version: manifest.version,
   task: manifest.task,
   packed_at: new Date().toISOString(),
-  git_commit: git.status === 0 ? git.stdout.trim() : null,
+  workspace_root: WS_ROOT,
+  organelles,
   entrypoints: manifest.entrypoints,
   portal_tools: manifest.portal_tools,
-  files,
+  git_commit: organelles.face?.git_commit ?? null,
+  files: organelles.face?.files ?? {},
 };
 
 mkdirSync(PACK_DIR, { recursive: true });
-writeFileSync(PACK_RECEIPT, `${JSON.stringify(receipt, null, 2)}\n`);
+const json = `${JSON.stringify(receipt, null, 2)}\n`;
+writeFileSync(PACK_RECEIPT, json);
+writeFileSync(PACK_RECEIPT_LEGACY, json);
 
 process.stdout.write(`\nPack receipt: ${PACK_RECEIPT}\n`);
-process.stdout.write("Runtime plugin pack OK.\n");
+process.stdout.write(`Legacy alias:   ${PACK_RECEIPT_LEGACY}\n`);
+process.stdout.write("Dream Machine triple pack OK.\n");

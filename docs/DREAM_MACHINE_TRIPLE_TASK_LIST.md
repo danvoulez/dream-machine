@@ -92,6 +92,11 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 - **FACE**: ~10.4k LOC ts/vue. Eve template + `runtime_projection` tool + shell bridge. 40 `.yml` membrane contracts (15 enforced by `pnpm contracts:validate`).
 - **Docs:** 113 `.md` → target ~12 (T-H5). **Packaging: none** — no umbrella package / Makefile / Docker / install across the three repos; the installable topology exists only as a contract (→ T-T1).
 
+**Session close — 2026-06-27 (PR-1 + PR-2 committed to branches, not merged):**
+- **PR-1** (`pr1-close-loops` on KERNEL/SPINE; feature branch on FACE): SPINE `577b725` derivation pipe + `tests/derive-pipe.test.ts` + `.gitignore` + JCS fix → **T-S1 ✓, T-H2 ✓**; KERNEL `2e61123` test_inference aligned to the inspect projection → **T-K6 ✓**; FACE `56d2c4c` this tasklist normalized. SPINE suite 107→**109**.
+- **PR-2** (`pr2-docs` on KERNEL/umbrella): KERNEL `cc192c4` prose docs **78→39**, non-canon archived to `~/dream-machine-attic/kernel-docs` (incl. the 4 LAB specs) → **T-H5 substantially ✓, T-H1 ✓** (devin ghosts archived with the LAB specs); umbrella `de73587` Atlas counts fixed → **T-H3 ✓**. Board canon reconciled, coherent → **T-H6 ✓** (only the L5 delta remains, tracked as T-S3).
+- **Not merged/pushed:** all of the above lives on the branches above; merge/push is Dan's call.
+
 ---
 
 ## C. Tasks
@@ -105,7 +110,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 - [ ] **T-K3 LogLine attention-obligation shape** (`logline-attention-obligation.v0.yml`): process-triggered obligation, authority requirement, closure path.
 - [ ] **T-K4 LogLine↔Envelope reference fields** (`logline-envelope-reference-fields.v0.yml`): declare `event_hash`, `source_digest`, `shift_hash`, `proposal_version_hash`, `projection_hash`, `finding_id` as the only legal cross-refs.
 - [ ] **T-K5 Canyon canonical target decision** (`logline-canyon-decision.v0.yml`): CAS + LogLine registration vs a standalone `inbox` table.
-- [!] **T-K6 Uncommitted tree decision.** `tests/test_inference.py` is modified and uncommitted; older note also lists `docs/DANGER_TIERS.md`, `lab/cli.py`, `processes/*CATALOG/RUNNABLE*.md`, `tests/test_grants_danger_tiers.py` dirty. *Decide* commit or revert per file — do not leave dangling.
+- [x] **T-K6 Uncommitted tree decision.** *(test_inference committed `2e61123`; other dirty files still Dan's call to commit/revert.)* `tests/test_inference.py` is modified and uncommitted; older note also lists `docs/DANGER_TIERS.md`, `lab/cli.py`, `processes/*CATALOG/RUNNABLE*.md`, `tests/test_grants_danger_tiers.py` dirty. *Decide* commit or revert per file — do not leave dangling.
 - [ ] **T-K7 Fix broken venv wrapper.** `.venv/bin/pytest` shebang still points at the pre-rename `/Users/ubl-ops/dream-machine-main/.venv/...`; use `python -m pytest` or rebuild the venv.
 
 ### SPINE — Envelope-Ledger
@@ -113,7 +118,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 - [x] Additive-spine foundation merged on `main`: canonical `Envelope` (intact content + shifts + custody + transport), dual hash (`thin_envelope_hash` vs `envelope_hash`), additive-law validation, append-only constructors.
 - [x] Projection metadata in identity: `pin`, `parent_projection_hashes`, `ladder_level`, `ttl_ms`, `stale`, `rebuild_reason`, `loss_accounting` (persisted via `identity_body_json`, no table migration). Verifier catches invalid ladder/missing parents/stale-without-reason/incomplete loss.
 - [x] Projection diff / `changes_since` — `diffProjections(...)` + `Board.diffProjections(...)`.
-- [~] **T-S1 LogLine→Envelope derivation pipe** — `scripts/derive-from-logline.mjs`, `verify_ok: true` on a manual run. *Per DoD §0 this is NOT `[x]`: no committed automated test, not committed. To close: add a test (act count → derived count, content_hash carried, verify ok) and commit. See T-S2 for the re-run limit.*
+- [x] **T-S1 LogLine→Envelope derivation pipe** — `scripts/derive-from-logline.mjs` + `tests/derive-pipe.test.ts` (act count → derived count, content_hash carried, verify ok, empty-ledger case), committed `577b725` on `pr1-close-loops`. See T-S2 for the re-run limit.
 - [~] **T-S2 Pipe re-run safety.** Stream id is `logline-derived-<count>`; re-running with the same act count collides (append-only). *Exit:* unique/idempotent stream stamping OR an explicit "rebuild wipes `.board`" command, logged — no silent collision.
 - [ ] **T-S3 Map/add L5** at the Envelope boundary (perceive-only; never authorize). Currently stops at L4.
 - [ ] **T-S4 Evaporated-source loss policy** (formal): when events evaporate, projections still cite a durable `source_digest` and reveal what detail is gone. Basic field exists; policy doesn't.
@@ -146,19 +151,19 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 
 ### Doc & repo hygiene
 
-- [~] Drift apparatus deleted + root junk cleared on disk (this session): `DOC_TREE_AND_DRIFT.md` + generator `build_doc_tree.py` deleted; `.playwright-mcp` + login png deleted; 47MB history tar + 48h md + spine demo moved to `~/dream-machine-attic`; `.board/` + `*.sqlite` gitignored in SPINE. *Per DoD §0 not `[x]` until committed (these are uncommitted working-tree changes across the repos).*
-- [ ] **T-H1 Ghost `devin_session`**: stale references in 3 KERNEL canon docs (`LAB OPERATING ATLAS.md`, `LAB FINAL IMPLEMENTATION SPEC v0.md`, `LAB LLM-FACING CANON SPEC v0.md`) — contract doesn't exist on disk. *Edit, not delete:* replace with `route_to_devin` or mark deprecated.
-- [ ] **T-H2 JCS contradiction** in `Dream-Machine-Envelope-Ledger/docs/superpowers/specs/2026-06-26-envelope-additive-spine-design.md`: invariant says "JCS+sha256", erratum says "NOT JCS" (code confirms the erratum). *Exit:* delete the wrong line.
-- [!] **T-H3 `DREAM_MACHINE_ATLAS.md`**: hand-written, the best short description of the system; only flaw is one stale "all green" line. *Decide:* keep (fix the line) or delete. Mislabeled "GENERATED" by the now-deleted drift report — it is not generated.
+- [x] Drift apparatus deleted + root junk cleared: `DOC_TREE_AND_DRIFT.md` + generator `build_doc_tree.py` deleted (were untracked); `.playwright-mcp` + login png deleted; 47MB history tar + 48h md + spine demo moved to `~/dream-machine-attic`; `.board/` + `*.sqlite` gitignored in SPINE (committed `577b725`).
+- [x] **T-H1 Ghost `devin_session`** *(resolved by archiving the LAB specs in PR-2 `cc192c4`)*: stale references in 3 KERNEL canon docs (`LAB OPERATING ATLAS.md`, `LAB FINAL IMPLEMENTATION SPEC v0.md`, `LAB LLM-FACING CANON SPEC v0.md`) — contract doesn't exist on disk. *Edit, not delete:* replace with `route_to_devin` or mark deprecated.
+- [x] **T-H2 JCS contradiction** *(fixed to `board-json-v0` in PR-1 `577b725`)* in `Dream-Machine-Envelope-Ledger/docs/superpowers/specs/2026-06-26-envelope-additive-spine-design.md`: invariant says "JCS+sha256", erratum says "NOT JCS" (code confirms the erratum). *Exit:* delete the wrong line.
+- [x] **T-H3 `DREAM_MACHINE_ATLAS.md`**: kept as the one general doc; stale counts fixed (265/1-skip, 109) in PR-2 `de73587`.
 - [ ] **T-H4 Vocabulary still in canon docs vs code**: keep docs sanitized; do not reintroduce banned unqualified terms.
-- [ ] **T-H5 Rationalize the prose docs — 113 `.md` is LLM padding** (78 in KERNEL alone; 13 READMEs; CONTRIBUTING/CODE_OF_CONDUCT/AGENTS/ARCHITECTURE/ENVIRONMENT duplicated across repos; `reports/` snapshots; generated mirrors; **2 copies of this very task list**). Collapse to one clean set, one doc per concept:
+- [~] **T-H5 Rationalize the prose docs — 113 `.md` is LLM padding** *(KERNEL done in PR-2 `cc192c4`: 78→39, non-canon to attic. Remaining: confirm the ~3 specific + the LogLine-canon=ADRs call; trim FACE/SPINE template boilerplate if wanted.)* (78 in KERNEL alone; 13 READMEs; CONTRIBUTING/CODE_OF_CONDUCT/AGENTS/ARCHITECTURE/ENVIRONMENT duplicated across repos; `reports/` snapshots; generated mirrors; **2 copies of this very task list**). Collapse to one clean set, one doc per concept:
   - **1 general:** `DREAM_MACHINE_ATLAS.md` (per T-H3).
   - **~3 specific:** this task list + `dream-machine-portal-chief.v0.md` + installable topology *(confirm the exact 3)*.
   - **LogLine canon = 3:** the ADRs `docs/decisions/0001..0003` *(confirm these are the 3, vs the LAB SPEC set)*.
   - **Envelope canon = 5:** 1 tabuleiro `BOARD SPEC_v0.2.md` + 4 board (`BOARD_DECISIONS`, `BOARD_VERTICAL_SLICE`, `BOARD_LIFECYCLE`, `BOARD_OBJECTS`).
   - **Keep** the machine-readable `.yml` membrane contracts (validated by `pnpm contracts:validate`) — those are not prose padding.
   *Exit:* everything outside that set deleted or moved to attic; no duplicate prose; the doc count is the set above, not 113.
-- [ ] **T-H6 Reconcile the 5 Envelope canon docs against code; fix drift.** Board/tabuleiro docs are NORMATIVE (BOARD wins). If `BOARD SPEC_v0.2` / `BOARD_DECISIONS` / `BOARD_VERTICAL_SLICE` / `BOARD_LIFECYCLE` / `BOARD_OBJECTS` disagree with `src/` (arming delays, lifecycle states, object fields, the hash/JCS discipline of T-H2), correct the doc to the verified runtime. *Exit:* each canon doc reconciled against code, drift fixed and dated.
+- [x] **T-H6 Reconcile the 5 Envelope canon docs against code.** *(Checked 2026-06-27: arming delays match code L0–L4; only delta is L5 (code 120s, BOARD SPEC stops at L4) — tracked as T-S3, not drift. Docs coherent.)* Board/tabuleiro docs are NORMATIVE (BOARD wins). If `BOARD SPEC_v0.2` / `BOARD_DECISIONS` / `BOARD_VERTICAL_SLICE` / `BOARD_LIFECYCLE` / `BOARD_OBJECTS` disagree with `src/` (arming delays, lifecycle states, object fields, the hash/JCS discipline of T-H2), correct the doc to the verified runtime. *Exit:* each canon doc reconciled against code, drift fixed and dated.
 
 ### Installable topology (LAB 8GB) — planned
 

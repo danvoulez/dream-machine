@@ -1,7 +1,7 @@
 # Dream Machine — Hybrid Deployment Tasklist (verified playbook)
 
 > **Verified:** 2026-06-27 on dev machine (`/Users/ubl-ops/Projetos`)  
-> **Companion:** [`HYBRID_DEPLOYMENT.md`](./HYBRID_DEPLOYMENT.md) (playbook — idea, scripts, bootstrap) · [`dream-machine-hybrid-topology.v0.yml`](./dream-machine-hybrid-topology.v0.yml) (contract)  
+> **Companion:** [`HYBRID_DEPLOYMENT.md`](./HYBRID_DEPLOYMENT.md) (playbook) · [`seams/DREAM_MACHINE_SEAM_REGISTRY.v0.md`](./seams/DREAM_MACHINE_SEAM_REGISTRY.v0.md) (seam code truth) · [`dream-machine-hybrid-topology.v0.yml`](./dream-machine-hybrid-topology.v0.yml) (contract)  
 > **Scope:** Code we build here (Projetos triple) + steps to get three rings live. Not Vercel dashboard trivia for its own sake.
 
 This is the **operator checklist with receipts**. Each row says what the docs/scripts *claim*, what we *ran*, and whether it *actually* worked.

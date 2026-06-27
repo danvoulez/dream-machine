@@ -4,6 +4,7 @@
 > the scripts, and the idea. Drops the build-log, eval debugging, and dead ends.
 >
 > **Contracts:** [`dream-machine-hybrid-topology.v0.yml`](./dream-machine-hybrid-topology.v0.yml) · [`dream-machine-passport.v0.yml`](./dream-machine-passport.v0.yml)  
+> **Seam registry (code truth):** [`seams/DREAM_MACHINE_SEAM_REGISTRY.v0.md`](./seams/DREAM_MACHINE_SEAM_REGISTRY.v0.md)  
 > **Operator checklist (verify commands):** [`HYBRID_DEPLOYMENT_TASKLIST.md`](./HYBRID_DEPLOYMENT_TASKLIST.md)
 
 ---

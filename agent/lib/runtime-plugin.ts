@@ -27,3 +27,20 @@ export {
 export { createSceneReaders } from "./scene/readers.js";
 export { assembleScene } from "./scene/scene.js";
 export { normalizeSceneProjection } from "./scene/normalize.js";
+
+export {
+  OAUTH_ADMIN_ENDPOINT,
+  OAUTH_CLIENT_DANGER_TIER,
+  OAUTH_CLIENT_PROCESS_ID,
+  clientMetadata,
+} from "./oauth-client-metadata.js";
+
+export {
+  buildOAuthAdapterAux,
+  buildOAuthCrossingRequest,
+  crossOAuthClientRegistration,
+  handleOAuthCrossingPost,
+  redactSupabaseOAuthResponse,
+  type OAuthCrossingRequest,
+  type OAuthCrossingResult,
+} from "./oauth-crossing.js";

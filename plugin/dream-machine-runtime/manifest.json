@@ -1,8 +1,8 @@
 {
   "name": "dream-machine-runtime",
-  "version": "0.1.0",
-  "task": "T-P1",
-  "description": "One packaged projection seam: HTTP POST /projection with python shell fallback. Scene + legacy runtime_projection share fetchProjectionRuntime().",
+  "version": "0.2.0",
+  "task": "T-P1+T-R2",
+  "description": "Packaged runtime seam: POST /projection (read-only) + POST /oauth-crossing (first external-effect crossing). Scene + legacy runtime_projection share fetchProjectionRuntime().",
   "topology_role": "manhattan",
   "entrypoints": {
     "http": {
@@ -20,7 +20,15 @@
       "script": "scripts/runtime-projection-local.py",
       "modes": ["rows", "logline", "envelope", "legacy"]
     },
-    "public_api": "agent/lib/runtime-plugin.ts"
+    "public_api": "agent/lib/runtime-plugin.ts",
+    "oauth_crossing": {
+      "method": "POST",
+      "path": "/oauth-crossing",
+      "handler": "server/routes/oauth-crossing.post.ts",
+      "module": "agent/lib/oauth-crossing.ts",
+      "danger_tier": "L3",
+      "process_id": "oauth-client.v1"
+    }
   },
   "portal_tools": {
     "primary": "scene",
@@ -40,7 +48,12 @@
     "server/utils/projection-auth.ts",
     "scripts/runtime-projection-local.py",
     "scripts/install-runtime.mjs",
-    "plugin/dream-machine-runtime/manifest.json"
+    "plugin/dream-machine-runtime/manifest.json",
+    "agent/lib/oauth-crossing.ts",
+    "agent/lib/oauth-client-metadata.ts",
+    "agent/lib/envelope-effect-store.ts",
+    "agent/lib/board-json-v0.ts",
+    "server/routes/oauth-crossing.post.ts"
   ],
   "env": [
     "DREAM_MACHINE_RUNTIME_URL",
@@ -49,7 +62,10 @@
     "DREAM_MACHINE_RUNTIME_TIMEOUT_MS",
     "DREAM_MACHINE_LOGLINE_DB",
     "DREAM_MACHINE_ENVELOPE_DB",
-    "BETTER_AUTH_URL"
+    "BETTER_AUTH_URL",
+    "SUPABASE_URL",
+    "SUPABASE_PROJECT_REF",
+    "SUPABASE_SECRET_KEY"
   ],
   "verify": {
     "install": "pnpm install:runtime",

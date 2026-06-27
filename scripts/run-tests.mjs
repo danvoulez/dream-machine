@@ -17,7 +17,14 @@ if (files.length === 0) throw new Error("no tests found");
 const outfiles = [];
 for (const f of files) {
   const outfile = join(outdir, f.replace(/\.ts$/, ".mjs"));
-  execFileSync(esbuild, ["--bundle", join(testsDir, f), "--platform=node", "--format=esm", `--outfile=${outfile}`], { cwd: root, stdio: "inherit" });
+  execFileSync(esbuild, [
+    "--bundle",
+    join(testsDir, f),
+    "--platform=node",
+    "--format=esm",
+    "--external:@libsql/client",
+    `--outfile=${outfile}`,
+  ], { cwd: root, stdio: "inherit" });
   outfiles.push(outfile);
 }
 execFileSync(process.execPath, ["--test", ...outfiles], { cwd: root, stdio: "inherit" });

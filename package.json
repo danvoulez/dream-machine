@@ -1,16 +1,8 @@
 {
-  "name": "personal-agent-template",
+  "name": "dream-machine-processual-ui",
   "version": "0.0.0",
-  "description": "A durable personal AI assistant template built with Eve, Nuxt 4, and Better Auth",
+  "description": "Dream Machine Processual UI: the portal chief over LogLine and Envelope.",
   "license": "MIT",
-  "author": "Hugo Richard",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vercel-labs/personal-agent-template"
-  },
-  "bugs": {
-    "url": "https://github.com/vercel-labs/personal-agent-template/issues"
-  },
   "engines": {
     "node": ">=24"
   },

@@ -49,7 +49,7 @@ export function useSiteSeo(options?: {
       { name: "author", content: site.author },
       {
         name: "keywords",
-        content: "Eve, Nuxt, personal agent, AI assistant, Better Auth, Slack, iMessage, Linear, template",
+        content: "Dream Machine, processual UI, LogLine, Envelope, portal chief, projections, Eve, Nuxt",
       },
     ],
     script: [
@@ -69,11 +69,15 @@ export function useSiteSeo(options?: {
             "price": "0",
             "priceCurrency": "USD",
           },
-          "isPartOf": {
-            "@type": "SoftwareSourceCode",
-            "codeRepository": site.repo,
-            "programmingLanguage": "TypeScript",
-          },
+          ...(site.repo
+            ? {
+                "isPartOf": {
+                  "@type": "SoftwareSourceCode",
+                  "codeRepository": site.repo,
+                  "programmingLanguage": "TypeScript",
+                },
+              }
+            : {}),
         }),
       },
     ],

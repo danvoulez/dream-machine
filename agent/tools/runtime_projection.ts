@@ -19,6 +19,11 @@
 // composer without touching the tool contract or the normalizer.
 
 import { defineTool } from "eve/tools";
+import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { z } from "zod";
 import {
   PROJECTION_INTENTS,
@@ -32,6 +37,7 @@ import {
 } from "../lib/projection-normalizer.js";
 
 const REQUIRED_CANNOT_DO = ["register_receipt", "dispatch_executor", "authorize_l5"] as const;
+const execFileAsync = promisify(execFile);
 
 const inputSchema = z.object({
   intent: z
@@ -100,6 +106,11 @@ export type RuntimeProjectionResult = RuntimeProjectionOk | RuntimeProjectionErr
 const RUNTIME_URL = process.env.DREAM_MACHINE_RUNTIME_URL?.trim();
 const RUNTIME_TOKEN = process.env.DREAM_MACHINE_RUNTIME_TOKEN?.trim();
 const RUNTIME_TIMEOUT_MS = Number(process.env.DREAM_MACHINE_RUNTIME_TIMEOUT_MS) || 8000;
+const PROCESSUAL_UI_ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const WORKSPACE_ROOT = dirname(PROCESSUAL_UI_ROOT);
+const LOGLINE_ROOT = join(WORKSPACE_ROOT, "Dream-Machine-LogLine-Acts");
+const ENVELOPE_ROOT = join(WORKSPACE_ROOT, "Dream-Machine-Envelope-Ledger");
+const LOCAL_PROJECTION_SCRIPT = join(PROCESSUAL_UI_ROOT, "scripts/runtime-projection-local.py");
 
 export function preferredJurisdiction(input: RuntimeProjectionInput): ProjectionJurisdiction {
   switch (input.intent) {
@@ -125,6 +136,33 @@ function defaultOwnerFor(jurisdiction: ProjectionJurisdiction): SourceRefOwner {
   if (jurisdiction === "logline") return "logline";
   if (jurisdiction === "envelope") return "envelope";
   return "membrane";
+}
+
+function resolveExistingPath(candidates: Array<string | undefined>): string | undefined {
+  for (const candidate of candidates) {
+    const value = candidate?.trim();
+    if (value && existsSync(value)) return value;
+  }
+  return undefined;
+}
+
+function resolveLogLineDbPath(): string | undefined {
+  return resolveExistingPath([
+    process.env.DREAM_MACHINE_LOGLINE_DB,
+    process.env.LAB_DB,
+    join(LOGLINE_ROOT, ".lab/lab.sqlite"),
+    join(LOGLINE_ROOT, ".lab/test.sqlite"),
+  ]);
+}
+
+function resolveEnvelopeDbPath(): string | undefined {
+  return resolveExistingPath([
+    process.env.DREAM_MACHINE_ENVELOPE_DB,
+    process.env.BOARD_DB,
+    join(ENVELOPE_ROOT, ".board/board.sqlite"),
+    join(ENVELOPE_ROOT, "board.sqlite"),
+    join(ENVELOPE_ROOT, "board_demo.sqlite"),
+  ]);
 }
 
 function stubProjection(input: RuntimeProjectionInput, reason: string): RawProjection {
@@ -157,6 +195,95 @@ function stubProjection(input: RuntimeProjectionInput, reason: string): RawProje
     ],
     open_findings: [],
     warnings: [],
+    affordances: [],
+  };
+}
+
+async function runLocalProjectionScript(
+  mode: "logline" | "envelope",
+  dbPath: string,
+  input: RuntimeProjectionInput,
+): Promise<Record<string, unknown>> {
+  const { stdout } = await execFileAsync("python3", [
+    LOCAL_PROJECTION_SCRIPT,
+    mode,
+    dbPath,
+    JSON.stringify({
+      intent: input.intent,
+      scope: input.scope,
+      filters: input.filters ?? null,
+      as_of: input.as_of ?? null,
+      audience: input.audience ?? "operator",
+      max_blocks: input.max_blocks ?? null,
+    }),
+  ], {
+    timeout: RUNTIME_TIMEOUT_MS,
+    cwd: PROCESSUAL_UI_ROOT,
+  });
+  const parsed = JSON.parse(stdout) as Record<string, unknown>;
+  if (typeof parsed.error === "string" && parsed.error) {
+    throw new Error(parsed.error);
+  }
+  return parsed;
+}
+
+function toLocalFallbackNotes(mode: "logline" | "envelope", reason: string): RawProjection["warnings"] {
+  return [{
+    kind: "partial_source",
+    message: `${mode} local adapter: ${reason}`,
+    source_refs: [],
+  }];
+}
+
+async function fetchLocalLogLineProjection(input: RuntimeProjectionInput): Promise<RawProjection | null> {
+  const dbPath = resolveLogLineDbPath();
+  if (!dbPath || !existsSync(LOCAL_PROJECTION_SCRIPT)) return null;
+  const data = await runLocalProjectionScript("logline", dbPath, input);
+  const projection = mapRuntimeProjection(data, input);
+  projection.warnings = [...(projection.warnings ?? []), ...toLocalFallbackNotes("logline", dbPath)];
+  return projection;
+}
+
+async function fetchLocalEnvelopeProjection(input: RuntimeProjectionInput): Promise<RawProjection | null> {
+  const dbPath = resolveEnvelopeDbPath();
+  if (!dbPath || !existsSync(LOCAL_PROJECTION_SCRIPT)) return null;
+  const data = await runLocalProjectionScript("envelope", dbPath, input);
+  const projection = mapRuntimeProjection(data, input);
+  projection.warnings = [...(projection.warnings ?? []), ...toLocalFallbackNotes("envelope", dbPath)];
+  return projection;
+}
+
+function mergeMixedProjection(
+  input: RuntimeProjectionInput,
+  logline: RawProjection | null,
+  envelope: RawProjection | null,
+): RawProjection | null {
+  if (!logline && !envelope) return null;
+  if (logline && !envelope) return logline;
+  if (envelope && !logline) return envelope;
+
+  return {
+    projection_id: `mixed_${input.intent}_${input.scope.trim() || "all"}`,
+    intent: input.intent,
+    jurisdiction: "mixed",
+    default_owner: "membrane",
+    freshness: {
+      generated_at: new Date().toISOString(),
+      as_of: input.as_of ?? "head",
+      stale: Boolean(logline?.freshness?.stale || envelope?.freshness?.stale),
+    },
+    source_refs: [...(logline?.source_refs ?? []), ...(envelope?.source_refs ?? [])],
+    blocks: [...(envelope?.blocks ?? []), ...(logline?.blocks ?? [])],
+    open_findings: [...(envelope?.open_findings ?? [])],
+    warnings: [
+      ...(envelope?.warnings ?? []),
+      ...(logline?.warnings ?? []),
+      {
+        kind: "mixed_jurisdiction",
+        message: "Local fallback composed envelope and logline read models.",
+        source_refs: [],
+      },
+    ],
     affordances: [],
   };
 }
@@ -398,7 +525,22 @@ export function mapRuntimeProjection(
 
 async function fetchRuntimeProjection(input: RuntimeProjectionInput): Promise<RawProjection> {
   if (!RUNTIME_URL) {
-    return stubProjection(input, "no DREAM_MACHINE_RUNTIME_URL configured");
+    const jurisdiction = preferredJurisdiction(input);
+    if (jurisdiction === "logline") {
+      const local = await fetchLocalLogLineProjection(input);
+      if (local) return local;
+    } else if (jurisdiction === "envelope") {
+      const local = await fetchLocalEnvelopeProjection(input);
+      if (local) return local;
+    } else {
+      const [logline, envelope] = await Promise.all([
+        fetchLocalLogLineProjection(input).catch(() => null),
+        fetchLocalEnvelopeProjection(input).catch(() => null),
+      ]);
+      const merged = mergeMixedProjection(input, logline, envelope);
+      if (merged) return merged;
+    }
+    return stubProjection(input, "no DREAM_MACHINE_RUNTIME_URL configured and no local runtime DB available");
   }
 
   const controller = new AbortController();

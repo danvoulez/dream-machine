@@ -69,7 +69,7 @@ const quickChats = [
               {{ greeting }}
             </h1>
             <p class="text-sm text-muted sm:text-base">
-              V — your personal agent
+              Dream Machine - processual portal chief
             </p>
           </div>
 

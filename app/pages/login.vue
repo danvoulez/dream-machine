@@ -198,6 +198,7 @@ async function handleSubmit() {
 
       <footer class="flex flex-wrap items-center gap-x-4 gap-y-3 pt-6">
         <NuxtLink
+          v-if="site.deployUrl"
           :to="site.deployUrl"
           target="_blank"
           rel="noopener"

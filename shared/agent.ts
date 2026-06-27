@@ -1,10 +1,10 @@
 // Customize agent branding here (name, slug, tagline, avatar).
 export const agent = {
-  name: "V",
-  slug: "v",
-  tagline: "What do you need?",
+  name: "Dream Machine",
+  slug: "dream-machine",
+  tagline: "Portal chief over consequence and cognition.",
   description:
-    "Remembers your context across conversations and channels.",
+    "Requests projections, explains state, and never claims authority it does not own.",
   avatar: {
     icon: "i-lucide-bot",
   },

@@ -1,7 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { isAbsolute, join } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = process.cwd()
+const scriptRoot = dirname(fileURLToPath(import.meta.url))
+const root = dirname(scriptRoot)
+const workspaceRoot = dirname(root)
+const envelopeRoot = join(workspaceRoot, 'Dream-Machine-Envelope-Ledger')
 
 const requiredFiles = [
   'docs/dream-machine-ownership.v0.yml',
@@ -89,11 +93,11 @@ const requiredSections = {
 }
 
 const boardDocs = [
-  '/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD SPEC_v0.2.md',
-  '/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_DECISIONS_v0.1.md',
-  '/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_OBJECTS.md',
-  '/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_LIFECYCLE.md',
-  '/Users/ubl-ops/Projetos/Dream-Machine-Envelope-Ledger/docs/board/BOARD_VERTICAL_SLICE.md',
+  join(envelopeRoot, 'docs/board/BOARD SPEC_v0.2.md'),
+  join(envelopeRoot, 'docs/board/BOARD_DECISIONS_v0.1.md'),
+  join(envelopeRoot, 'docs/board/BOARD_OBJECTS.md'),
+  join(envelopeRoot, 'docs/board/BOARD_LIFECYCLE.md'),
+  join(envelopeRoot, 'docs/board/BOARD_VERTICAL_SLICE.md'),
 ]
 
 const allowPoisonedInRepo = new Set([
@@ -103,24 +107,46 @@ const allowPoisonedInRepo = new Set([
 ])
 
 const poisoned = /\b(candidate|candidates|Candidate|Candidates|admission|Admission|admitted|admit|admits|admitting|act|acts|Act|Acts)\b/g
-const dependencyPath = /^\s+[a-zA-Z0-9_]+:\s+(\/Users\/ubl-ops\/[^\s]+.*|docs\/[^\s]+)$/gm
+const dependencyPath = /^\s+[a-zA-Z0-9_]+:\s+((?:\/[^\s]+)|(?:docs\/[^\s]+)|(?:Dream-Machine-[^\s]+))$/gm
+const dependencyPathLine = /^\s+[a-zA-Z0-9_]+:\s+((?:\/[^\s]+)|(?:docs\/[^\s]+)|(?:Dream-Machine-[^\s]+))$/
 
 const failures = []
 
 function read(path) {
-  const absolute = isAbsolute(path) ? path : join(root, path)
+  const absolute = resolvePath(path)
   return readFileSync(absolute, 'utf8')
 }
 
 function exists(path) {
-  const absolute = isAbsolute(path) ? path : join(root, path)
+  const absolute = resolvePath(path)
   return existsSync(absolute)
+}
+
+function resolvePath(path) {
+  if (!path) return path
+  if (!isAbsolute(path)) {
+    if (path.startsWith('Dream-Machine-')) {
+      return join(workspaceRoot, path)
+    }
+    return join(root, path)
+  }
+  if (existsSync(path)) return path
+
+  const repoMarker = '/Dream-Machine-'
+  const markerIndex = path.indexOf(repoMarker)
+  if (markerIndex >= 0) {
+    const relativeFromWorkspace = path.slice(markerIndex + 1)
+    return join(workspaceRoot, relativeFromWorkspace)
+  }
+
+  return path
 }
 
 function withoutPathLines(body) {
   return body
     .split('\n')
-    .filter((line) => !line.includes('/Users/ubl-ops/'))
+    .filter((line) => !dependencyPathLine.test(line))
+    .filter((line) => !line.includes('/Dream-Machine-'))
     .join('\n')
 }
 

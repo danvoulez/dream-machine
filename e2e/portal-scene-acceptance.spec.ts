@@ -25,6 +25,14 @@ test.describe("T-P2 portal scene acceptance", () => {
     const count = await items.count();
     expect(count).toBeGreaterThanOrEqual(1);
 
+    const cannotDo = page.getByTestId("scene-cannot-do");
+    await expect(cannotDo).toBeVisible();
+    await expect(cannotDo).toContainText("register_receipt");
+
+    const projectionBlocks = page.getByTestId("scene-projection-blocks");
+    await expect(projectionBlocks).toBeVisible();
+    await expect(page.getByTestId("scene-projection-block").first()).toBeVisible();
+
     const summaryText = await summary.textContent();
     const match = summaryText?.match(/(\d+) process candidate/);
     expect(match).not.toBeNull();

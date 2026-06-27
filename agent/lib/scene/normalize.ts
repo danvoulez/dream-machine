@@ -1,5 +1,5 @@
-import type { SceneResponse } from "../../../shared/tools/scene.ts";
-import type { ProjectionIntent, SourceRefOwner } from "../../../shared/tools/runtime-projection.ts";
+import type { SceneResponse } from "../../../shared/tools/scene.js";
+import { PORTAL_READ_ONLY_CANNOT_DO, type ProjectionIntent, type SourceRefOwner } from "../../../shared/tools/runtime-projection.js";
 import { normalizeProjection, type RawProjection } from "../projection-normalizer.js";
 
 const OP_INTENT: Partial<Record<SceneResponse["op"], ProjectionIntent>> = {
@@ -81,7 +81,7 @@ function sceneToRaw(scene: SceneResponse): RawProjection {
       risk_tier: "L0",
       authority_route: { owner: "membrane", approval_required: false, grants_required: [] },
       result_mode: "read_only",
-      cannot_do: ["register_receipt", "dispatch_executor", "authorize_l5"],
+      cannot_do: [...PORTAL_READ_ONLY_CANNOT_DO],
     })),
   };
 }

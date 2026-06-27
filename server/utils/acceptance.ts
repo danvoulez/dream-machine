@@ -1,6 +1,7 @@
 import { assembleScene } from "../../agent/lib/scene/scene";
 import { createSceneReaders } from "../../agent/lib/scene/readers";
 import { normalizeSceneProjection } from "../../agent/lib/scene/normalize";
+import { PORTAL_READ_ONLY_CANNOT_DO } from "~~/shared/tools/runtime-projection";
 import type { SceneResponse } from "~~/shared/tools/scene";
 import type { SceneOutput } from "~~/shared/utils/tools/scene";
 
@@ -21,6 +22,6 @@ export async function assembleAcceptanceScene(): Promise<SceneOutput & { scene: 
     scene,
     projection: normalized.ok ? normalized.response : undefined,
     notes: normalized.notes,
-    cannot_do: ["register_receipt", "dispatch_executor", "authorize_l5", "mutate_ledger"],
+    cannot_do: [...PORTAL_READ_ONLY_CANNOT_DO],
   };
 }

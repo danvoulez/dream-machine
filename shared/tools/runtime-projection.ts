@@ -197,6 +197,14 @@ export interface DeclaredAffordance {
   cannot_do: string[];
 }
 
+/** Read-only portal boundary — Scene + legacy projection tools must surface these. */
+export const PORTAL_READ_ONLY_CANNOT_DO = [
+  "register_receipt",
+  "dispatch_executor",
+  "authorize_l5",
+  "mutate_ledger",
+] as const;
+
 export interface ProjectionResponse {
   projection_id: string;
   intent: ProjectionIntent;

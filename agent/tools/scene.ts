@@ -1,17 +1,13 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { SCENE_OPS } from "../../shared/tools/scene.js";
+import { PORTAL_READ_ONLY_CANNOT_DO } from "../../shared/tools/runtime-projection.js";
 import { assembleScene } from "../lib/scene/scene.js";
 import { SceneOpNotImplementedError } from "../lib/scene/errors.js";
 import { normalizeSceneProjection } from "../lib/scene/normalize.js";
 import { createSceneReaders } from "../lib/scene/readers.js";
 
-const REQUIRED_CANNOT_DO = [
-  "register_receipt",
-  "dispatch_executor",
-  "authorize_l5",
-  "mutate_ledger",
-] as const;
+const REQUIRED_CANNOT_DO = [...PORTAL_READ_ONLY_CANNOT_DO] as const;
 
 const inputSchema = z.object({
   op: z.enum(SCENE_OPS).describe("The Scene operation. Start with scene.open."),
@@ -36,6 +32,7 @@ export default defineTool({
         scene,
         projection: normalized.ok ? normalized.response : undefined,
         notes: normalized.notes,
+        cannot_do: [...REQUIRED_CANNOT_DO],
       };
     } catch (err) {
       if (err instanceof SceneOpNotImplementedError) {

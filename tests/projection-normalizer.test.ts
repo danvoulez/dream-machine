@@ -6,8 +6,8 @@ import {
   normalizeProjection,
   type RawProjection,
 } from "../agent/lib/projection-normalizer.ts";
+import { mapRuntimeProjection } from "../agent/lib/projection-portal.ts";
 import {
-  mapRuntimeProjection,
   preferredJurisdiction,
   type RuntimeProjectionInput,
 } from "../agent/tools/runtime_projection.ts";

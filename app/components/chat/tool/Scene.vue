@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SceneResponse } from "~~/shared/tools/scene";
+import type { ProjectionResponse } from "~~/shared/tools/runtime-projection";
 import type { SceneOutput, SceneUIToolInvocation } from "~~/shared/utils/tools/scene";
 
 const props = defineProps<{
@@ -28,6 +29,16 @@ const failed = computed(
 const scene = computed<SceneResponse | undefined>(() =>
   output.value?.ok ? output.value.scene : undefined,
 );
+
+const projection = computed<ProjectionResponse | undefined>(() =>
+  output.value?.ok ? output.value.projection : undefined,
+);
+
+const cannotDo = computed(() => {
+  const fromOutput = output.value?.cannot_do ?? [];
+  const fromProjection = projection.value?.cannot_do ?? [];
+  return [...new Set([...fromOutput, ...fromProjection])];
+});
 
 const errorText = computed(() => {
   if (props.invocation.errorText) return props.invocation.errorText;
@@ -205,14 +216,67 @@ function onMove(args: Record<string, unknown>) {
           {{ p.label }} · {{ p.airlock }}
         </div>
       </div>
+
+      <div
+        v-if="projection"
+        data-testid="scene-projection-blocks"
+        class="space-y-2 border-t border-default/40 pt-2"
+      >
+        <p class="text-[10px] uppercase text-dimmed">
+          Projection ({{ projection.intent }} · {{ projection.jurisdiction }})
+        </p>
+
+        <div
+          v-for="block in projection.blocks"
+          :key="block.block_id"
+          data-testid="scene-projection-block"
+          class="rounded-md border border-default/40 bg-elevated/30 px-2.5 py-2"
+        >
+          <div class="flex flex-wrap items-center gap-x-1.5">
+            <p class="text-[11px] font-medium text-toned">
+              {{ block.title || block.kind }}
+            </p>
+            <UBadge
+              color="neutral"
+              variant="soft"
+              size="xs"
+            >
+              {{ block.kind }}
+            </UBadge>
+          </div>
+          <p
+            v-if="block.body"
+            class="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted"
+          >
+            {{ block.body }}
+          </p>
+        </div>
+
+        <div
+          v-if="projection.affordances.length"
+          data-testid="scene-projection-affordances"
+          class="flex flex-wrap gap-1"
+        >
+          <UBadge
+            v-for="aff in projection.affordances"
+            :key="aff.affordance_id"
+            color="neutral"
+            variant="subtle"
+            size="xs"
+          >
+            {{ aff.label }}
+          </UBadge>
+        </div>
+      </div>
     </div>
 
     <div
-      v-if="scene && !failed && output?.cannot_do?.length"
+      v-if="scene && !failed && cannotDo.length"
+      data-testid="scene-cannot-do"
       class="border-t border-default/50 px-3 py-1.5"
     >
       <p class="text-[10px] leading-snug text-dimmed">
-        Cannot: {{ output.cannot_do.join(" · ") }}
+        Cannot: {{ cannotDo.join(" · ") }}
       </p>
     </div>
   </div>

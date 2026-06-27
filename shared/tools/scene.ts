@@ -93,6 +93,8 @@ export type Proposal = {
   effect_class: EffectClass;
   airlock: string;
   args: Record<string, unknown>;
+  /** Set after proposal-only POST /admission/intake — not committed truth. */
+  proposal_id?: string;
 };
 
 export type SceneWarning = {

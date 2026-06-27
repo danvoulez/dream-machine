@@ -29,7 +29,8 @@ Storage and door sit beside the rings:
 > between them, Neon is the diary. You stop asking Vercel to *be* the ledger.
 
 **Rule:** Vercel never registers consequence. It **reads** LAB through the runtime
-seam and **renders** what it gets.
+seam, **submits proposals** through `POST /admission/intake` (never commits), and
+**renders** what it gets.
 
 **Identity:** a passport is a **content hash** (`receipt.id == content_hash`,
 64-char sha256). `lab:*` strings are display nicknames only and are rejected by
@@ -83,7 +84,8 @@ flowchart LR
 | LogLine authority (consequence, grants, closure) | LAB | KERNEL |
 | Envelope + `derive-from-logline` | LAB | SPINE cognition ledger |
 | Ledgers (sqlite) | LAB | Source of truth — **never on Vercel** |
-| `POST /projection` | LAB via Canyon | Python bridge → real ProcessViews |
+| `POST /projection` | LAB via Canyon | Python bridge → real ProcessViews (read-only) |
+| `POST /admission/intake` | LAB via Canyon | Proposal-only intake — `admitted: false`, no ledger writes |
 | Fleet + maintenance (`pack:runtime`, backups) | LAB | Golden Bridge |
 | Portal DB (auth/threads/memory) | Neon `app` | Shared by prod + previews |
 
@@ -106,16 +108,25 @@ flowchart LR
 `danvoulez/dream-machine` was renamed `logline-acts-python` — **legacy KERNEL,
 stale, keep out of the deploy path until reviewed**. Vercel must deploy `main`.
 
-The whole hybrid is wired by **one env var pair**:
+The hybrid is wired by **two token classes** (read vs proposal):
 
 ```bash
 # Vercel web + eve (production)
 DREAM_MACHINE_RUNTIME_URL=https://api.lab.minilab.work
-DREAM_MACHINE_RUNTIME_TOKEN=<shared secret with LAB>
+DREAM_MACHINE_RUNTIME_TOKEN=<read token>
+DREAM_MACHINE_RUNTIME_TOKEN_CLASS=read
+DREAM_MACHINE_ADMISSION_TOKEN=<proposal-only token>
+DREAM_MACHINE_ADMISSION_TOKEN_CLASS=proposal
 
-# LAB runtime service only — Bearer auth, Vercel is the only allowed caller
-DREAM_MACHINE_RUNTIME_TOKEN=<same token>
+# LAB runtime service — accepts both tokens on their routes
+DREAM_MACHINE_RUNTIME_TOKEN=<read token>
+DREAM_MACHINE_RUNTIME_TOKEN_CLASS=read
+DREAM_MACHINE_ADMISSION_TOKEN=<proposal-only token>
+DREAM_MACHINE_ADMISSION_TOKEN_CLASS=proposal
 ```
+
+`read` may call `POST /projection`. `proposal` may call `POST /admission/intake`.
+Neither may append LogLine Acts or close runs from Vercel.
 
 ---
 
@@ -192,6 +203,9 @@ Three Vercel profiles plus the root `.env`.
 # docs/env/cockpit.env.example  (Vercel Production, web + eve)
 DREAM_MACHINE_RUNTIME_URL=https://api.lab.minilab.work
 DREAM_MACHINE_RUNTIME_TOKEN=<openssl rand -base64 32>
+DREAM_MACHINE_RUNTIME_TOKEN_CLASS=read
+DREAM_MACHINE_ADMISSION_TOKEN=<openssl rand -base64 32>
+DREAM_MACHINE_ADMISSION_TOKEN_CLASS=proposal
 BETTER_AUTH_URL=https://dream-machine-portal.vercel.app
 BETTER_AUTH_SECRET=<openssl rand -base64 32>
 INTERNAL_API_SECRET=<openssl rand -base64 32>   # MUST match on web AND eve
@@ -214,7 +228,10 @@ DATABASE_URL=<neon preview branch, auto>
 # docs/env/lab-runtime.env.example  (LAB engine room only)
 DREAM_MACHINE_LOGLINE_DB=/Lab/data/lab.sqlite
 DREAM_MACHINE_ENVELOPE_DB=/Lab/data/board.sqlite
-DREAM_MACHINE_RUNTIME_TOKEN=<same token as cockpit>
+DREAM_MACHINE_RUNTIME_TOKEN=<read token — same as cockpit>
+DREAM_MACHINE_RUNTIME_TOKEN_CLASS=read
+DREAM_MACHINE_ADMISSION_TOKEN=<proposal token — same as cockpit>
+DREAM_MACHINE_ADMISSION_TOKEN_CLASS=proposal
 DREAM_MACHINE_RUNTIME_URL=http://127.0.0.1:3000
 ```
 
@@ -323,9 +340,10 @@ The transcript's hard-won correction: trust commands, not docs.
 - `derive-from-logline` idempotent ✓ · passport hash minted ✓
 
 **C0 fixed (2026-06-27 evening):**
-- `pnpm test` → **75 pass / 0 skip** (ledger paths via `resolveLoglineDbPath`, not bundled `import.meta.url`)
+- `pnpm test` → **106 pass / 0 skip** (runtime, identity, preview, admission seams)
 - `pnpm typecheck` → green
 - KERNEL → **273 pass** (`incompleto` close status on `not_dispatched`)
+- **C0.4** — `POST /admission/intake` proposal-only; `admitted: false`, forbidden ops denylist
 
 **Still before deploy:**
 - FACE feature branch not merged to `main`; GitHub `main` still Vercel template
@@ -339,11 +357,18 @@ core the deploy cares about. `logline-acts-python` is irrelevant to this path.
 ## 9. Verify the cable + smoke
 
 ```bash
-# LAB runtime answers projection (through Canyon, with bearer token)
+# LAB runtime answers projection (through Canyon, with read bearer token)
 curl -H "Authorization: Bearer $DREAM_MACHINE_RUNTIME_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"mode":"rows","scope":{}}' \
      https://api.lab.minilab.work/projection
+
+# Proposal intake accepts but never commits (proposal-only token)
+curl -H "Authorization: Bearer $DREAM_MACHINE_ADMISSION_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"kind":"proposal","actor":{"passport_hash":"<64-char>"},"source":{"surface":"test"},"intent":{"action":"request_human_approval"}}' \
+     https://api.lab.minilab.work/admission/intake
+# → {"ok":true,"admitted":false,"committed":false,"proposal_id":"...","route_class":"proposal-only",...}
 
 # Eve health on the deployed portal
 curl https://dream-machine-portal.vercel.app/_eve_internal/eve/eve/v1/health

@@ -36,6 +36,12 @@ export {
 } from "./oauth-client-metadata.js";
 
 export {
+  attachProposalIntakeIds,
+  proposalToIntakeRequest,
+  submitAdmissionIntake,
+} from "./admission-client.js";
+
+export {
   buildOAuthAdapterAux,
   buildOAuthCrossingRequest,
   crossOAuthClientRegistration,

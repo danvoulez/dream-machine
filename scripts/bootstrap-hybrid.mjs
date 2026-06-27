@@ -120,7 +120,12 @@ function writeEnvFile(path, entries, header) {
 }
 
 function mergeSecrets(existing) {
-  const need = ["BETTER_AUTH_SECRET", "INTERNAL_API_SECRET", "DREAM_MACHINE_RUNTIME_TOKEN"];
+  const need = [
+    "BETTER_AUTH_SECRET",
+    "INTERNAL_API_SECRET",
+    "DREAM_MACHINE_RUNTIME_TOKEN",
+    "DREAM_MACHINE_ADMISSION_TOKEN",
+  ];
   const merged = { ...existing };
   for (const key of need) {
     if (!merged[key]) merged[key] = secretB64();
@@ -400,6 +405,9 @@ function vercelSetup() {
     INTERNAL_API_SECRET: env.INTERNAL_API_SECRET,
     DREAM_MACHINE_RUNTIME_URL: RUNTIME_URL,
     DREAM_MACHINE_RUNTIME_TOKEN: env.DREAM_MACHINE_RUNTIME_TOKEN,
+    DREAM_MACHINE_RUNTIME_TOKEN_CLASS: "read",
+    DREAM_MACHINE_ADMISSION_TOKEN: env.DREAM_MACHINE_ADMISSION_TOKEN,
+    DREAM_MACHINE_ADMISSION_TOKEN_CLASS: "proposal",
     DREAM_MACHINE_RUNTIME_TIMEOUT_MS: "8000",
   };
   if (env.DATABASE_URL) production.DATABASE_URL = env.DATABASE_URL;

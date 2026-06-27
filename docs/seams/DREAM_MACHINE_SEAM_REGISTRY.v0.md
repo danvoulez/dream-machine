@@ -32,8 +32,9 @@ Declared in `plugin/dream-machine-runtime/manifest.json`:
 |-------|------------|---------|
 | `POST /projection` | **runtime** + **projection** (read-only semantic) | `server/routes/projection.post.ts` |
 | `POST /oauth-crossing` | **runtime** + **proposal/airlock** (L3 crossing) | `server/routes/oauth-crossing.post.ts` |
+| `POST /admission/intake` | **proposal** (proposal-only; never commits) | `server/routes/admission/intake.post.ts` |
 
-Future routes (`POST /proposal`, `POST /effect/intended`) will be **runtime** routes. They must **not** inherit projection’s read-only contract.
+Future routes (`POST /effect/intended`) will be **runtime** routes. They must **not** inherit projection’s read-only contract.
 
 ---
 
@@ -62,7 +63,7 @@ flowchart TB
   RT --> Py
   Py -->|read_only_connect mode=ro| Kern
   Eve --> Norm
-  Eve -.->|proposals object only| Eve
+  Eve -->|POST /admission/intake proposal-only| RT
   OAuth[POST /oauth-crossing] --> Spine
   OAuth -.->|execute needs ledger anchor| Kern
   Exec -->|append + close| Kern
@@ -80,7 +81,7 @@ flowchart TB
 | LAB closure is evidence-bound | “green” without machine evidence | KERNEL `missing_evidence`, `close_evidence_incomplete`, `_validate_close_result` |
 | Inline OAuth crossing cannot fake ledger authority | Vercel mints Acts | `/oauth-crossing` execute requires ledger-anchored `content_hash` |
 
-**Bottom line:** read path + seal path + closure path are **real**. Weak seams are **integration** seams (identity map, proposal admission HTTP, live LAB).
+**Bottom line:** read path + proposal intake + seal path + closure path are **real**. Weak seams are **integration** seams (full LAB admission queue, live Canyon).
 
 ---
 
@@ -119,7 +120,7 @@ Vercel cockpit / Eve → LAB runtime API (**transport, auth, route class** — n
 | **Contract** | `plugin/dream-machine-runtime/manifest.json` · `docs/dream-machine-hybrid-topology.v0.yml` |
 | **Code anchor** | **Auth policy (C0.1):** `server/utils/projection-auth.ts` — `isProjectionAuthOpenAllowed`, `verifyProjectionRuntimeAuth` (production + missing token → `503 config_error`), `requireRuntimeTokenForHttp`. **Client:** `agent/lib/projection-bridge.ts` — `postProjectionHttp` calls guard before fetch. **Server:** `server/routes/projection.post.ts`. **Open modes only:** `DREAM_MACHINE_RUNTIME_SHELL_ONLY=1`, `DREAM_MACHINE_RUNTIME_DEV_OPEN=1`, `DREAM_MACHINE_ACCEPTANCE=1` (non-production), `NODE_ENV=test` |
 | **Verify** | `pnpm test -- --test-name-pattern 'projection auth'`; production curl without token must get 503 |
-| **Gap** | `/oauth-crossing` and future `POST /proposal` routes share token env but are not yet classified per route class (**C0.4**) |
+| **Gap** | `/oauth-crossing` route class not yet split from projection token policy; `/admission/intake` uses separate proposal-only token (**C0.4 done**) |
 
 **Owns:** URL, Bearer/Access auth, route class, shell-only mode, server route protection.  
 **Does not own:** ProcessView shape, `authoritative: false`, `cannot_do` (projection seam).
@@ -136,7 +137,7 @@ LAB ledgers / ProcessViews → Vercel UI (**read-only semantic boundary**).
 | **Level** | **HARD** |
 | **Contract** | `docs/dream-machine-projections.v0.yml` · `docs/dream-machine-actions.v0.yml` |
 | **Code anchor** | **Storage:** `scripts/runtime-projection-local.py` — `read_only_connect()`. **Motor:** `agent/lib/scene/scene.ts`, `agent/lib/scene/readers.ts`. **Law:** `agent/lib/projection-normalizer.ts` — always `authoritative: false`, `buildCannotDo()`. **Tool:** `agent/tools/scene.ts` — read-only description + `cannot_do` on every response |
-| **Verify** | `pnpm test` (75 pass, 0 skip); `pnpm contracts:validate` |
+| **Verify** | `pnpm test` (106 pass, 0 skip); `pnpm contracts:validate` |
 | **Gap** | None on semantic read path; depends on runtime seam for transport auth in prod |
 
 **Owns:** `mode=ro`, ProcessView shape, `authoritative: false`, `cannot_do`, no append branch.  
@@ -151,14 +152,14 @@ Eve / Vercel → LAB admission path (intention ≠ truth).
 | | |
 |--|--|
 | **Failure mode** | Eve request silently becomes committed Act |
-| **Level** | **PARTIAL** |
+| **Level** | **HARD** for proposal-only HTTP intake rejecting commit/write/closure operations · **PARTIAL** for full LAB qualification/enqueue/executor admission |
 | **Contract** | `docs/envelope-jurisdiction.v0.yml` (`proposal_not_truth`) · `docs/envelope-proposal-to-logline-package.v0.yml` |
-| **Code anchor** | `agent/lib/scene/governor.ts` — `proposals()` → `airlock: "human-approval"`; `agent/tools/scene.ts` — effectful intents in `proposals`, not `legal_next_moves`. KERNEL local: `lab/dream.py` — `dream.proposal` receipt |
-| **Verify** | `pnpm test` — `proposals surface effectful intents` |
-| **Gap** | No production `POST /proposal` or `/admission/intake` on LAB runtime (**C0.4**) |
+| **Code anchor** | **Intake (C0.4):** `server/routes/admission/intake.post.ts` — `POST /admission/intake`. `server/utils/admission-intake.ts` — `PROPOSAL_INTAKE_FORBIDDEN`, `handleAdmissionIntake` (`admitted: false`, `committed: false`, `ADMISSION_INTAKE_LEDGER_MUTATION = false`). `server/utils/admission-auth.ts` — `DREAM_MACHINE_ADMISSION_TOKEN` + `ADMISSION_TOKEN_CLASS=proposal`; read token → 403. **Client:** `agent/lib/admission-client.ts` — `submitAdmissionIntake`, `attachProposalIntakeIds`. **Scene:** `agent/tools/scene.ts` — `scene.proposals[]` → intake → `proposal_id`; `agent/lib/scene/governor.ts` — proposals ≠ `legal_next_moves` |
+| **Verify** | `pnpm test -- --test-name-pattern 'admission'`; `proposals surface effectful intents` |
+| **Gap** | Full LAB qualification/enqueue/executor admission not wired; intake is in-memory only |
 
-**Carries:** proposed Act fields, actor context, requested operation.  
-**Must not carry:** automatic closure, direct sqlite writes from Vercel.
+**Carries:** proposed Act fields, actor context, requested operation, `proposal_id`.  
+**Must not carry:** automatic closure, direct sqlite writes from Vercel, `admitted: true`.
 
 ---
 
@@ -235,7 +236,7 @@ Branch deploy → experiment sandbox.
 | **Contract** | `docs/dream-machine-hybrid-topology.v0.yml` (ring_1 runtime_modes) |
 | **Code anchor** | `server/utils/preview-env-guard.ts` — `validatePreviewEnv`, `assertPreviewEnvSafe` (boot). `server/plugins/preview-env-guard.ts` (Nitro). `scripts/bootstrap-hybrid.mjs` — preview profile omits prod runtime token/URL. `pack:runtime` — `seams.preview.seam` receipt |
 | **Verify** | `pnpm test -- --test-name-pattern 'preview'`; `VERCEL_ENV=preview` + forbidden token → boot fails |
-| **Gap** | Proposal/effect route token classes not created yet |
+| **Gap** | Effect route token class not created yet; admission intake uses proposal-only token (separate from preview read guard) |
 
 ---
 
@@ -321,14 +322,15 @@ Runtime result / observation → ledger closure.
 | Question answered | *Who may call which route, how?* | *What may this response claim?* |
 | Owns | URL, Bearer, route class, shell-only, server auth | `mode=ro`, ProcessView, `authoritative: false`, `cannot_do` |
 | Today’s route | `POST /projection` (transport) | same handler (read-only semantics only) |
-| Future routes | `POST /proposal`, `POST /effect/intended` | **Do not** inherit projection contract |
+| Future routes | `POST /effect/intended` | **Do not** inherit projection contract |
+| Proposal route | `POST /admission/intake` (proposal-only transport) | **Do not** inherit projection contract; response always `admitted: false` |
 
 ---
 
 ## Known weak seams (integration, not conceptual)
 
 ```text
-1. proposal.seam     — Scene proposals exist; no LAB HTTP admission queue
+1. proposal.seam     — HTTP intake HARD; full LAB qualification/enqueue not wired
 2. canyon.seam       — scripts exist; LAB + tunnel not proven live here
 ```
 
@@ -341,7 +343,7 @@ Runtime result / observation → ledger closure.
 | **C0.1** | runtime | ~~Require production `/projection` auth unconditionally~~ **done** — `503 config_error` when token unset in production |
 | **C0.2** | identity | ~~Consume `DREAM_MACHINE_PASSPORT_MAP`~~ **done** — `passport_hash` authority; `lab_id` gloss only |
 | **C0.3** | preview | ~~Assert preview env cannot contain write/commit tokens~~ **done** — boot guard + bootstrap preview profile |
-| **C0.4** | proposal | Add `POST /proposal` or `/admission/intake` — proposal-only, no commit |
+| **C0.4** | proposal | ~~Add `POST /admission/intake` — proposal-only, no commit~~ **done** — `admitted: false`, forbidden ops denylist, proposal token auth |
 | **C0.5** | canyon | Deploy tunnel; prove `api.lab.minilab.work/projection` with Bearer/Access |
 | **C0.6** | deploy-seal | `pack:runtime` emits seam receipt with per-seam level |
 
@@ -353,7 +355,7 @@ Runtime result / observation → ledger closure.
     "identity.seam": "HARD:passport-map;PARTIAL:grant-policy",
     "runtime.seam": "HARD:/projection;PARTIAL:other-routes",
     "projection.seam": "HARD",
-    "proposal.seam": "PARTIAL",
+    "proposal.seam": "HARD:intake;PARTIAL:lab-queue",
     "airlock.seam": "HARD",
     "deploy-seal.seam": "HARD"
   }

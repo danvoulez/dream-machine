@@ -2,7 +2,7 @@
   "name": "dream-machine",
   "version": "0.2.0",
   "task": "T-P1+T-R2",
-  "description": "Triple organelle pack: KERNEL (LogLine) + SPINE (Envelope) + FACE (membrane runtime). One plugin seam: POST /projection (read-only) + POST /oauth-crossing (first external-effect crossing).",
+  "description": "Triple organelle pack: KERNEL (LogLine) + SPINE (Envelope) + FACE (membrane runtime). Seams: POST /projection (read-only), POST /oauth-crossing (L3), POST /admission/intake (proposal-only).",
   "topology_role": "manhattan",
   "entrypoints": {
     "http": {
@@ -28,6 +28,13 @@
       "module": "agent/lib/oauth-crossing.ts",
       "danger_tier": "L3",
       "process_id": "oauth-client.v1"
+    },
+    "admission_intake": {
+      "method": "POST",
+      "path": "/admission/intake",
+      "handler": "server/routes/admission/intake.post.ts",
+      "module": "server/utils/admission-intake.ts",
+      "route_class": "proposal-only"
     }
   },
   "portal_tools": {
@@ -57,7 +64,11 @@
         "agent/lib/oauth-client-metadata.ts",
         "agent/lib/envelope-effect-store.ts",
         "agent/lib/board-json-v0.ts",
-        "server/routes/oauth-crossing.post.ts"
+        "server/routes/oauth-crossing.post.ts",
+        "server/routes/admission/intake.post.ts",
+        "server/utils/admission-auth.ts",
+        "server/utils/admission-intake.ts",
+        "agent/lib/admission-client.ts"
       ]
     },
     "kernel": {
@@ -99,11 +110,18 @@
     "agent/lib/oauth-client-metadata.ts",
     "agent/lib/envelope-effect-store.ts",
     "agent/lib/board-json-v0.ts",
-    "server/routes/oauth-crossing.post.ts"
+    "server/routes/oauth-crossing.post.ts",
+    "server/routes/admission/intake.post.ts",
+    "server/utils/admission-auth.ts",
+    "server/utils/admission-intake.ts",
+    "agent/lib/admission-client.ts"
   ],
   "env": [
     "DREAM_MACHINE_RUNTIME_URL",
     "DREAM_MACHINE_RUNTIME_TOKEN",
+    "DREAM_MACHINE_RUNTIME_TOKEN_CLASS",
+    "DREAM_MACHINE_ADMISSION_TOKEN",
+    "DREAM_MACHINE_ADMISSION_TOKEN_CLASS",
     "DREAM_MACHINE_RUNTIME_SHELL_ONLY",
     "DREAM_MACHINE_RUNTIME_TIMEOUT_MS",
     "DREAM_MACHINE_LOGLINE_DB",

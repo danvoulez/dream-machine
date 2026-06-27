@@ -6,6 +6,7 @@ import { assembleScene } from "../lib/scene/scene.js";
 import { SceneOpNotImplementedError } from "../lib/scene/errors.js";
 import { normalizeSceneProjection } from "../lib/scene/normalize.js";
 import { createSceneReaders } from "../lib/scene/readers.js";
+import { attachProposalIntakeIds } from "../lib/admission-client.js";
 import { resolvePortalIdentity } from "../lib/identity-bridge.js";
 
 const REQUIRED_CANNOT_DO = [...PORTAL_READ_ONLY_CANNOT_DO] as const;
@@ -27,7 +28,17 @@ export default defineTool({
   async execute(input, ctx) {
     const operator = resolvePortalIdentity(ctx?.session?.auth?.current ?? null) ?? undefined;
     try {
-      const scene = await assembleScene(input as never, createSceneReaders(), { now: Date.now() });
+      let scene = await assembleScene(input as never, createSceneReaders(), { now: Date.now() });
+      if (scene.proposals.length > 0 && operator?.passport_hash) {
+        scene = {
+          ...scene,
+          proposals: await attachProposalIntakeIds(
+            scene.proposals,
+            operator,
+            { surface: "eve", session_id: ctx?.session?.id },
+          ),
+        };
+      }
       const normalized = normalizeSceneProjection(scene);
       return {
         ok: true as const,

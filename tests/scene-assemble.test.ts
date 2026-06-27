@@ -66,8 +66,27 @@ test("scene.explain_loss returns omitted items from a bounded open view", async 
   assert.ok(explained.loss_accounting.omitted_reasons[0]?.includes("omitted"));
 });
 
+test("scene.back returns the ranked view when ascending from a drill", async () => {
+  const drill = await assembleScene({
+    op: "scene.drill",
+    scope: { ledger: "lab" },
+    selection: { focus: "h2" },
+    limit: 10,
+  }, fakeReaders, { now: NOW });
+  assert.equal(drill.view.items.length, 1);
+  const back = await assembleScene({
+    op: "scene.back",
+    scope: { ledger: "lab" },
+    parent_projection_hash: drill.projection_hash,
+    limit: 10,
+  }, fakeReaders, { now: NOW });
+  assert.equal(back.op, "scene.back");
+  assert.ok(back.view.items.length > 1);
+  assert.ok(back.legal_next_moves.some((m) => m.move === "scene.drill"));
+});
+
 test("unimplemented Scene ops throw SceneOpNotImplementedError", async () => {
-  for (const op of ["scene.group", "scene.filter", "scene.compare", "scene.ascend", "scene.descend", "scene.back"] as const) {
+  for (const op of ["scene.group", "scene.filter", "scene.compare", "scene.ascend", "scene.descend"] as const) {
     await assert.rejects(
       () => assembleScene({ op, scope: { ledger: "lab" }, limit: 10 }, fakeReaders, { now: NOW }),
       (err: unknown) => err instanceof SceneOpNotImplementedError && err.op === op,

@@ -137,38 +137,11 @@ function ownerLabel(owner: string) {
       </div>
 
       <!-- blocks -->
-      <div
+      <ChatToolProjectionBlockCard
         v-for="block in projection.blocks"
         :key="block.block_id"
-        class="rounded-md border border-default/40 bg-elevated/30 px-2.5 py-2"
-      >
-        <div class="flex flex-wrap items-center gap-x-1.5">
-          <p class="text-[11px] font-medium text-toned">
-            {{ block.title || block.kind }}
-          </p>
-          <UBadge
-            color="neutral"
-            variant="soft"
-            size="xs"
-          >
-            {{ block.kind }}
-          </UBadge>
-          <UBadge
-            v-if="block.risk_tier"
-            color="neutral"
-            variant="outline"
-            size="xs"
-          >
-            {{ block.risk_tier }}
-          </UBadge>
-        </div>
-        <p
-          v-if="block.body"
-          class="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted"
-        >
-          {{ block.body }}
-        </p>
-      </div>
+        :block="block"
+      />
 
       <!-- open findings -->
       <div
@@ -239,24 +212,7 @@ function ownerLabel(owner: string) {
         </UBadge>
       </div>
 
-      <!-- declared affordances (shown, not actionable here — wiring is a later tool) -->
-      <div
-        v-if="projection.affordances.length"
-        class="space-y-1"
-      >
-        <span class="text-[11px] text-dimmed">Available actions (route through the runtime):</span>
-        <div class="flex flex-wrap gap-1">
-          <UBadge
-            v-for="aff in projection.affordances"
-            :key="aff.affordance_id"
-            color="neutral"
-            variant="subtle"
-            size="xs"
-          >
-            {{ aff.label }} · {{ aff.risk_tier }}
-          </UBadge>
-        </div>
-      </div>
+      <ChatToolProjectionAffordances :affordances="projection.affordances" />
     </div>
 
     <!-- cannot_do footer -->

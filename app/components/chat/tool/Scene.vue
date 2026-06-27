@@ -226,47 +226,16 @@ function onMove(args: Record<string, unknown>) {
           Projection ({{ projection.intent }} · {{ projection.jurisdiction }})
         </p>
 
-        <div
+        <ChatToolProjectionBlockCard
           v-for="block in projection.blocks"
           :key="block.block_id"
-          data-testid="scene-projection-block"
-          class="rounded-md border border-default/40 bg-elevated/30 px-2.5 py-2"
-        >
-          <div class="flex flex-wrap items-center gap-x-1.5">
-            <p class="text-[11px] font-medium text-toned">
-              {{ block.title || block.kind }}
-            </p>
-            <UBadge
-              color="neutral"
-              variant="soft"
-              size="xs"
-            >
-              {{ block.kind }}
-            </UBadge>
-          </div>
-          <p
-            v-if="block.body"
-            class="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted"
-          >
-            {{ block.body }}
-          </p>
-        </div>
+          :block="block"
+        />
 
-        <div
-          v-if="projection.affordances.length"
-          data-testid="scene-projection-affordances"
-          class="flex flex-wrap gap-1"
-        >
-          <UBadge
-            v-for="aff in projection.affordances"
-            :key="aff.affordance_id"
-            color="neutral"
-            variant="subtle"
-            size="xs"
-          >
-            {{ aff.label }}
-          </UBadge>
-        </div>
+        <ChatToolProjectionAffordances
+          :affordances="projection.affordances"
+          @select="onMove"
+        />
       </div>
     </div>
 

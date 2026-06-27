@@ -75,6 +75,11 @@ function applyOp(
     };
   }
 
+  if (op === "scene.back" || op === "scene.refresh") {
+    const { items, loss } = rankAndBound(views, profile, limit);
+    return { items, loss, focused: false };
+  }
+
   if (op === "scene.drill" || op === "scene.open_evidence") {
     const match = focusedId
       ? views.find((v) => v.id === focusedId || v.instance === focusedId)

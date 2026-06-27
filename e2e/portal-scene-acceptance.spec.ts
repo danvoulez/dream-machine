@@ -31,7 +31,8 @@ test.describe("T-P2 portal scene acceptance", () => {
 
     const projectionBlocks = page.getByTestId("scene-projection-blocks");
     await expect(projectionBlocks).toBeVisible();
-    await expect(page.getByTestId("scene-projection-block").first()).toBeVisible();
+    await expect(page.getByTestId("projection-block-summary").first()).toBeVisible();
+    await expect(page.getByTestId("projection-affordance-buttons")).toBeVisible();
 
     const summaryText = await summary.textContent();
     const match = summaryText?.match(/(\d+) process candidate/);

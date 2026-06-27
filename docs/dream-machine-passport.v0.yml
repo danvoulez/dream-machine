@@ -1,0 +1,161 @@
+version: dream-machine-passport.v0
+status: draft_locked
+date: "2026-06-27"
+
+depends_on:
+  ownership: docs/dream-machine-ownership.v0.yml
+  vocabulary: docs/dream-machine-vocabulary.v0.yml
+  reference_map: docs/dream-machine-reference-map.v0.yml
+  crossing_map: docs/dream-machine-crossing-map.v0.yml
+  logline_jurisdiction: docs/logline-jurisdiction.v0.yml
+  hybrid_topology: docs/dream-machine-hybrid-topology.v0.yml
+
+purpose: >
+  Declare how Dream Machine recognizes operators, entities, and OAuth subjects.
+  A passport is not a nickname and not an IdP-assigned string. The passport is the
+  LogLine content_hash of a registered logline_act (or a citation bundle pointing
+  at one). Recognition layers (Neon Auth, Vercel Better Auth, OAuth clients) may
+  carry that hash in token claims; they never mint authority.
+
+passport_identity:
+  authoritative_field: passport_hash
+  format:
+    algorithm: sha256
+    encoding: lowercase_hex
+    length: 64
+    pattern: "^[0-9a-f]{64}$"
+  identifies: registered_logline_receipt_content
+  owner: logline
+  composable_via:
+    - content_hash
+    - tuple_hash
+    - process_contract_hash
+    - result_hash
+    - bundle
+  citation_module: Dream-Machine-LogLine-Acts/lab/citation.py
+
+banned_nicknames:
+  - id: no_lab_prefix_handles
+    text: >
+      Strings like lab:abc123, lab:dan, or lab:operator are informal gloss only.
+      They are not passport identity, not grant keys, and not valid in machine
+      fields unless they happen to be 64-char content hashes (they are not).
+  - id: idp_sub_is_not_passport
+    text: >
+      Supabase sub, Vercel user id, Neon Auth user id, and OAuth client_id are
+      recognition handles. They map to passport_hash via declared bridge rules;
+      they do not replace content_hash authority.
+
+entity_kinds:
+  # Same receipt anatomy; process contract interprets slots and AUX.
+  shared_shape: logline_act_nine_slots_plus_aux
+  kinds:
+    person:
+      typical_processes: [memory-register.v1]
+      passport_is: content_hash_of_registration_logline_act
+    object:
+      typical_processes: [memory-register.v1, evidence-closure.v1]
+      passport_is: content_hash_of_registration_logline_act
+    app:
+      typical_processes: [oauth-client.v1]
+      passport_is: content_hash_of_subject_registration_or_oauth_registration
+    llm:
+      typical_processes: [inference.v1]
+      passport_is: content_hash_of_model_or_session_registration_logline_act
+    engine:
+      typical_processes: [worker-run.v1, projection-build.v1]
+      passport_is: content_hash_of_engine_registration_logline_act
+    workflow:
+      typical_processes: [workflow-run.v1]
+      passport_is: content_hash_of_workflow_declaration_logline_act
+    oauth_client_registration:
+      process_id: oauth-client.v1
+      danger_tier: L3
+      passport_is: content_hash_of_the_registering_logline_act
+      subject_citation_aux: passport_hash
+
+oauth_recognition:
+  process_id: oauth-client.v1
+  registration_act:
+    required_slots: [who, did, this, when, confirmed_by, if_ok, if_doubt, if_not, status]
+    optional_aux:
+      - passport_hash
+      - client_name
+      - redirect_uris
+      - client_type
+    legacy_aux_deprecated:
+      - lab_id
+  subject_binding:
+    rule: >
+      passport_hash AUX cites the subject entity's registration content_hash.
+      When the registration logline_act itself is the passport (e.g. first-party
+      LAB Passport client), passport_hash may equal the registration logline_act id.
+  recognition_hosts:
+    - id: neon_auth
+      role: issue_sessions_branch_with_database
+      must_emit_claim: passport_hash
+      must_not_register_consequence: true
+    - id: vercel_better_auth
+      role: cockpit_session
+      must_map_via: membrane_identity_bridge
+      must_not_register_consequence: true
+    - id: supabase_oauth_admin
+      role: oauth_client_registration_edge_effect
+      crossing: oauth-crossing
+      evidence: [request_hash, client_metadata_hash]
+  redirect_example: https://passport.minilab.work/auth/callback
+
+membrane_identity_bridge:
+  owner: membrane
+  read_only: true
+  env:
+    primary: DREAM_MACHINE_PASSPORT_MAP
+    legacy_ignored_unless_hash: DREAM_MACHINE_LAB_ID_MAP
+    default: DREAM_MACHINE_DEFAULT_PASSPORT_HASH
+  maps: app_principal_id → passport_hash
+  grants_resolve_from: logline_grant_registry
+  ghost_until: live_grant_registry_sync
+
+workflow_automation_substrate:
+  # Vercel Workflows (Workflow SDK) — A-axis continuity, not constitutional law.
+  process_id: workflow-run.v1
+  danger_tier: L5
+  role: >
+    Durable step orchestration (sleep, hooks, retries) may execute adapter work
+    between registered logline_acts. Workflow state is infrastructure memory.
+    Each meaningful consequence still closes with a LogLine registration whose
+    content_hash is citable and whose citations bind to prior passport_hashes.
+  vercel_primitives:
+    - use_workflow
+    - use_step
+    - sleep
+    - defineHook
+  must_not:
+    - replace_logline_registration
+    - raise_l4_l5_without_grant_and_signoff
+    - treat_workflow_event_log_as_sovereign_truth
+  closes_with:
+    - result_hash_citing_input_passport_hashes
+    - envelope_shift_when_observability_recorded
+
+ring_placement:
+  ring_2_cockpit:
+    - oauth_token_claim_passport_hash
+    - identity_bridge_read_only
+    - optional_vercel_workflows_for_hitl_and_connect
+  ring_3_engine_room:
+    - logline_grant_registry_authority
+    - workflow_run_adapter_execution
+    - passport_registration_processes
+
+validation_rules:
+  - id: passport_is_content_hash
+    text: passport_hash must match the declared sha256 hex pattern or be absent.
+  - id: nicknames_not_authoritative
+    text: lab:* strings and IdP handles are never valid passport_hash values.
+  - id: recognition_does_not_grant
+    text: OAuth or session recognition maps to grants; it does not create grants.
+  - id: workflow_substrate_not_owner
+    text: Vercel Workflows orchestrate; LogLine owns consequence registration.
+  - id: cite_before_operate
+    text: Effectful routes must cite passport_hash and process_id before crossing.

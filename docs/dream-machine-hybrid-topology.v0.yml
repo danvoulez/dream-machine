@@ -1,0 +1,220 @@
+version: dream-machine-hybrid-topology.v0
+status: draft_locked
+date: "2026-06-27"
+
+depends_on:
+  ownership: docs/dream-machine-ownership.v0.yml
+  installable_topology: docs/dream-machine-installable-topology.v0.yml
+  core_technologies: docs/dream-machine-core-technologies.v0.yml
+  portal_chief: docs/dream-machine-portal-chief.v0.md
+  passport: docs/dream-machine-passport.v0.yml
+  deployment_playbook: docs/HYBRID_DEPLOYMENT.md
+
+purpose: >
+  Declare the official three-ring hybrid deployment: Vercel cockpit (production daily UI
+  and Eve integration), Vercel preview (experiment lab per branch), and LAB engine room
+  (all compute that needs sovereignty — ledgers, projection runtime, KERNEL/SPINE writes,
+  Golden Bridge maintenance). Cloud holds ingress (Canyon) and portal persistence (Neon)
+  only. This contract extends dream-machine-installable-topology.v0 for Ring 3; it does
+  not create new jurisdiction primitives.
+
+supersedes_for:
+  - production_deployment_shape
+  - vercel_vs_lab_split
+
+does_not_supersede:
+  - logline_consequence_authority
+  - envelope_additive_law
+  - installable_topology_lab_layout
+
+three_rings:
+  ring_1_experiment_lab:
+    metaphor: lab_bench
+    host: vercel_preview
+    vercel_environment: Preview
+    owns:
+      - per_branch_preview_deploy
+      - experiment_eve_sessions
+      - experiment_scene_ui
+      - vercel_connect_trials
+      - ai_gateway_via_oidc
+      - acceptance_harness_routes_when_enabled
+      - isolated_neon_preview_database_optional
+    must_not_own:
+      - logline_consequence
+      - envelope_authority_writes
+      - ledger_source_of_truth
+    runtime_modes:
+      stub:
+        description: UI and normalizer work without live ledgers
+        dream_machine_runtime_shell_only: "1"
+      fixture:
+        description: Seeded sqlite bundled or local bridge in preview build
+        dream_machine_runtime_url: preview_self_or_unset
+      live_read:
+        description: Read-only projection against LAB runtime API via Canyon
+        dream_machine_runtime_url: https://api.lab.minilab.work
+        requires_shared_bearer_token: true
+        default_for_most_prs: false
+    promotion_gate:
+      - pnpm_pack_runtime_passes
+      - unit_and_safety_tests_pass
+      - optional_eval_against_preview_url
+
+  ring_2_cockpit:
+    metaphor: daily_cockpit
+    host: vercel_production
+    vercel_environment: Production
+    vercel_project: dream-machine-portal
+    services:
+      web:
+        framework: nuxtjs
+        route_prefix: "web_root"
+      eve:
+        framework: eve
+        route_prefix: "eve_internal_prefix"
+    owns:
+      - daily_portal_ui
+      - chat_and_scene_cards
+      - durable_eve_workflow
+      - vercel_connect_linear_slack
+      - ai_gateway_oidc
+      - agent_runs_observability
+    must_not_own:
+      - logline_registration
+      - envelope_authority_mutation
+      - ledger_sqlite_files
+    reads_truth_via:
+      seam: POST /projection
+      env: DREAM_MACHINE_RUNTIME_URL
+      target_ring: ring_3_engine_room
+
+  ring_3_engine_room:
+    metaphor: engine_room
+    host: lab_8gb_macos
+    extends: installable_topology
+    owns:
+      - logline_sqlite_ledger
+      - envelope_sqlite_ledger
+      - kernel_writes_and_fleet
+      - spine_derive_pipe
+      - projection_runtime_api
+      - python_sqlite_bridge
+      - golden_bridge_maintenance
+      - pack_runtime_seal_execution
+      - local_inference_optional
+    must_not_own:
+      - portal_auth_threads_memory
+      - vercel_connect_credential_hosting
+    exposes_via:
+      canyon_hostname: api.lab.minilab.work
+      projection_endpoint: "POST_projection"
+      auth: bearer_dream_machine_runtime_token
+
+cloud_no_compute:
+  canyon:
+    platform: cloudflare_tunnel
+    hostnames:
+      - api.lab.minilab.work
+      - lab.minilab.work
+    rules:
+      - ingress_does_not_grant_authority
+      - tunnel_terminates_on_lab_only
+  neon:
+    platform: neon_postgres
+    databases:
+      app:
+        role: portal_persistence
+        used_by: [ring_2_cockpit, ring_1_experiment_lab]
+        stores: [better_auth, threads, memory, profile]
+      ledgers:
+        role: future_read_mirror
+        used_by: ring_3_engine_room
+        status: planned
+        note: sqlite_on_lab_remains_authoritative_until_postgres_reader_ships
+
+seams:
+  projection_read:
+    contract: dream-machine-projections.v0
+    http_method: POST
+    http_path: projection
+    bearer: DREAM_MACHINE_RUNTIME_TOKEN
+    client_rings: [ring_1_experiment_lab, ring_2_cockpit]
+    server_ring: ring_3_engine_room
+    non_authoritative: true
+  internal_api:
+    bearer: INTERNAL_API_SECRET
+    between: [ring_2_cockpit_eve, ring_2_cockpit_web]
+  oauth_crossing_execute:
+    ring: ring_3_engine_room_or_declared_airlock
+    note: effectful_crossing_not_on_vercel_serverless_alone
+
+env_profiles:
+  cockpit_production:
+    template: docs/env/cockpit.env.example
+    vercel_scope: Production
+    required:
+      - BETTER_AUTH_SECRET
+      - BETTER_AUTH_URL
+      - INTERNAL_API_SECRET
+      - DATABASE_URL
+      - DREAM_MACHINE_RUNTIME_URL
+      - DREAM_MACHINE_RUNTIME_TOKEN
+    ai:
+      provider: vercel_ai_gateway_oidc
+      api_key_required: false
+  experiment_preview:
+    template: docs/env/experiment.env.example
+    vercel_scope: Preview
+    required:
+      - BETTER_AUTH_SECRET
+      - BETTER_AUTH_URL
+      - INTERNAL_API_SECRET
+      - DATABASE_URL
+      - DREAM_MACHINE_RUNTIME_URL
+      - DREAM_MACHINE_RUNTIME_TOKEN
+    optional:
+      - DREAM_MACHINE_ACCEPTANCE
+      - DREAM_MACHINE_RUNTIME_SHELL_ONLY
+    ai:
+      provider: vercel_ai_gateway_oidc
+  lab_runtime:
+    template: docs/env/lab-runtime.env.example
+    host: lab_8gb
+    required:
+      - DREAM_MACHINE_LOGLINE_DB
+      - DREAM_MACHINE_ENVELOPE_DB
+      - DREAM_MACHINE_RUNTIME_TOKEN
+    paths:
+      lab_root: "LAB_ROOT"
+      data: "LAB_ROOT_data"
+      src: "LAB_ROOT_src"
+
+deploy_flow:
+  on_pull_request:
+    - vercel_preview_deploy
+    - optional_pnpm_test_eval_against_preview
+    - optional_playwright_against_preview
+  on_main_merge:
+    - pnpm_pack_runtime
+    - vercel_deploy_prod
+    - ssh_lab_restart_runtime_if_kernel_spine_or_data_changed
+  on_lab_schedule:
+    - golden_bridge_hourly
+    - golden_bridge_daily
+
+dan_operator_checklist: docs/HYBRID_DEPLOYMENT.md
+
+validation_rules:
+  - id: three_rings_not_jurisdiction
+    text: Rings are deployment topology names, not owning jurisdictions.
+  - id: vercel_never_registers_consequence
+    text: Ring 1 and Ring 2 may read projections and render cards; LogLine registration stays on Ring 3 unless an explicit airlock crossing is declared.
+  - id: experiment_lab_is_preview
+    text: Per-branch experiments use Vercel Preview (Ring 1), not production cockpit (Ring 2).
+  - id: ledger_authority_on_lab
+    text: sqlite ledgers on LAB 8GB remain authoritative until a written migration promotes Neon ledgers read path.
+  - id: pack_runtime_before_prod
+    text: pnpm pack:runtime must pass before treating a main merge as deployable to cockpit.
+  - id: canyon_exposes_runtime_not_authority
+    text: api.lab.minilab.work exposes read-only projection runtime; it does not grant write permission by ingress alone.

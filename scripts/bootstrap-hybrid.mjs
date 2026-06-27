@@ -517,20 +517,24 @@ function neonSetup() {
     }
   }
 
-  runOrFail(
+  const dbCreate = run(
     "neonctl",
-    ["databases", "create", DEFAULT_NEON_DB, "--project-id", projectId, "-o", "json"],
+    ["databases", "create", "--name", DEFAULT_NEON_DB, "--project-id", projectId, "-o", "json"],
     { label: "neonctl databases create" },
   );
+  if (dbCreate.status !== 0 && !/already exists/i.test(dbCreate.stderr || dbCreate.stdout || "")) {
+    console.error(`error: neonctl databases create failed: ${dbCreate.stderr?.trim() || dbCreate.stdout?.trim()}`);
+    process.exit(dbCreate.status ?? 1);
+  }
 
   const pooled = runOrFail(
     "neonctl",
-    ["connection-string", DEFAULT_NEON_DB, "--project-id", projectId, "--pooled", "-o", "json"],
+    ["connection-string", "--database-name", DEFAULT_NEON_DB, "--project-id", projectId, "--pooled", "-o", "json"],
     { label: "neonctl connection-string pooled" },
   );
   const direct = runOrFail(
     "neonctl",
-    ["connection-string", DEFAULT_NEON_DB, "--project-id", projectId, "-o", "json"],
+    ["connection-string", "--database-name", DEFAULT_NEON_DB, "--project-id", projectId, "-o", "json"],
     { label: "neonctl connection-string direct" },
   );
 

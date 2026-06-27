@@ -84,6 +84,7 @@ process.stdout.write([
   "",
   "Start: pnpm dev",
   "Verify: pnpm test && DREAM_MACHINE_ACCEPTANCE=1 pnpm test:e2e",
+  "Pack:   pnpm pack:runtime",
 ].join("\n"));
 
 process.stdout.write("\n");

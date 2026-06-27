@@ -15,6 +15,7 @@ dist
 .nuxt
 .pnpm-store
 .tmp
+.pack
 /test-results/
 /playwright-report/
 /blob-report/

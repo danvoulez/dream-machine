@@ -409,11 +409,15 @@ function vercelSetup() {
   }
 
   const preview = {
-    ...production,
+    BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_URL: env.BETTER_AUTH_URL || cockpitUrl,
+    NUXT_PUBLIC_SITE_URL: env.NUXT_PUBLIC_SITE_URL || env.BETTER_AUTH_URL || cockpitUrl,
+    INTERNAL_API_SECRET: env.INTERNAL_API_SECRET,
     DREAM_MACHINE_RUNTIME_SHELL_ONLY: "1",
     DREAM_MACHINE_ACCEPTANCE: "1",
   };
-  delete preview.DREAM_MACHINE_RUNTIME_URL;
+  if (env.DATABASE_URL) preview.DATABASE_URL = env.DATABASE_URL;
+  // C0.3: preview must not inherit production runtime URL/token (write authority).
 
   console.log("pushing Production env…");
   for (const [k, v] of Object.entries(production)) {

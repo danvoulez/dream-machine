@@ -231,11 +231,11 @@ Branch deploy → experiment sandbox.
 | | |
 |--|--|
 | **Failure mode** | Branch sandbox mutates production truth |
-| **Level** | **PARTIAL** |
+| **Level** | **HARD** for rejecting write/commit authority in Vercel Preview env · **PARTIAL** for future token-class enforcement on not-yet-created proposal/effect routes |
 | **Contract** | `docs/dream-machine-hybrid-topology.v0.yml` (ring_1 runtime_modes) |
-| **Code anchor** | `agent/lib/scene/readers.ts` — `DREAM_MACHINE_RUNTIME_SHELL_ONLY`; `scripts/bootstrap-hybrid.mjs` preview profile; `server/utils/acceptance.ts`; `nuxt.config.ts` gates `/acceptance/*` |
-| **Verify** | `DREAM_MACHINE_RUNTIME_SHELL_ONLY=1 DREAM_MACHINE_ACCEPTANCE=1 pnpm dev` → `/acceptance/scene` |
-| **Gap** | No automated assert that preview env lacks write/commit tokens (**C0.3**) |
+| **Code anchor** | `server/utils/preview-env-guard.ts` — `validatePreviewEnv`, `assertPreviewEnvSafe` (boot). `server/plugins/preview-env-guard.ts` (Nitro). `scripts/bootstrap-hybrid.mjs` — preview profile omits prod runtime token/URL. `pack:runtime` — `seams.preview.seam` receipt |
+| **Verify** | `pnpm test -- --test-name-pattern 'preview'`; `VERCEL_ENV=preview` + forbidden token → boot fails |
+| **Gap** | Proposal/effect route token classes not created yet |
 
 ---
 
@@ -340,7 +340,7 @@ Runtime result / observation → ledger closure.
 |----|------|------|
 | **C0.1** | runtime | ~~Require production `/projection` auth unconditionally~~ **done** — `503 config_error` when token unset in production |
 | **C0.2** | identity | ~~Consume `DREAM_MACHINE_PASSPORT_MAP`~~ **done** — `passport_hash` authority; `lab_id` gloss only |
-| **C0.3** | preview | Assert preview env cannot contain write/propose/commit tokens |
+| **C0.3** | preview | ~~Assert preview env cannot contain write/commit tokens~~ **done** — boot guard + bootstrap preview profile |
 | **C0.4** | proposal | Add `POST /proposal` or `/admission/intake` — proposal-only, no commit |
 | **C0.5** | canyon | Deploy tunnel; prove `api.lab.minilab.work/projection` with Bearer/Access |
 | **C0.6** | deploy-seal | `pack:runtime` emits seam receipt with per-seam level |

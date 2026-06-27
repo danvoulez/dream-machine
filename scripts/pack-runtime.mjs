@@ -15,7 +15,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const WS_ROOT = dirname(UI_ROOT);
@@ -44,6 +44,25 @@ function run(label, cmd, args, cwd = UI_ROOT) {
     process.stderr.write(`pack failed at: ${label}\n`);
     process.exit(result.status ?? 1);
   }
+}
+
+function auditPreviewSeam() {
+  const esbuild = join(UI_ROOT, "node_modules/.pnpm/node_modules/.bin/esbuild");
+  if (!existsSync(esbuild)) {
+    process.stderr.write("esbuild wrapper not found for preview env audit\n");
+    process.exit(1);
+  }
+  const out = join(UI_ROOT, ".tmp/preview-env-audit.mjs");
+  mkdirSync(dirname(out), { recursive: true });
+  execFileSync(esbuild, [
+    join(UI_ROOT, "scripts/preview-env-audit-entry.mjs"),
+    "--bundle",
+    "--platform=node",
+    "--format=esm",
+    `--outfile=${out}`,
+  ], { cwd: UI_ROOT, stdio: "pipe" });
+  const stdout = execFileSync(process.execPath, [out], { cwd: UI_ROOT, encoding: "utf8" });
+  return JSON.parse(stdout.trim());
 }
 
 function hashOrganelle(organelleKey, spec) {
@@ -143,6 +162,10 @@ if (!skipTest) {
   }
 }
 
+process.stdout.write("\n→ preview env guard audit\n");
+const previewSeam = auditPreviewSeam();
+process.stdout.write(`  ✓ ${previewSeam.seam} (${previewSeam.level}): ${previewSeam.checked}\n`);
+
 const receipt = {
   name: manifest.name,
   version: manifest.version,
@@ -154,6 +177,9 @@ const receipt = {
   portal_tools: manifest.portal_tools,
   git_commit: organelles.face?.git_commit ?? null,
   files: organelles.face?.files ?? {},
+  seams: {
+    "preview.seam": previewSeam,
+  },
 };
 
 mkdirSync(PACK_DIR, { recursive: true });

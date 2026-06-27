@@ -6,8 +6,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   const config = useRuntimeConfig();
-  const acceptanceOn = config.public.dreamMachineAcceptance === true || config.dreamMachineAcceptance === true;
-  if (acceptanceOn && to.path.startsWith("/acceptance")) {
+  if (config.public.dreamMachineAcceptance && to.path.startsWith("/acceptance")) {
     return;
   }
 

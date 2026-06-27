@@ -90,6 +90,8 @@ model: "anthropic/claude-sonnet-4.6"
 
 On Vercel, Eve handles provider configuration through the platform. For local development, follow [Eve docs](https://eve.dev) for your chosen provider.
 
+**Acceptance harness (local only):** `DREAM_MACHINE_ACCEPTANCE=1` enables `/acceptance/*` routes without login. It is **ignored in production** (`NODE_ENV=production`) even if set. Never enable on Vercel.
+
 For T-P2 agent/chat acceptance (requires Node ≥24), set `AI_GATEWAY_API_KEY` in `.env` (or export `VERCEL_OIDC_TOKEN` when linked to Vercel):
 
 - `pnpm test:eval` — eve eval (`evals/scene-andamento.eval.ts`)

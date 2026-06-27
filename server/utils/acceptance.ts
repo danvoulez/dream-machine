@@ -5,12 +5,8 @@ import type { SceneResponse } from "~~/shared/tools/scene";
 import type { SceneOutput } from "~~/shared/utils/tools/scene";
 
 export function acceptanceEnabled(): boolean {
-  if (process.env.DREAM_MACHINE_ACCEPTANCE === "1") return true;
-  try {
-    return useRuntimeConfig().dreamMachineAcceptance === true;
-  } catch {
-    return false;
-  }
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.DREAM_MACHINE_ACCEPTANCE === "1";
 }
 
 export async function assembleAcceptanceScene(): Promise<SceneOutput & { scene: SceneResponse }> {

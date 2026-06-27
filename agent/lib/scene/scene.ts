@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { SceneReaders } from "./readers.ts";
 import { composeProcessViews } from "./compose.ts";
 import { resolveSalience, rankAndBound, legalMoves, proposals } from "./governor.ts";
+import { assertSceneOpImplemented } from "./errors.ts";
 import type {
   SceneRequest,
   SceneResponse,
@@ -105,12 +106,13 @@ export async function assembleScene(
   readers: SceneReaders,
   opts: AssembleOpts,
 ): Promise<SceneResponse> {
+  assertSceneOpImplemented(req.op);
   const rows = await readers.readRows(req.scope);
-  const riskByProcess: Record<string, RiskTier> = {
-    ...rows.risk_by_process,
-    ...opts.riskByProcess,
-  };
-  const views = composeProcessViews(rows, { now: opts.now, riskByProcess: riskByProcess as Record<string, RiskTier> });
+  const riskByProcess: Record<string, RiskTier> = {};
+  for (const [key, tier] of Object.entries({ ...rows.risk_by_process, ...opts.riskByProcess })) {
+    if (tier) riskByProcess[key] = tier;
+  }
+  const views = composeProcessViews(rows, { now: opts.now, riskByProcess });
   const profile = resolveSalience(req.goal);
   const limit = req.limit ?? 10;
   const { items, loss, focused } = applyOp(req.op, views, profile, limit, req.selection);

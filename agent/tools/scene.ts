@@ -2,8 +2,16 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { SCENE_OPS } from "../../shared/tools/scene.js";
 import { assembleScene } from "../lib/scene/scene.js";
+import { SceneOpNotImplementedError } from "../lib/scene/errors.js";
 import { normalizeSceneProjection } from "../lib/scene/normalize.js";
 import { bridgeReaders } from "../lib/scene/readers.js";
+
+const REQUIRED_CANNOT_DO = [
+  "register_receipt",
+  "dispatch_executor",
+  "authorize_l5",
+  "mutate_ledger",
+] as const;
 
 const inputSchema = z.object({
   op: z.enum(SCENE_OPS).describe("The Scene operation. Start with scene.open."),
@@ -30,11 +38,19 @@ export default defineTool({
         notes: normalized.notes,
       };
     } catch (err) {
+      if (err instanceof SceneOpNotImplementedError) {
+        return {
+          ok: false as const,
+          reason: "projection_unavailable" as const,
+          errors: [{ field: "op", message: err.message }],
+          cannot_do: [err.op, ...REQUIRED_CANNOT_DO],
+        };
+      }
       return {
         ok: false as const,
         reason: "projection_unavailable" as const,
         errors: [{ field: "runtime", message: err instanceof Error ? err.message : String(err) }],
-        cannot_do: ["register_receipt", "dispatch_executor", "authorize_l5", "mutate_ledger"],
+        cannot_do: [...REQUIRED_CANNOT_DO],
       };
     }
   },

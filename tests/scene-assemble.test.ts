@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { assembleScene } from "../agent/lib/scene/scene.ts";
+import { SceneOpNotImplementedError } from "../agent/lib/scene/errors.ts";
 import type { SceneReaders } from "../agent/lib/scene/readers.ts";
 import type { SceneRawRows } from "../shared/tools/scene.ts";
 
@@ -63,6 +64,15 @@ test("scene.explain_loss returns omitted items from a bounded open view", async 
   const explained = await assembleScene({ op: "scene.explain_loss", scope: { ledger: "lab" }, limit: 1 }, fakeReaders, { now: NOW });
   assert.ok(explained.view.items.length >= 1);
   assert.ok(explained.loss_accounting.omitted_reasons[0]?.includes("omitted"));
+});
+
+test("unimplemented Scene ops throw SceneOpNotImplementedError", async () => {
+  for (const op of ["scene.group", "scene.filter", "scene.compare", "scene.ascend", "scene.descend"] as const) {
+    await assert.rejects(
+      () => assembleScene({ op, scope: { ledger: "lab" }, limit: 10 }, fakeReaders, { now: NOW }),
+      (err: unknown) => err instanceof SceneOpNotImplementedError && err.op === op,
+    );
+  }
 });
 
 test("unknown scope emits scope_not_found when logline db is present but filter is empty", async () => {

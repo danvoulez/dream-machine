@@ -1,5 +1,5 @@
 import type { SceneResponse } from "../../../shared/tools/scene.ts";
-import type { ProjectionIntent } from "../../../shared/tools/runtime-projection.ts";
+import type { ProjectionIntent, SourceRefOwner } from "../../../shared/tools/runtime-projection.ts";
 import { normalizeProjection, type RawProjection } from "../projection-normalizer.ts";
 
 const OP_INTENT: Partial<Record<SceneResponse["op"], ProjectionIntent>> = {
@@ -34,10 +34,11 @@ function sceneToRaw(scene: SceneResponse): RawProjection {
       title: "Loss accounting",
       body: `Vendo ${scene.loss_accounting.visible_count} de ${scene.loss_accounting.total_candidates}. ${scene.loss_accounting.confidence_limits.join(" ")}`,
       source_refs: scene.transform.source_hashes.slice(0, 1),
+      risk_tier: "L0",
     });
   }
 
-  const sourceRefs = scene.view.items.flatMap((item) =>
+  const sourceRefs: Array<{ ref_kind: string; ref: string; owner: SourceRefOwner }> = scene.view.items.flatMap((item) =>
     item.source_refs.map((ref) => ({
       ref_kind: ref.length === 64 ? "content_hash" : "ref",
       ref,
@@ -54,7 +55,12 @@ function sceneToRaw(scene: SceneResponse): RawProjection {
     intent: OP_INTENT[scene.op] ?? "overview",
     jurisdiction: "mixed",
     default_owner: "membrane",
-    freshness: scene.freshness,
+    freshness: {
+      generated_at: scene.freshness.generated_at,
+      as_of: scene.freshness.as_of,
+      stale: scene.freshness.stale,
+      ...(scene.freshness.ttl_ms != null ? { ttl_ms: scene.freshness.ttl_ms } : {}),
+    },
     source_refs: sourceRefs,
     blocks,
     open_findings: scene.view.items.flatMap((item) => item.open_findings.map((f) => f.kind)),

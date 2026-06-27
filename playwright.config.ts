@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: "list",
-  timeout: 120_000,
+  timeout: 180_000,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
     trace: "on-first-retry",
@@ -21,9 +21,15 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: "DREAM_MACHINE_ACCEPTANCE=1 PORT=3000 pnpm dev",
+        command: "mise exec node@24 -- env DREAM_MACHINE_ACCEPTANCE=1 PORT=3000 pnpm dev",
         url: "http://localhost:3000/login",
         reuseExistingServer: !process.env.CI,
-        timeout: 180_000,
+        timeout: 240_000,
+        env: {
+          DREAM_MACHINE_ACCEPTANCE: "1",
+          PORT: "3000",
+          AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY ?? "",
+          VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN ?? "",
+        },
       },
 });

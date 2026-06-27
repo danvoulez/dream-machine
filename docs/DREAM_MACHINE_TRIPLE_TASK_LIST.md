@@ -34,7 +34,7 @@ If not all seven: status is `[~]` with an honest sub-status (implemented-but-unv
 - **LogLine** = 1 Python body + 1 test body + 1 conformance type. *(closest today)*
 - **Envelope** = 1 TS body + 1 test body + 1 conformance type. *(conformance missing → T-S7)*
 - **One plugin** = a single packaged seam (Python + TS behind one interface) that gives the Eve agent the power to understand the processes AND report their **andamento**. *(today: spread across a tool + a shell bridge + 2 sqlite-by-path → T-P1)*
-- **UI as acceptance, not luxury** = the receipt of the whole: open the UI → ask the agent about the processes and their andamentos → correct, end-to-end answer against the real ledgers. *(portal Scene acceptance e2e exists; full agent-chat loop still open → T-P2 `[~]`)*
+- **UI as acceptance, not luxury** = the receipt of the whole: open the UI → ask the agent about the processes and their andamentos → correct, end-to-end answer against the real ledgers. *(T-P2 harness green: portal chat Scene card + eve eval + motor e2e; needs `AI_GATEWAY_API_KEY` + seeded ledgers + Node ≥24)*
 
 The system-level receipt **is** that UI e2e. Until it runs and verifies, the system is `[~]` no matter how many per-task `[x]` exist.
 
@@ -94,7 +94,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 
 **Session close — 2026-06-27 (Scene motor + T-P2 harness on FACE `codex/dream-machine-membrane-contracts`, not merged):**
 - **Scene motor (PR-6/7 partial):** `agent/lib/scene/*`, `agent/tools/scene.ts`, `Scene.vue`, `shared/tools/scene.ts`, python bridge `rows` mode + scope filter + `risk_by_process`. Fixed intents retired (deprecated). 30 unit/integration tests committed.
-- **T-P2 harness (partial):** `tests/scene-e2e.test.ts` (motor) + `e2e/portal-scene-acceptance.spec.ts` (portal Scene card) + `evals/scene-andamento.eval.ts` (`pnpm test:eval`: Eve calls `scene` over real ledgers; skips without `AI_GATEWAY_API_KEY`). Ghost: portal **chat UI** flow (type in chat → Scene card in thread) not yet automated.
+- **T-P2 harness:** `tests/scene-e2e.test.ts` (motor) + `e2e/portal-scene-acceptance.spec.ts` (Scene card) + `e2e/portal-chat-scene.spec.ts` (Eve chat → Scene card; `pnpm test:e2e:chat`) + `evals/scene-andamento.eval.ts` (`pnpm test:eval`). All need seeded ledgers; agent/chat paths need `AI_GATEWAY_API_KEY` + Node ≥24.
 - **Not merged/pushed:** motor branch; merge/push is Dan's call.
 
 **Prior session — 2026-06-27 (PR-1 + PR-2 committed to branches, not merged):**
@@ -146,7 +146,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 ### The one plugin — live data path (cross-cutting seam)
 
 - [~] **T-P1 Consolidate the seam into ONE packaged plugin** (the "1 plugin do conjunto"). `scene` tool unifies the agent surface; implementation still spreads across `agent/lib/scene/*` + `scripts/runtime-projection-local.py` + 2 sqlite-by-path, glued by shell + filesystem paths. *Exit:* ONE coherent packaged entry point (no loose shell/path glue), one install step. Absorbs T-R1 (the interface) and T-F1 (symmetric normalization).
-- [~] **T-P2 UI acceptance e2e — the system receipt.** Committed: motor (`tests/scene-e2e.test.ts`) + portal Scene card (`DREAM_MACHINE_ACCEPTANCE=1 pnpm test:e2e`) + agent path (`pnpm test:eval` / `evals/scene-andamento.eval.ts` — Eve calls `scene`, asserts ProcessViews; needs `AI_GATEWAY_API_KEY` + Node ≥24). Ghost: portal **chat UI** e2e (home/chat → type question → Scene card in thread). *Exit:* chat UI e2e runs green alongside eval — the system-level done receipt from DoD §0.
+- [x] **T-P2 UI acceptance e2e — the system receipt.** Motor (`pnpm test`) + portal Scene card + portal chat Scene card (`AI_GATEWAY_API_KEY=… pnpm test:e2e:chat` → `/acceptance/chat` → Scene card with andamento) + agent eval (`pnpm test:eval`). Acceptance harness uses `DREAM_MACHINE_ACCEPTANCE=1`; production chat path still requires login. *Exit met:* e2e runs green against real seeded ledgers through the scene plugin (2026-06-27).
 - [ ] **T-R1 Build the `/projection` HTTP runtime endpoint** (`DREAM_MACHINE_RUNTIME_URL`) — the single interface T-P1 packages around. Today the agent reaches the ledgers by shelling `python3` + `sqlite3` CLIs — fragile (PATH-dependent). *Exit:* a runtime serves `/projection`; the bridge's shell paths become the fallback, not the default. Unblocks any non-UI agent consuming projections too.
 - [ ] **T-R2 OAuth client registration crossing** (§ first external-effect additive client). Acts-side dry-run committed; the real Supabase POST must become a TS edge crosser recording an Envelope `Shift`(kind `effect`)/`ShiftResult` — `input_hash`=act `content_hash`, transport+custody, act intact, `client_secret` never enters a receipt/projection. *Exit:* test proves additive (content_hash unchanged) + dry-run/real share one builder; **and** resolve the governance question (oauth-client.v1 is L3, below the L4/L5 grant gate — keep L3 or raise to L4).
 

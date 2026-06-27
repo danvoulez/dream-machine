@@ -36,6 +36,10 @@ execFileSync(
   {
     cwd: root,
     stdio: "inherit",
-    env: { ...process.env, PORT: process.env.PORT ?? "3000" },
+    env: {
+      ...process.env,
+      PORT: process.env.PORT ?? "3000",
+      DREAM_MACHINE_UI_ROOT: root,
+    },
   },
 );

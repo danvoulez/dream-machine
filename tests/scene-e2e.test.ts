@@ -1,16 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { assembleScene } from "../agent/lib/scene/scene.ts";
 import { bridgeReaders } from "../agent/lib/scene/readers.ts";
-
-const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const LOGLINE_DB = join(UI_ROOT, "../Dream-Machine-LogLine-Acts/.lab/lab.sqlite");
+import { resolveLoglineDbPath } from "../agent/lib/projection-bridge.ts";
 
 test("scene.open over the real ledgers returns ProcessViews for the seeded processes", async (t) => {
-  if (!existsSync(LOGLINE_DB)) {
+  if (!resolveLoglineDbPath()) {
     t.skip("ledgers not seeded");
     return;
   }

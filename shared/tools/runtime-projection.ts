@@ -114,6 +114,7 @@ export const STANDARD_CANNOT_DO = [
   "activate_process",
   "dispatch_executor",
   "authorize_l5",
+  "mutate_ledger",
   "mutate_logline_ledger",
   "mutate_envelope_ledger",
   "treat_projection_as_truth",

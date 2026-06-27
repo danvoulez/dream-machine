@@ -27,7 +27,11 @@ function serialize(value: JsonValue): string {
   if (Array.isArray(value)) return `[${value.map(serialize).join(",")}]`;
 
   const keys = Object.keys(value).sort();
-  const pairs = keys.map((k) => `${JSON.stringify(k)}:${serialize(value[k])}`);
+  const pairs = keys.map((k) => {
+    const child = value[k];
+    if (child === undefined) throw new TypeError(`canonicalJson rejects undefined value for key ${k}`);
+    return `${JSON.stringify(k)}:${serialize(child)}`;
+  });
   return `{${pairs.join(",")}}`;
 }
 

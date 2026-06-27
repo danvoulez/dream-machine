@@ -1,18 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   bridgeReadSceneRows,
   fetchProjectionRuntime,
   handleProjectionPost,
   hasLocalLedger,
   preferredJurisdiction,
+  resolveLoglineDbPath,
 } from "../agent/lib/projection-bridge.ts";
-
-const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const LOGLINE_DB = join(UI_ROOT, "../Dream-Machine-LogLine-Acts/.lab/lab.sqlite");
 
 test("preferredJurisdiction routes intents to the expected owner", () => {
   assert.equal(preferredJurisdiction("logline_receipt_detail"), "logline");
@@ -21,7 +16,7 @@ test("preferredJurisdiction routes intents to the expected owner", () => {
 });
 
 test("handleProjectionPost rows mode returns ledger rows from the bridge", async (t) => {
-  if (!existsSync(LOGLINE_DB)) {
+  if (!resolveLoglineDbPath()) {
     t.skip("ledgers not seeded");
     return;
   }
@@ -32,7 +27,7 @@ test("handleProjectionPost rows mode returns ledger rows from the bridge", async
 });
 
 test("bridgeReadSceneRows matches handleProjectionPost rows mode", async (t) => {
-  if (!existsSync(LOGLINE_DB)) {
+  if (!resolveLoglineDbPath()) {
     t.skip("ledgers not seeded");
     return;
   }

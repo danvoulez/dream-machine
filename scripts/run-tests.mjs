@@ -27,4 +27,8 @@ for (const f of files) {
   ], { cwd: root, stdio: "inherit" });
   outfiles.push(outfile);
 }
-execFileSync(process.execPath, ["--test", ...outfiles], { cwd: root, stdio: "inherit" });
+execFileSync(process.execPath, ["--test", ...outfiles], {
+  cwd: root,
+  stdio: "inherit",
+  env: { ...process.env, DREAM_MACHINE_UI_ROOT: root },
+});

@@ -1,20 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { normalizeBridgeProjection } from "../agent/lib/projection-portal.ts";
 import { assembleScene } from "../agent/lib/scene/scene.ts";
 import { normalizeSceneProjection } from "../agent/lib/scene/normalize.ts";
 import { bridgeReaders } from "../agent/lib/scene/readers.ts";
-import { fetchProjectionRuntime } from "../agent/lib/projection-bridge.ts";
+import { fetchProjectionRuntime, resolveLoglineDbPath } from "../agent/lib/projection-bridge.ts";
 import {
   PORTAL_READ_ONLY_CANNOT_DO,
   REQUIRED_CANNOT_DO,
 } from "../shared/tools/runtime-projection.ts";
-
-const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const LOGLINE_DB = join(UI_ROOT, "../Dream-Machine-LogLine-Acts/.lab/lab.sqlite");
 
 function assertPortalContract(
   label: string,
@@ -37,7 +31,7 @@ function assertPortalContract(
 }
 
 test("Scene and legacy overview both normalize to dream-machine-projections.v0", async (t) => {
-  if (!existsSync(LOGLINE_DB)) {
+  if (!resolveLoglineDbPath()) {
     t.skip("ledgers not seeded");
     return;
   }

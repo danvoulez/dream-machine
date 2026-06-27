@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+
 import { assembleScene } from "../agent/lib/scene/scene.ts";
 import { normalizeSceneProjection } from "../agent/lib/scene/normalize.ts";
 import { bridgeReaders } from "../agent/lib/scene/readers.ts";
 import { normalizeBridgeProjection } from "../agent/lib/projection-portal.ts";
-import { fetchProjectionRuntime } from "../agent/lib/projection-bridge.ts";
+import { fetchProjectionRuntime, resolveLoglineDbPath } from "../agent/lib/projection-bridge.ts";
 import sceneTool from "../agent/tools/scene.ts";
 import {
   PORTAL_READ_ONLY_CANNOT_DO,
@@ -15,9 +13,6 @@ import {
 } from "../shared/tools/runtime-projection.ts";
 import type { SceneReaders } from "../agent/lib/scene/readers.ts";
 import type { SceneRawRows } from "../shared/tools/scene.ts";
-
-const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const LOGLINE_DB = join(UI_ROOT, "../Dream-Machine-LogLine-Acts/.lab/lab.sqlite");
 
 const fakeRows: SceneRawRows = {
   logline_acts: [
@@ -122,7 +117,7 @@ test("scene.group succeeds and stays read-only", async () => {
 });
 
 test("source to card path: real ledger scene normalizes with portal limits", async (t) => {
-  if (!existsSync(LOGLINE_DB)) {
+  if (!resolveLoglineDbPath()) {
     t.skip("ledgers not seeded");
     return;
   }

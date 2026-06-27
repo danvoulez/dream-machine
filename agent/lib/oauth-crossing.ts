@@ -56,7 +56,7 @@ export type OAuthCrossingOk = {
   adapter: OAuthAdapterAux;
   act: {
     content_hash: string;
-    additive: true;
+    additive: boolean;
     body: Record<string, unknown>;
   };
   envelope: {

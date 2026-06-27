@@ -1,8 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   bridgeReadLegacyProjection,
   fetchProjectionRuntime,
@@ -11,9 +8,6 @@ import {
   resolveLoglineDbPath,
 } from "../agent/lib/projection-bridge.ts";
 import { normalizeBridgeProjection } from "../agent/lib/projection-portal.ts";
-
-const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const LOGLINE_DB = join(UI_ROOT, "../Dream-Machine-LogLine-Acts/.lab/lab.sqlite");
 
 async function withShellOnly<T>(fn: () => Promise<T>): Promise<T> {
   const prevUrl = process.env.DREAM_MACHINE_RUNTIME_URL;
@@ -35,7 +29,7 @@ async function withShellOnly<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 test("logline_receipt_detail routes to logline jurisdiction", async (t) => {
-  if (!existsSync(LOGLINE_DB) || !resolveLoglineDbPath()) {
+  if (!resolveLoglineDbPath()) {
     t.skip("logline ledger not seeded");
     return;
   }
@@ -70,7 +64,7 @@ test("open_findings routes to envelope jurisdiction", async (t) => {
 });
 
 test("overview composes mixed jurisdiction from both ledgers", async (t) => {
-  if (!existsSync(LOGLINE_DB) || !resolveLoglineDbPath() || !resolveEnvelopeDbPath()) {
+  if (!resolveLoglineDbPath() || !resolveEnvelopeDbPath()) {
     t.skip("both ledgers required for mixed overview");
     return;
   }

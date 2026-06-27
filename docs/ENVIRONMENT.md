@@ -90,6 +90,8 @@ model: "anthropic/claude-sonnet-4.6"
 
 On Vercel, Eve handles provider configuration through the platform. For local development, follow [Eve docs](https://eve.dev) for your chosen provider.
 
+For the T-P2 agent eval (`pnpm test:eval`, requires Node ≥24), set `AI_GATEWAY_API_KEY` in `.env` (or export `VERCEL_OIDC_TOKEN` when linked to Vercel).
+
 ## Vercel Connect (optional)
 
 Integrations use [Vercel Connect](https://vercel.com/docs/connect) — no extra env vars in this repo, but you must:

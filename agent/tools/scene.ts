@@ -6,6 +6,7 @@ import { assembleScene } from "../lib/scene/scene.js";
 import { SceneOpNotImplementedError } from "../lib/scene/errors.js";
 import { normalizeSceneProjection } from "../lib/scene/normalize.js";
 import { createSceneReaders } from "../lib/scene/readers.js";
+import { resolvePortalIdentity } from "../lib/identity-bridge.js";
 
 const REQUIRED_CANNOT_DO = [...PORTAL_READ_ONLY_CANNOT_DO] as const;
 
@@ -23,7 +24,8 @@ export default defineTool({
   description:
     "Read-only Dynamic Projection Scene over the LogLine + Envelope ledgers. Ask with a `goal`; get a bounded ProcessView (process state + andamento), honest loss accounting, and the legal next moves to drill. Never registers receipts, dispatches, mutates a ledger, or authorizes L5 — effectful intents come back as `proposals` for the airlock.",
   inputSchema,
-  async execute(input) {
+  async execute(input, ctx) {
+    const operator = resolvePortalIdentity(ctx?.session?.auth?.current ?? null) ?? undefined;
     try {
       const scene = await assembleScene(input as never, createSceneReaders(), { now: Date.now() });
       const normalized = normalizeSceneProjection(scene);
@@ -31,6 +33,7 @@ export default defineTool({
         ok: true as const,
         scene,
         projection: normalized.ok ? normalized.response : undefined,
+        operator,
         notes: normalized.notes,
         cannot_do: [...REQUIRED_CANNOT_DO],
       };

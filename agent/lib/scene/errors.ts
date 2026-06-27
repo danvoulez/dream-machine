@@ -1,12 +1,6 @@
-import type { SceneOp } from "../../../shared/tools/scene.ts";
+import type { SceneOp } from "../../../shared/tools/scene.js";
 
-export const UNIMPLEMENTED_SCENE_OPS = [
-  "scene.group",
-  "scene.filter",
-  "scene.compare",
-  "scene.ascend",
-  "scene.descend",
-] as const satisfies readonly SceneOp[];
+export const UNIMPLEMENTED_SCENE_OPS = [] as const satisfies readonly SceneOp[];
 
 const UNIMPLEMENTED_SET = new Set<string>(UNIMPLEMENTED_SCENE_OPS);
 

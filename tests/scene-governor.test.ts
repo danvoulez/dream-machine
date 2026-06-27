@@ -51,18 +51,52 @@ test("rankAndBound never silently truncates: omitted_reasons explains the cut", 
   assert.ok(loss.omitted_reasons.length > 0);
 });
 
-test("legalMoves at an open scene with items offers read-only drill/explain/back only", () => {
-  const moves = legalMoves({ op: "scene.open", hasItems: true, hasParent: true, omitted: 5, focused: false });
+test("legalMoves at an open scene with items offers drill, group, filter, descend", () => {
+  const moves = legalMoves({
+    op: "scene.open",
+    hasItems: true,
+    hasParent: true,
+    omitted: 5,
+    focused: false,
+    itemCount: 3,
+    candidateCount: 8,
+    filtered: false,
+  });
   const names = moves.map((m) => m.move);
   assert.ok(names.includes("scene.drill"));
+  assert.ok(names.includes("scene.group"));
+  assert.ok(names.includes("scene.filter"));
+  assert.ok(names.includes("scene.descend"));
   assert.ok(names.includes("scene.explain_loss"));
   assert.ok(names.includes("scene.back"));
-  assert.ok(!names.includes("scene.group"));
   assert.ok(moves.every((m) => m.effect_class === "none" && m.requires_confirmation === false));
 });
 
+test("legalMoves offers compare when view is filtered", () => {
+  const moves = legalMoves({
+    op: "scene.filter",
+    hasItems: true,
+    hasParent: false,
+    omitted: 2,
+    focused: false,
+    itemCount: 1,
+    candidateCount: 3,
+    filtered: true,
+  });
+  assert.ok(moves.map((m) => m.move).includes("scene.compare"));
+});
+
 test("explain_loss only offered when something was omitted", () => {
-  const moves = legalMoves({ op: "scene.open", hasItems: true, hasParent: false, omitted: 0, focused: false });
+  const moves = legalMoves({
+    op: "scene.open",
+    hasItems: true,
+    hasParent: false,
+    omitted: 0,
+    focused: false,
+    itemCount: 1,
+    candidateCount: 1,
+    filtered: false,
+  });
   assert.ok(!moves.map((m) => m.move).includes("scene.explain_loss"));
 });
 

@@ -5,7 +5,7 @@ import type {
   LossAccounting,
   LegalNextMove,
   Proposal,
-} from "../../../shared/tools/scene.ts";
+} from "../../../shared/tools/scene.js";
 
 const FALLBACK: RankingProfile = ["stuck", "waiting_on_human", "risk", "recency"];
 
@@ -75,7 +75,14 @@ export function rankAndBound(
 }
 
 export type SceneState = {
-  op: string; hasItems: boolean; hasParent: boolean; omitted: number; focused: boolean;
+  op: string;
+  hasItems: boolean;
+  hasParent: boolean;
+  omitted: number;
+  focused: boolean;
+  itemCount: number;
+  candidateCount: number;
+  filtered: boolean;
 };
 
 export function legalMoves(s: SceneState): LegalNextMove[] {
@@ -83,10 +90,21 @@ export function legalMoves(s: SceneState): LegalNextMove[] {
   const add = (move: LegalNextMove["move"], label: string, reason: string, args: Record<string, unknown> = {}) =>
     m.push({ move, label, reason, args, effect_class: "none", requires_confirmation: false });
 
-  if (s.hasItems && !s.focused) add("scene.drill", "Abrir um item", "Há itens na view.");
+  if (s.hasItems && !s.focused) {
+    add("scene.drill", "Abrir um item", "Há itens na view.");
+    if (s.candidateCount > 1) {
+      add("scene.group", "Agrupar", "Resumir por dimensão.", { group_by: "process_id" });
+    }
+    add("scene.filter", "Filtrar", "Restringir a view.", { filter: "stuck" });
+    add("scene.descend", "Aprofundar", "Focar o item mais saliente.");
+  }
   add("scene.refresh", "Atualizar com novo objetivo", "Reconsultar com outro goal.");
   if (s.omitted > 0) add("scene.explain_loss", `Explicar os ${s.omitted} omitidos`, "A view é parcial.", { projection_hash: "self" });
-  if (s.focused) add("scene.open_evidence", "Ver a prova", "Abrir os source refs do item.");
+  if (s.filtered) add("scene.compare", "Comparar filtro", "Ver diferença vs baseline.", { filter: "stuck" });
+  if (s.focused) {
+    add("scene.open_evidence", "Ver a prova", "Abrir os source refs do item.");
+    add("scene.ascend", "Ampliar", "Subir e ver mais itens.");
+  }
   if (s.hasParent) add("scene.back", "Voltar", "Subir um nível.");
   return m;
 }

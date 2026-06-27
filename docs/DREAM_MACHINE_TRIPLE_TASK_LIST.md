@@ -147,7 +147,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 - [x] **T-F2 Live-source adapter coverage + tests** — routing tests for logline (`logline_receipt_detail`), envelope (`open_findings`), mixed (`overview`) via `normalizeBridgeProjection` + shell bridge. *Exit met:* `tests/projection-routing.test.ts` (2026-06-27).
 - [x] **T-F3 Projection UI cards**: `Scene.vue` + shared `ProjectionBlockCard` / `ProjectionAffordances` render ProcessView list, warnings, loss line, legal moves, proposals (airlock), kind-specific projection blocks (source-ref, finding, attention, proposal/receipt detail, next-steps), and affordance buttons. *Exit met:* 2026-06-27.
 - [x] **T-F4 Safety integration tests**: legal moves `effect_class: "none"`, proposals not in affordances, `cannot_do` includes `register_receipt`, unimplemented ops surface op in `cannot_do`, source→card path. *Exit met:* `tests/projection-safety.test.ts` (2026-06-27).
-- [ ] **T-F5 Auth identity bridge**: app user ↔ Supabase user ↔ LAB ID ↔ grants ↔ Vercel Connect/MCP boundary.
+- [~] **T-F5 Auth identity bridge**: `agent/lib/identity-bridge.ts` maps app principal → `lab_id` + grants via env; Scene tool surfaces `operator` on success. Ghost: live Supabase claim fetch, LogLine grant registry sync, MCP connector principal merge.
 
 ### The one plugin — live data path (cross-cutting seam)
 
@@ -158,7 +158,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 
 ### The real motor — Dynamic Projection (the gap behind "agent knows the processes")
 
-- [~] **T-DP1 Composer.** FACE `compose.ts` + `assembleScene` build ProcessViews from real ledger rows; goal drives salience profile. `scene.back` implemented (v0 breadcrumb pop). Ghost: KERNEL `lab/projections.py` still ignores `projection_spec`; no single owner (recommend KERNEL Python). Unbuilt ops: `group`, `filter`, `compare`, `ascend`, `descend`. *Exit:* one owner turns spec/question into the view; SPINE/FACE become thin adapters — **not three half-motors**.
+- [~] **T-DP1 Composer.** FACE `compose.ts` + `assembleScene` build ProcessViews from real ledger rows; goal drives salience profile; all §4.1 Scene ops implemented (`filter`, `group`, `compare`, `ascend`, `descend`, `back`, …). Ghost: KERNEL `lab/projections.py` still ignores `projection_spec`; no single owner (recommend KERNEL Python). *Exit:* one owner turns spec/question into the view; SPINE/FACE become thin adapters — **not three half-motors**.
 - [~] **T-DP2 Attention governor over the query space** — FACE `governor.ts`: deterministic goal→salience, rank/bound, loss accounting, legal moves, proposals. Ghost: not full Scene-bound dynamic-tool reshaping (`defineDynamic`); LLM ranker extension point unused. Distinct from human attention objects in §A.
 
 ### Doc & repo hygiene

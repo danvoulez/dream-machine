@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { assembleScene } from "../agent/lib/scene/scene.ts";
-import { SceneOpNotImplementedError } from "../agent/lib/scene/errors.ts";
 import type { SceneReaders } from "../agent/lib/scene/readers.ts";
 import type { SceneRawRows } from "../shared/tools/scene.ts";
 
@@ -85,13 +84,9 @@ test("scene.back returns the ranked view when ascending from a drill", async () 
   assert.ok(back.legal_next_moves.some((m) => m.move === "scene.drill"));
 });
 
-test("unimplemented Scene ops throw SceneOpNotImplementedError", async () => {
-  for (const op of ["scene.group", "scene.filter", "scene.compare", "scene.ascend", "scene.descend"] as const) {
-    await assert.rejects(
-      () => assembleScene({ op, scope: { ledger: "lab" }, limit: 10 }, fakeReaders, { now: NOW }),
-      (err: unknown) => err instanceof SceneOpNotImplementedError && err.op === op,
-    );
-  }
+test("all Scene ops in SCENE_OPS are implemented in v0", async () => {
+  const { UNIMPLEMENTED_SCENE_OPS } = await import("../agent/lib/scene/errors.ts");
+  assert.deepEqual(UNIMPLEMENTED_SCENE_OPS, []);
 });
 
 test("unknown scope emits scope_not_found when logline db is present but filter is empty", async () => {

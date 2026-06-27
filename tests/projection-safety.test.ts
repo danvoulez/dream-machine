@@ -109,15 +109,16 @@ test("scene tool surfaces cannot_do on success and includes register_receipt", a
   }
 });
 
-test("unimplemented Scene ops surface the op in cannot_do", async () => {
+test("scene.group succeeds and stays read-only", async () => {
   const result = await sceneTool.execute({
     op: "scene.group",
     scope: { ledger: "lab" },
+    selection: { group_by: "process_id" },
     limit: 10,
   });
-  assert.equal(result.ok, false);
-  assert.ok(result.cannot_do.includes("scene.group"));
+  assert.equal(result.ok, true);
   assert.ok(result.cannot_do.includes("register_receipt"));
+  assert.ok(result.scene?.legal_next_moves.every((m) => m.effect_class === "none"));
 });
 
 test("source to card path: real ledger scene normalizes with portal limits", async (t) => {

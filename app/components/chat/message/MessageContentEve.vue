@@ -16,6 +16,7 @@ import { hasVisibleParts, normalizeEveParts } from "~/utils/chat/eve";
 import { buildDisplayParts } from "~/utils/chat/save-memory";
 import type { WeatherUIToolInvocation } from "~~/shared/utils/tools/weather";
 import type { RuntimeProjectionUIToolInvocation } from "~~/shared/utils/tools/runtime-projection";
+import type { SceneUIToolInvocation } from "~~/shared/utils/tools/scene";
 
 const props = defineProps<{
   message: UIMessage;
@@ -26,6 +27,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   inputResponses: [responses: AgentInputResponse[]];
+  sceneMove: [args: Record<string, unknown>];
 }>();
 
 const rawParts = computed(() => props.message.parts);
@@ -83,6 +85,12 @@ const showThinking = computed(
           v-else-if="getToolName(entry.part) === 'runtime_projection'"
           :invocation="{ ...(entry.part as RuntimeProjectionUIToolInvocation) }"
           :streaming="isToolStreaming(entry.part)"
+        />
+        <ChatToolScene
+          v-else-if="getToolName(entry.part) === 'scene'"
+          :invocation="{ ...(entry.part as SceneUIToolInvocation) }"
+          :streaming="isToolStreaming(entry.part)"
+          @scene-move="emit('sceneMove', $event)"
         />
         <UChatTool
           v-else-if="getToolName(entry.part) === 'web_search' || getToolName(entry.part) === 'google_search'"

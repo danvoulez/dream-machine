@@ -77,6 +77,11 @@ function handleSubmit(e: Event) {
 function handleInputResponses(responses: Parameters<typeof sendInputResponses>[0]) {
   void sendInputResponses(responses);
 }
+
+function handleSceneMove(args: Record<string, unknown>) {
+  if (isBusy.value) return;
+  void sendMessage(`Use the scene tool with: ${JSON.stringify(args)}`);
+}
 </script>
 
 <template>
@@ -127,6 +132,7 @@ function handleInputResponses(responses: Parameters<typeof sendInputResponses>[0
                 :is-last="message.id === messages.at(-1)?.id"
                 :can-respond="!isBusy"
                 @input-responses="handleInputResponses"
+                @scene-move="handleSceneMove"
               />
             </template>
           </UChatMessages>

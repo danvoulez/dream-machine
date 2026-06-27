@@ -16,6 +16,7 @@
     "dev": "node scripts/ensure-eve-dev.mjs && nuxt dev",
     "start": "nuxt preview",
     "typecheck": "nuxt typecheck",
+    "test": "node scripts/run-tests.mjs",
     "test:projection": "node scripts/test-runtime-projection.mjs",
     "contracts:validate": "node scripts/validate-dream-machine-contracts.mjs",
     "db:generate": "nuxt db generate",

@@ -17,6 +17,7 @@ import {
   type BuiltShift,
   type BuiltShiftResult,
 } from "./envelope-effect-store.js";
+import { verifyLoglineReceipt } from "./logline-receipt-verify.js";
 import { resolveEnvelopeDbPath, resolveLoglineDbPath } from "./projection-bridge.js";
 
 export type OAuthCrossingRequest = {
@@ -198,6 +199,8 @@ export async function loadOAuthAct(contentHash: string): Promise<Record<string, 
     const parsed = JSON.parse(actJson) as Record<string, unknown>;
     const anchorError = assertOAuthActAnchor(parsed, contentHash);
     if (anchorError) return null;
+    const receipt = verifyLoglineReceipt(parsed);
+    if (!receipt.ok) return null;
     parsed.id = contentHash;
     return parsed;
   } finally {

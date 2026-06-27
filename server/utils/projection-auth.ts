@@ -1,4 +1,4 @@
-import type { H3Event } from "h3";
+import { createError, getHeader, type H3Event } from "h3";
 
 export function parseRuntimeBearer(authorizationHeader: string | undefined): string | undefined {
   if (!authorizationHeader?.startsWith("Bearer ")) return undefined;

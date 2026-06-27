@@ -10,13 +10,16 @@ import {
   buildOAuthAdapterAux,
   buildOAuthCrossingRequest,
   crossOAuthClientRegistration,
+  loadOAuthAct,
   redactSupabaseOAuthResponse,
 } from "../agent/lib/oauth-crossing.ts";
+import { verifyLoglineReceipt } from "../agent/lib/logline-receipt-verify.ts";
 import { buildStreamConfigRow } from "../agent/lib/envelope-effect-store.ts";
 import { clientMetadata, OAUTH_CLIENT_DANGER_TIER } from "../agent/lib/oauth-client-metadata.ts";
+import { resolveUiRoot } from "../agent/lib/projection-bridge.ts";
 
-const UI_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const LOGLINE_ROOT = join(UI_ROOT, "../Dream-Machine-LogLine-Acts");
+const UI_ROOT = resolveUiRoot();
+const LOGLINE_ROOT = join(dirname(UI_ROOT), "Dream-Machine-LogLine-Acts");
 
 const passportAct = {
   id: "a".repeat(64),
@@ -142,6 +145,88 @@ test("default crossing requires envelope db for durable evidence", async () => {
   } finally {
     if (prior) process.env.DREAM_MACHINE_ENVELOPE_DB = prior;
     else delete process.env.DREAM_MACHINE_ENVELOPE_DB;
+  }
+});
+
+test("verifyLoglineReceipt accepts minted oauth receipt", (t) => {
+  if (!existsSync(join(LOGLINE_ROOT, "lab/receipt.py"))) {
+    t.skip("LogLine repo missing");
+    return;
+  }
+  const py = spawnSync("python3", ["-c", `
+import json, sys
+from lab.receipt import mint
+act = mint({
+  "who": "tester",
+  "did": "requested_oauth_client",
+  "this": "LAB Passport",
+  "when": "2026-06-22T00:00:00Z",
+  "confirmed_by": "test",
+  "if_ok": "oauth-client.v1",
+  "if_doubt": "attention-raise.v1",
+  "if_not": "stop",
+  "status": "candidate",
+  "client_name": "LAB Passport",
+  "redirect_uris": ["https://passport.minilab.work/auth/callback"],
+  "client_type": "confidential",
+  "lab_id": "lab:abc123",
+})
+print(json.dumps(act))
+`], { cwd: LOGLINE_ROOT, encoding: "utf8" });
+  assert.equal(py.status, 0, py.stderr || py.stdout);
+  const minted = JSON.parse(py.stdout) as Record<string, unknown>;
+  const verified = verifyLoglineReceipt(minted);
+  assert.equal(verified.ok, true, verified.message);
+});
+
+test("loadOAuthAct rejects tampered ledger receipt", async (t) => {
+  if (!existsSync(join(LOGLINE_ROOT, "lab/receipt.py"))) {
+    t.skip("LogLine repo missing");
+    return;
+  }
+  const { mkdtempSync, writeFileSync, unlinkSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join: pathJoin } = await import("node:path");
+  const dir = mkdtempSync(pathJoin(tmpdir(), "oauth-act-"));
+  const dbPath = pathJoin(dir, "lab.sqlite");
+  const priorDb = process.env.DREAM_MACHINE_LOGLINE_DB;
+  process.env.DREAM_MACHINE_LOGLINE_DB = dbPath;
+  try {
+    const py = spawnSync("python3", ["-c", `
+import json, sqlite3, sys
+from lab.receipt import mint
+act = mint({
+  "who": "tester",
+  "did": "requested_oauth_client",
+  "this": "LAB Passport",
+  "when": "2026-06-22T00:00:00Z",
+  "confirmed_by": "test",
+  "if_ok": "oauth-client.v1",
+  "if_doubt": "attention-raise.v1",
+  "if_not": "stop",
+  "status": "candidate",
+  "client_name": "LAB Passport",
+  "redirect_uris": ["https://passport.minilab.work/auth/callback"],
+  "client_type": "confidential",
+  "lab_id": "lab:abc123",
+})
+content_hash = act["id"]
+act["who"] = "tampered"
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE logline_acts (content_hash TEXT PRIMARY KEY, act TEXT NOT NULL, inserted_at TEXT NOT NULL)")
+conn.execute("INSERT INTO logline_acts(content_hash, act, inserted_at) VALUES (?, ?, ?)",
+             (content_hash, json.dumps(act), "2026-06-27T00:00:00Z"))
+conn.commit()
+print(content_hash)
+`, dbPath], { cwd: LOGLINE_ROOT, encoding: "utf8" });
+    assert.equal(py.status, 0, py.stderr || py.stdout);
+    const contentHash = py.stdout.trim();
+    const loaded = await loadOAuthAct(contentHash);
+    assert.equal(loaded, null);
+  } finally {
+    if (priorDb) process.env.DREAM_MACHINE_LOGLINE_DB = priorDb;
+    else delete process.env.DREAM_MACHINE_LOGLINE_DB;
+    try { unlinkSync(dbPath); } catch { /* temp */ }
   }
 });
 

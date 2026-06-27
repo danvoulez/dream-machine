@@ -152,4 +152,6 @@ export type SceneRawRows = {
   findings: FindingRow[];
   shifts: ShiftRow[];
   watermark: { logline_seq: number; envelope_seq: number };
+  risk_by_process?: Partial<Record<string, RiskTier>>;
+  meta?: { logline_db_present?: boolean; envelope_db_present?: boolean };
 };

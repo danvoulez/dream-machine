@@ -2,6 +2,7 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { SCENE_OPS } from "../../shared/tools/scene.js";
 import { assembleScene } from "../lib/scene/scene.js";
+import { normalizeSceneProjection } from "../lib/scene/normalize.js";
 import { bridgeReaders } from "../lib/scene/readers.js";
 
 const inputSchema = z.object({
@@ -21,7 +22,13 @@ export default defineTool({
   async execute(input) {
     try {
       const scene = await assembleScene(input as never, bridgeReaders, { now: Date.now() });
-      return { ok: true as const, scene };
+      const normalized = normalizeSceneProjection(scene);
+      return {
+        ok: true as const,
+        scene,
+        projection: normalized.ok ? normalized.response : undefined,
+        notes: normalized.notes,
+      };
     } catch (err) {
       return {
         ok: false as const,

@@ -39,6 +39,11 @@ export const bridgeReaders: SceneReaders = {
     const { stdout } = await execFileAsync("python3", [
       SCRIPT, "rows", loglineDb() ?? "", envelopeDb() ?? "", JSON.stringify(scope ?? {}),
     ], { timeout: 8000, cwd: UI_ROOT });
-    return JSON.parse(stdout) as SceneRawRows;
+    const parsed = JSON.parse(stdout) as SceneRawRows & { error?: string };
+    if (typeof parsed.error === "string" && parsed.error) {
+      throw new Error(parsed.error);
+    }
+    const { error: _ignored, ...rows } = parsed;
+    return rows as SceneRawRows;
   },
 };

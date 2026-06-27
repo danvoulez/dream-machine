@@ -56,7 +56,7 @@ export function rankAndBound(
       if (crit === "recency") { sa = -sa; sb = -sb; }
       if (sb !== sa) return sb - sa;
     }
-    return 0;
+    return a.id.localeCompare(b.id);
   });
   const items = ranked.slice(0, limit);
   const omitted = ranked.length - items.length;
@@ -84,7 +84,6 @@ export function legalMoves(s: SceneState): LegalNextMove[] {
     m.push({ move, label, reason, args, effect_class: "none", requires_confirmation: false });
 
   if (s.hasItems && !s.focused) add("scene.drill", "Abrir um item", "Há itens na view.");
-  if (s.hasItems) add("scene.group", "Agrupar", "Resumir por dimensão.");
   add("scene.refresh", "Atualizar com novo objetivo", "Reconsultar com outro goal.");
   if (s.omitted > 0) add("scene.explain_loss", `Explicar os ${s.omitted} omitidos`, "A view é parcial.", { projection_hash: "self" });
   if (s.focused) add("scene.open_evidence", "Ver a prova", "Abrir os source refs do item.");

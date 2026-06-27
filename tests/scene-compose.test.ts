@@ -20,6 +20,7 @@ const rows: SceneRawRows = {
     { input_hash: "h1", actor: "cos", duration_ms: 1200, kind: "condensation", closed_at: NOW - 1000 },
   ],
   watermark: { logline_seq: 1, envelope_seq: 1 },
+  risk_by_process: { "inbox-route.v1": "L2", "memory-register.v1": "L0" },
 };
 
 test("composeProcessViews joins queue+act+findings+shift into one ProcessView", () => {

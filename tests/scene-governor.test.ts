@@ -57,6 +57,7 @@ test("legalMoves at an open scene with items offers read-only drill/explain/back
   assert.ok(names.includes("scene.drill"));
   assert.ok(names.includes("scene.explain_loss"));
   assert.ok(names.includes("scene.back"));
+  assert.ok(!names.includes("scene.group"));
   assert.ok(moves.every((m) => m.effect_class === "none" && m.requires_confirmation === false));
 });
 

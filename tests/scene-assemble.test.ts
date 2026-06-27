@@ -35,9 +35,49 @@ test("same request + same rows = same projection_hash (reproducible)", async () 
   assert.equal(a.projection_hash, b.projection_hash);
 });
 
-test("degraded reader (empty envelope) sets stale + a partial_source warning is allowed; empty scope yields empty view", async () => {
+test("degraded reader warns on both missing halves and marks stale", async () => {
   const empty: SceneReaders = { async readRows() { return { logline_acts: [], queue: [], findings: [], shifts: [], watermark: { logline_seq: 0, envelope_seq: 0 } }; } };
   const r = await assembleScene({ op: "scene.open", scope: {}, limit: 10 }, empty, { now: NOW });
   assert.equal(r.view.items.length, 0);
   assert.equal(r.loss_accounting.total_candidates, 0);
+  assert.equal(r.freshness.stale, true);
+  assert.ok(r.warnings.some((w) => w.source === "logline"));
+  assert.ok(r.warnings.some((w) => w.source === "envelope"));
+});
+
+test("scene.drill focuses a single item when selection.focus is set", async () => {
+  const r = await assembleScene({
+    op: "scene.drill",
+    scope: { ledger: "lab" },
+    selection: { focus: "h2" },
+    limit: 10,
+  }, fakeReaders, { now: NOW });
+  assert.equal(r.view.items.length, 1);
+  assert.equal(r.view.items[0].id, "h2");
+  assert.ok(r.legal_next_moves.some((m) => m.move === "scene.open_evidence"));
+});
+
+test("scene.explain_loss returns omitted items from a bounded open view", async () => {
+  const open = await assembleScene({ op: "scene.open", goal: "o que travou", scope: { ledger: "lab" }, limit: 1 }, fakeReaders, { now: NOW });
+  assert.equal(open.view.items.length, 1);
+  const explained = await assembleScene({ op: "scene.explain_loss", scope: { ledger: "lab" }, limit: 1 }, fakeReaders, { now: NOW });
+  assert.ok(explained.view.items.length >= 1);
+  assert.ok(explained.loss_accounting.omitted_reasons[0]?.includes("omitted"));
+});
+
+test("unknown scope emits scope_not_found when logline db is present but filter is empty", async () => {
+  const scoped: SceneReaders = {
+    async readRows() {
+      return {
+        logline_acts: [],
+        queue: [],
+        findings: [],
+        shifts: [],
+        watermark: { logline_seq: 0, envelope_seq: 0 },
+        meta: { logline_db_present: true, envelope_db_present: true },
+      };
+    },
+  };
+  const r = await assembleScene({ op: "scene.open", scope: { content_hash: "missing" }, limit: 10 }, scoped, { now: NOW });
+  assert.equal(r.warnings.some((w) => w.kind === "scope_not_found"), true);
 });

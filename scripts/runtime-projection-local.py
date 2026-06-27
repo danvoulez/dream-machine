@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import glob
 import json
 import os
 import re
@@ -302,16 +303,74 @@ def envelope_projection(db: sqlite3.Connection, request: dict[str, Any]) -> dict
     return envelope_row_to_projection(row)
 
 
+def load_risk_by_process(logline_db: str) -> dict[str, str]:
+    if not logline_db:
+        return {}
+    processes_dir = os.path.join(os.path.dirname(os.path.abspath(logline_db)), "..", "processes")
+    if not os.path.isdir(processes_dir):
+        return {}
+    risk: dict[str, str] = {}
+    for path in glob.glob(os.path.join(processes_dir, "*.v1.yml")):
+        process_id = os.path.basename(path).replace(".yml", "")
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        match = re.search(r"^danger_tier:\s*(L[0-5])\s*$", text, re.MULTILINE)
+        if match:
+            risk[process_id] = match.group(1)
+    return risk
+
+
+def apply_scope(out: dict[str, Any], scope: dict[str, Any]) -> None:
+    if not scope:
+        return
+    content_hash = scope.get("content_hash")
+    process_id = scope.get("process_id")
+    process = scope.get("process")
+    stream_id = scope.get("stream_id")
+
+    if content_hash:
+        out["logline_acts"] = [a for a in out["logline_acts"] if a["content_hash"] == content_hash]
+        out["queue"] = [q for q in out["queue"] if q["source_hash"] == content_hash]
+    elif process_id:
+        out["queue"] = [q for q in out["queue"] if q["process_id"] == process_id]
+        refs = {q["source_hash"] for q in out["queue"]}
+        out["logline_acts"] = [
+            a for a in out["logline_acts"]
+            if a["content_hash"] in refs or a.get("if_ok") == process_id
+        ]
+    elif process:
+        needle = str(process).lower()
+        out["queue"] = [q for q in out["queue"] if needle in q["process_id"].lower()]
+        refs = {q["source_hash"] for q in out["queue"]}
+        out["logline_acts"] = [
+            a for a in out["logline_acts"]
+            if a["content_hash"] in refs
+            or needle in (a.get("if_ok") or "").lower()
+            or needle in (a.get("this") or "").lower()
+            or needle in (a.get("did") or "").lower()
+        ]
+
+    if stream_id:
+        out["findings"] = [f for f in out["findings"] if f.get("stream_id") == stream_id]
+
+    out["watermark"]["logline_seq"] = len(out["logline_acts"])
+
+
 def scene_rows(logline_db: str, envelope_db: str, request: dict[str, Any]) -> dict[str, Any]:
-    del request  # scope reserved for future filtering
+    scope = request if isinstance(request, dict) else {}
     out: dict[str, Any] = {
         "logline_acts": [],
         "queue": [],
         "findings": [],
         "shifts": [],
         "watermark": {"logline_seq": 0, "envelope_seq": 0},
+        "risk_by_process": {},
+        "meta": {"logline_db_present": False, "envelope_db_present": False},
     }
     if logline_db and os.path.exists(logline_db):
+        out["meta"]["logline_db_present"] = True
         db = read_only_connect(logline_db)
         out["logline_acts"] = [
             dict(r)
@@ -331,8 +390,10 @@ def scene_rows(logline_db: str, envelope_db: str, request: dict[str, Any]) -> di
         except sqlite3.OperationalError:
             out["queue"] = []
         out["watermark"]["logline_seq"] = len(out["logline_acts"])
+        out["risk_by_process"] = load_risk_by_process(logline_db)
         db.close()
     if envelope_db and os.path.exists(envelope_db):
+        out["meta"]["envelope_db_present"] = True
         db = read_only_connect(envelope_db)
         try:
             out["findings"] = [
@@ -340,11 +401,12 @@ def scene_rows(logline_db: str, envelope_db: str, request: dict[str, Any]) -> di
                     "finding_id": r["finding_id"],
                     "kind": r["kind"],
                     "severity": r["severity"],
+                    "stream_id": r["stream_id"],
                     "refs": json.loads(r["refs_json"]) if r["refs_json"] else [],
                     "resolved_at": r["resolved_at"],
                 }
                 for r in db.execute(
-                    "SELECT finding_id, kind, severity, refs_json, resolved_at FROM findings"
+                    "SELECT finding_id, kind, severity, stream_id, refs_json, resolved_at FROM findings"
                 )
             ]
         except sqlite3.OperationalError:
@@ -360,6 +422,7 @@ def scene_rows(logline_db: str, envelope_db: str, request: dict[str, Any]) -> di
         except sqlite3.OperationalError:
             out["shifts"] = []
         db.close()
+    apply_scope(out, scope)
     return out
 
 

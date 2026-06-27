@@ -18,6 +18,7 @@ function deriveWaiting(status: string, confirmedBy: string, queueState: string):
 }
 
 export function composeProcessViews(rows: SceneRawRows, opts: ComposeOpts): ProcessView[] {
+  const riskMap = { ...rows.risk_by_process, ...opts.riskByProcess };
   const findingsByRef = new Map<string, OpenFinding[]>();
   for (const f of rows.findings) {
     if (f.resolved_at !== null) continue;
@@ -33,7 +34,9 @@ export function composeProcessViews(rows: SceneRawRows, opts: ComposeOpts): Proc
   return rows.logline_acts.map((act) => {
     const q = queueByHash.get(act.content_hash);
     const queueState = q?.status ?? "";
-    const risk = opts.riskByProcess[q?.process_id ?? ""] ?? "L1";
+    const risk = riskMap[q?.process_id ?? ""]
+      ?? riskMap[act.if_ok ?? ""]
+      ?? "L1";
     const sinceMs = q ? opts.now - ms(q.updated_at) : opts.now - ms(act.inserted_at);
     const ageMs = opts.now - ms(act.inserted_at);
     const attempts = q?.attempts ?? 0;

@@ -48,7 +48,10 @@ function onMove(args: Record<string, unknown>) {
 </script>
 
 <template>
-  <div class="my-1 w-full max-w-xl overflow-hidden rounded-lg border border-default/70 bg-elevated/30">
+  <div
+    data-testid="scene-card"
+    class="my-1 w-full max-w-xl overflow-hidden rounded-lg border border-default/70 bg-elevated/30"
+  >
     <div class="flex items-start gap-2.5 px-3 py-2.5">
       <div class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border border-default/60 bg-default/50">
         <UIcon
@@ -129,6 +132,7 @@ function onMove(args: Record<string, unknown>) {
       <div
         v-for="item in scene.view.items"
         :key="item.id"
+        data-testid="scene-process-item"
         class="rounded-md border border-default/40 bg-elevated/30 px-2.5 py-2"
       >
         <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">

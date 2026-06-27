@@ -34,7 +34,7 @@ If not all seven: status is `[~]` with an honest sub-status (implemented-but-unv
 - **LogLine** = 1 Python body + 1 test body + 1 conformance type. *(closest today)*
 - **Envelope** = 1 TS body + 1 test body + 1 conformance type. *(conformance missing → T-S7)*
 - **One plugin** = a single packaged seam (Python + TS behind one interface) that gives the Eve agent the power to understand the processes AND report their **andamento**. *(today: spread across a tool + a shell bridge + 2 sqlite-by-path → T-P1)*
-- **UI as acceptance, not luxury** = the receipt of the whole: open the UI → ask the agent about the processes and their andamentos → correct, end-to-end answer against the real ledgers. *(no e2e yet → T-P2)*
+- **UI as acceptance, not luxury** = the receipt of the whole: open the UI → ask the agent about the processes and their andamentos → correct, end-to-end answer against the real ledgers. *(portal Scene acceptance e2e exists; full agent-chat loop still open → T-P2 `[~]`)*
 
 The system-level receipt **is** that UI e2e. Until it runs and verifies, the system is `[~]` no matter how many per-task `[x]` exist.
 
@@ -77,22 +77,27 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 - **Ledgers now have data (local sqlite only — Supabase santoandre deliberately untouched):**
   KERNEL `.lab/lab.sqlite` seeded with 4 acts via the legit `lab act` writer; SPINE `.board/board.sqlite`
   created + seeded via the `Board` API.
-- **The agent read-path works end-to-end:** FACE `agent/tools/runtime_projection.ts` → `scripts/runtime-projection-local.py` → reads both sqlite ledgers. Proven: agent gets a real non-empty projection from each half.
+- **The agent read-path works end-to-end:** FACE `agent/tools/scene.ts` (primary) → `agent/lib/scene/*` → `scripts/runtime-projection-local.py` → reads both sqlite ledgers. `runtime_projection` is deprecated unless `DREAM_MACHINE_ENABLE_LEGACY_PROJECTION=1`. Proven: Scene returns bounded ProcessViews with andamento from seeded data.
 - **The LogLine→Envelope derivation pipe now EXISTS** (was the central missing seam): `Dream-Machine-Envelope-Ledger/scripts/derive-from-logline.mjs` reads `logline_acts` read-only, ingests each as an Envelope Event (payload embeds the LogLine `content_hash`), condenses → CandidateVersion → admits → BoardAct (slots.object = the content_hash) → projects. `verify_ok: true`; the 4 LogLine hashes appear verbatim in the derived chain. Observability now emerges from the kernel.
 - **Corrected overclaim:** "Envelope Dynamic Projections already exist" is only half true. The *metadata
   scaffolding* (ladder L0–L5, pin, parent hashes, loss-accounting, diff) is real and tested in all three
-  projection impls. The *actual dynamic composition* (arbitrary LLM question → view assembled, attention
-  governing the query space) is **not implemented anywhere**: `lab/projections.py` `_ledger_snapshot` is a
-  fixed `GROUP BY` and `projection_spec` is decorative; SPINE `buildProjection` takes `narrative` as input;
-  FACE `runtime_projection` has 10 fixed intents. See T-DP1/T-DP2.
+  projection impls. The *actual dynamic composition* is **partially implemented in FACE** on branch
+  `codex/dream-machine-membrane-contracts`: goal-driven salience, rank/bound, loss, legal moves, Scene card.
+  KERNEL `lab/projections.py` `_ledger_snapshot` still ignores `projection_spec`; SPINE `buildProjection`
+  still takes `narrative` as input. See T-DP1/T-DP2 — one owner, not three half-motors.
 
 **Full scan (2026-06-27) — the size of the monster:**
 - **KERNEL** `lab/`: ~4.2k LOC, 24 modules, 31 test files (265 tests). Conformance corpus ✓ (`tests/jcs_conformance`, `fixtures/.../conformance/vectors`, `santo-andre-vectors`). `runtime/` service daemons are **README-only stubs** (executor/clock/adapters) except `receiver/realtime_listener.mjs` — the real logic lives in `lab/`. `fleet/` = machine+service yml (lab-256/8gb/512). `migrations/` = 3 Postgres SQL. `schemas/receipt.v0.schema.json`. `signing/webauthn_verifier.py`.
 - **SPINE** `src/`: ~4.2k LOC, 39 modules, 18 test files (107 tests). Conformance ✗ — scattered, no single corpus (→ T-S7).
-- **FACE**: ~10.4k LOC ts/vue. Eve template + `runtime_projection` tool + shell bridge. 40 `.yml` membrane contracts (15 enforced by `pnpm contracts:validate`).
+- **FACE**: ~10.4k+ LOC ts/vue. Eve template + `scene` tool (Dynamic Projection Motor) + deprecated `runtime_projection` + shell bridge. 40 `.yml` membrane contracts (15 enforced by `pnpm contracts:validate`). `pnpm test` = 30 tests (29 pass, 1 skip if ledgers absent).
 - **Docs:** 113 `.md` → target ~12 (T-H5). **Packaging: none** — no umbrella package / Makefile / Docker / install across the three repos; the installable topology exists only as a contract (→ T-T1).
 
-**Session close — 2026-06-27 (PR-1 + PR-2 committed to branches, not merged):**
+**Session close — 2026-06-27 (Scene motor + T-P2 harness on FACE `codex/dream-machine-membrane-contracts`, not merged):**
+- **Scene motor (PR-6/7 partial):** `agent/lib/scene/*`, `agent/tools/scene.ts`, `Scene.vue`, `shared/tools/scene.ts`, python bridge `rows` mode + scope filter + `risk_by_process`. Fixed intents retired (deprecated). 30 unit/integration tests committed.
+- **T-P2 harness (partial):** `tests/scene-e2e.test.ts` (motor over real ledgers) + `e2e/portal-scene-acceptance.spec.ts` (portal login → `/acceptance/scene` → Scene card). Ghost: full chat-agent loop (ask Eve in UI → agent calls `scene` → answer) still needs model creds + `eve eval`; acceptance page exercises plugin path without LLM.
+- **Not merged/pushed:** motor branch; merge/push is Dan's call.
+
+**Prior session — 2026-06-27 (PR-1 + PR-2 committed to branches, not merged):**
 - **PR-1** (`pr1-close-loops` on KERNEL/SPINE; feature branch on FACE): SPINE `577b725` derivation pipe + `tests/derive-pipe.test.ts` + `.gitignore` + JCS fix → **T-S1 ✓, T-H2 ✓**; KERNEL `2e61123` test_inference aligned to the inspect projection → **T-K6 ✓**; FACE `56d2c4c` this tasklist normalized. SPINE suite 107→**109**.
 - **PR-2** (`pr2-docs` on KERNEL/umbrella): KERNEL `cc192c4` prose docs **78→39**, non-canon archived to `~/dream-machine-attic/kernel-docs` (incl. the 4 LAB specs) → **T-H5 substantially ✓, T-H1 ✓** (devin ghosts archived with the LAB specs); umbrella `de73587` Atlas counts fixed → **T-H3 ✓**. Board canon reconciled, coherent → **T-H6 ✓** (only the L5 delta remains, tracked as T-S3).
 - **Not merged/pushed:** all of the above lives on the branches above; merge/push is Dan's call.
@@ -129,25 +134,26 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 ### FACE — Membrane + Processual UI
 
 - [x] Membrane contract set written + validated: `pnpm contracts:validate` = 15 contracts pass (ownership, vocabulary, reference-map, jurisdictions, crossing-map, conflict-map, projections + JSON schema, actions, core-technologies, installable-topology, portal-chief, …).
-- [x] `runtime_projection` Eve tool + `RuntimeProjection.vue` card exist; jurisdiction routing (`preferredJurisdiction`), stub/live/local-adapter seam, LogLine + Envelope + diff mappers, `mergeMixedProjection`.
-- [x] Local bridge `scripts/runtime-projection-local.py` reads both sqlite ledgers (proven against seeded data).
-- [~] **T-F1 Symmetric normalization.** Bridge returns *normalized* shape for logline mode but *raw native* projection for envelope mode. *Exit:* both normalized consistently (or the asymmetry documented as intentional with the TS mapper owning it).
+- [x] `runtime_projection` Eve tool + `RuntimeProjection.vue` card exist; jurisdiction routing (`preferredJurisdiction`), stub/live/local-adapter seam, LogLine + Envelope + diff mappers, `mergeMixedProjection`. *(deprecated — superseded by `scene`.)*
+- [x] **`scene` Eve tool + `Scene.vue` card** — Dynamic Projection Motor: goal-driven ProcessViews, loss accounting, legal moves, proposals (airlock-only). Committed on `codex/dream-machine-membrane-contracts`.
+- [x] Local bridge `scripts/runtime-projection-local.py` reads both sqlite ledgers (proven against seeded data); `rows` mode feeds Scene readers.
+- [~] **T-F1 Symmetric normalization.** Scene path normalizes via `normalizeSceneProjection()` → `dream-machine-projections.v0`. Legacy `runtime_projection` bridge still returns raw envelope native shape. *Exit:* both normalized consistently (or asymmetry documented with TS mapper owning it).
 - [ ] **T-F2 Live-source adapter coverage + tests** beyond the current pure tests: routing tests (logline/envelope/mixed), card tests.
-- [ ] **T-F3 Projection UI cards**: source-ref, finding, attention, proposal-detail, receipt-detail, warning, next-steps; affordance buttons from declared affordances only; empty/stale/partial/loading/error states.
+- [~] **T-F3 Projection UI cards**: `Scene.vue` covers ProcessView list, warnings, loss line, legal moves, proposals (airlock). Ghost: source-ref, finding, attention, proposal-detail, receipt-detail, next-steps cards; full affordance button set from declared affordances.
 - [ ] **T-F4 Safety integration tests**: prove the portal can request/render but cannot register receipts, dispatch, mutate either ledger, or authorize L5; one end-to-end source→card path.
 - [ ] **T-F5 Auth identity bridge**: app user ↔ Supabase user ↔ LAB ID ↔ grants ↔ Vercel Connect/MCP boundary.
 
 ### The one plugin — live data path (cross-cutting seam)
 
-- [ ] **T-P1 Consolidate the seam into ONE packaged plugin** (the "1 plugin do conjunto"). Today it's spread across `agent/tools/runtime_projection.ts` + `scripts/runtime-projection-local.py` + 2 sqlite-by-path + `shared/tools/runtime-projection.ts` + `agent/lib/projection-normalizer.ts`, glued by shell + filesystem paths. *Exit:* the agent reaches both halves through ONE coherent packaged entry point (no loose shell/path glue), one install step. Absorbs T-R1 (the interface) and T-F1 (symmetric normalization).
-- [ ] **T-P2 UI acceptance e2e — the system receipt.** One end-to-end flow: open the portal → agent answers "what are the processes and their andamentos?" correctly against the real seeded ledgers, through the plugin. Reporting *andamento* (where each process sits in its lifecycle) depends on T-DP1. *Exit:* the e2e runs green and is committed — this is the system-level done receipt from DoD §0.
+- [~] **T-P1 Consolidate the seam into ONE packaged plugin** (the "1 plugin do conjunto"). `scene` tool unifies the agent surface; implementation still spreads across `agent/lib/scene/*` + `scripts/runtime-projection-local.py` + 2 sqlite-by-path, glued by shell + filesystem paths. *Exit:* ONE coherent packaged entry point (no loose shell/path glue), one install step. Absorbs T-R1 (the interface) and T-F1 (symmetric normalization).
+- [~] **T-P2 UI acceptance e2e — the system receipt.** Committed: `tests/scene-e2e.test.ts` (motor over real ledgers) + `e2e/portal-scene-acceptance.spec.ts` (`DREAM_MACHINE_ACCEPTANCE=1 pnpm test:e2e`: portal `/acceptance/scene` → Scene card with andamento from real ledgers). Ghost: full flow open portal → ask agent in chat → agent calls `scene` → correct answer (needs model creds / `eve eval`). *Exit:* that chat-agent e2e runs green — the system-level done receipt from DoD §0.
 - [ ] **T-R1 Build the `/projection` HTTP runtime endpoint** (`DREAM_MACHINE_RUNTIME_URL`) — the single interface T-P1 packages around. Today the agent reaches the ledgers by shelling `python3` + `sqlite3` CLIs — fragile (PATH-dependent). *Exit:* a runtime serves `/projection`; the bridge's shell paths become the fallback, not the default. Unblocks any non-UI agent consuming projections too.
 - [ ] **T-R2 OAuth client registration crossing** (§ first external-effect additive client). Acts-side dry-run committed; the real Supabase POST must become a TS edge crosser recording an Envelope `Shift`(kind `effect`)/`ShiftResult` — `input_hash`=act `content_hash`, transport+custody, act intact, `client_secret` never enters a receipt/projection. *Exit:* test proves additive (content_hash unchanged) + dry-run/real share one builder; **and** resolve the governance question (oauth-client.v1 is L3, below the L4/L5 grant gate — keep L3 or raise to L4).
 
 ### The real motor — Dynamic Projection (the gap behind "agent knows the processes")
 
-- [ ] **T-DP1 Composer.** Make a projection answer an arbitrary question instead of a fixed snapshot. Today `lab/projections.py` `_ledger_snapshot` ignores `projection_spec` (decorative). *Exit:* one owner of composition (recommend the KERNEL Python) turns a spec/question into the view; SPINE/FACE become thin adapters — **not three half-motors**.
-- [ ] **T-DP2 Attention governor over the query space** — the sense that stops the LLM drowning in an unbounded question space (budget/salience/ranking + Scene bound). Distinct from the human attention objects in §A. Currently unbuilt.
+- [~] **T-DP1 Composer.** FACE `compose.ts` + `assembleScene` build ProcessViews from real ledger rows; goal drives salience profile. Ghost: KERNEL `lab/projections.py` still ignores `projection_spec`; no single owner (recommend KERNEL Python). Unbuilt ops: `group`, `filter`, `compare`, `ascend`, `descend`. *Exit:* one owner turns spec/question into the view; SPINE/FACE become thin adapters — **not three half-motors**.
+- [~] **T-DP2 Attention governor over the query space** — FACE `governor.ts`: deterministic goal→salience, rank/bound, loss accounting, legal moves, proposals. Ghost: not full Scene-bound dynamic-tool reshaping (`defineDynamic`); LLM ranker extension point unused. Distinct from human attention objects in §A.
 
 ### Doc & repo hygiene
 
@@ -178,7 +184,7 @@ admitted→board_committed, Act→BoardAct/EnvelopeAct. Docs are sanitized; **co
 ## D. Corrected / removed claims (so they don't creep back)
 
 - ✗ "There is a v0/v1 gate schism" — false; v0 is the live system (corrected 2026-06-26).
-- ✗ "Envelope Dynamic Projections already exist" — only the metadata scaffolding; composition + attention governor are unbuilt (T-DP1/T-DP2).
+- ✗ "Envelope Dynamic Projections already exist" — metadata scaffolding is real; composition + attention governor are **partial in FACE Scene motor** (T-DP1/T-DP2 `[~]`), not done in KERNEL/SPINE.
 - ✗ Test counts 103 / 242 / 94 — stale; now 107 (SPINE) and 265+1-skip (KERNEL).
 - ✗ "No LogLine→Envelope derivation pipe" — built this session (T-S1).
 - ✗ `DOC_TREE_AND_DRIFT.md` as a trustworthy drift report — it had itself drifted; deleted.

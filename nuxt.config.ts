@@ -63,8 +63,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     betterAuthSecret: process.env.BETTER_AUTH_SECRET,
     betterAuthUrl: process.env.BETTER_AUTH_URL,
+    dreamMachineAcceptance: process.env.DREAM_MACHINE_ACCEPTANCE === "1",
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || "",
+      dreamMachineAcceptance: process.env.DREAM_MACHINE_ACCEPTANCE === "1",
     },
   },
 });

@@ -17,6 +17,8 @@
     "start": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "test": "node scripts/run-tests.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:projection": "node scripts/test-runtime-projection.mjs",
     "contracts:validate": "node scripts/validate-dream-machine-contracts.mjs",
     "db:generate": "nuxt db generate",
@@ -45,6 +47,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@iconify-json/lucide": "^1.2.112",
     "@iconify-json/simple-icons": "^1.2.48",
     "@types/node": "25.9.1",

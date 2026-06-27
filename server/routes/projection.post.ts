@@ -2,6 +2,7 @@ import { handleProjectionPost } from "../../agent/lib/projection-bridge";
 import { verifyProjectionRuntimeAuth } from "~~/server/utils/projection-auth";
 
 export default defineEventHandler(async (event) => {
+  // C0.1 runtime.seam — production /projection is never open when token is unset.
   verifyProjectionRuntimeAuth(event);
 
   const body = await readBody(event);

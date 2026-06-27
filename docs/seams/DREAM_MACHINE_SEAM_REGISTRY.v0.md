@@ -115,11 +115,11 @@ Vercel cockpit / Eve → LAB runtime API (**transport, auth, route class** — n
 | | |
 |--|--|
 | **Failure mode** | Unauthenticated or wrong-class caller reaches LAB commit surface |
-| **Level** | **PARTIAL** |
+| **Level** | **HARD** for production `POST /projection` auth · **PARTIAL** for future non-projection runtime routes |
 | **Contract** | `plugin/dream-machine-runtime/manifest.json` · `docs/dream-machine-hybrid-topology.v0.yml` |
-| **Code anchor** | **Client:** `agent/lib/projection-bridge.ts` — `fetchProjectionRuntime`, `postProjectionHttp` (Bearer). **Server:** `server/routes/projection.post.ts`, `server/routes/oauth-crossing.post.ts`. **Auth:** `server/utils/projection-auth.ts` — `verifyProjectionRuntimeAuth`, `verifyOAuthCrossingAuth` (fail-closed). **Modes:** `DREAM_MACHINE_RUNTIME_URL`, `DREAM_MACHINE_RUNTIME_SHELL_ONLY`, `DREAM_MACHINE_RUNTIME_TOKEN`. **LAB:** `scripts/deploy-lab-runtime.sh` |
-| **Verify** | `pnpm test` (projection-auth, oauth-crossing auth); `curl -H "Authorization: Bearer $TOKEN" …/projection` |
-| **Gap** | `/projection` auth is optional when token unset (local dev); production should require token unconditionally (**C0.1**) |
+| **Code anchor** | **Auth policy (C0.1):** `server/utils/projection-auth.ts` — `isProjectionAuthOpenAllowed`, `verifyProjectionRuntimeAuth` (production + missing token → `503 config_error`), `requireRuntimeTokenForHttp`. **Client:** `agent/lib/projection-bridge.ts` — `postProjectionHttp` calls guard before fetch. **Server:** `server/routes/projection.post.ts`. **Open modes only:** `DREAM_MACHINE_RUNTIME_SHELL_ONLY=1`, `DREAM_MACHINE_RUNTIME_DEV_OPEN=1`, `DREAM_MACHINE_ACCEPTANCE=1` (non-production), `NODE_ENV=test` |
+| **Verify** | `pnpm test -- --test-name-pattern 'projection auth'`; production curl without token must get 503 |
+| **Gap** | `/oauth-crossing` and future `POST /proposal` routes share token env but are not yet classified per route class (**C0.4**) |
 
 **Owns:** URL, Bearer/Access auth, route class, shell-only mode, server route protection.  
 **Does not own:** ProcessView shape, `authoritative: false`, `cannot_do` (projection seam).
@@ -339,7 +339,7 @@ Runtime result / observation → ledger closure.
 
 | ID | Seam | Task |
 |----|------|------|
-| **C0.1** | runtime | Require production `/projection` auth unconditionally; local open mode = explicit shell/dev only |
+| **C0.1** | runtime | ~~Require production `/projection` auth unconditionally~~ **done** — `503 config_error` when token unset in production |
 | **C0.2** | identity | Consume `DREAM_MACHINE_PASSPORT_MAP` in `identity-bridge` / auth / Scene |
 | **C0.3** | preview | Assert preview env cannot contain write/propose/commit tokens |
 | **C0.4** | proposal | Add `POST /proposal` or `/admission/intake` — proposal-only, no commit |
@@ -352,7 +352,7 @@ Runtime result / observation → ledger closure.
 {
   "seams": {
     "identity.seam": "PARTIAL",
-    "runtime.seam": "PARTIAL",
+    "runtime.seam": "HARD:/projection;PARTIAL:other-routes",
     "projection.seam": "HARD",
     "proposal.seam": "PARTIAL",
     "airlock.seam": "HARD",

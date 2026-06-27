@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { requireRuntimeTokenForHttp } from "../../server/utils/projection-auth.js";
 import type { ProjectionJurisdiction } from "../../shared/tools/runtime-projection.js";
 import type { SceneRawRows, SceneScope } from "../../shared/tools/scene.js";
 
@@ -211,6 +212,7 @@ async function postProjectionHttp(
   baseUrl: string,
   body: ProjectionPostBody,
 ): Promise<Record<string, unknown>> {
+  requireRuntimeTokenForHttp();
   const token = process.env.DREAM_MACHINE_RUNTIME_TOKEN?.trim();
   const url = `${baseUrl.replace(/\/+$/, "")}/projection`;
   const controller = new AbortController();
